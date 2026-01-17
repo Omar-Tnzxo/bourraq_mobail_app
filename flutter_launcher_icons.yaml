@@ -1,0 +1,22 @@
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/icons/icon.png"
+  min_sdk_android: 21
+  
+  # Adaptive icon for Android 8.0+ (circles, squircles, etc.)
+  adaptive_icon_foreground: "assets/icons/icon.png"
+  adaptive_icon_background: "#3D8A3D"
+  
+  # Web
+  web:
+    generate: true
+    image_path: "assets/icons/icon.png"
+    background_color: "#3D8A3D"
+    theme_color: "#3D8A3D"
+  
+  # Windows
+  windows:
+    generate: true
+    image_path: "assets/icons/icon.png"
+    icon_size: 256

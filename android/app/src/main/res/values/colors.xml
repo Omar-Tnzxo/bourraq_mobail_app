@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#3D8A3D</color>
+    <!-- Notification icon accent color (Bourraq Green) -->
+    <color name="notification_color">#6EAE3B</color>
+</resources>
