@@ -1,6 +1,12 @@
 {
     "app_name": "Bourraq",
     "tagline": "Your orders, in your hands",
+    "app": {
+        "exit_confirm_title": "Confirm Exit",
+        "exit_confirm_message": "Are you sure you want to exit?",
+        "exit": "Exit",
+        "stay": "Stay"
+    },
     "general": {
         "skip": "Skip",
         "done": "Done"
@@ -25,7 +31,12 @@
         "weak_connection": "Weak internet connection",
         "offline_mode": "You are offline",
         "help": "Help",
-        "not_specified": "Not specified"
+        "not_specified": "Not specified",
+        "error_occurred": "An error occurred",
+        "close": "Close",
+        "viewing_cached_data": "Viewing cached data",
+        "last_updated": "Last updated {minutes} min ago",
+        "cached_data_offline": "You're offline, showing last saved data"
     },
     "location": {
         "area_detected": "Delivery area: {area}",
@@ -60,6 +71,17 @@
         "page_not_found_desc": "Sorry, the page you're looking for doesn't exist or has been moved",
         "go_home": "Go to Home",
         "go_back": "Go Back"
+    },
+    "errors": {
+        "general": "Something went wrong, please try again",
+        "network": "Connection failed, check your internet",
+        "server": "Server error, please try later",
+        "timeout": "Connection timed out, try again",
+        "not_found": "Content not found",
+        "loading_failed": "Failed to load data",
+        "save_failed": "Failed to save",
+        "delete_failed": "Failed to delete",
+        "rate_limit": "Too many requests, please wait"
     },
     "onboarding": {
         "skip": "Skip",
@@ -139,7 +161,11 @@
             "email_already_in_use": "Email is already in use",
             "update_email_failed": "Failed to update email",
             "verify_email_failed": "Failed to verify email",
-            "otp_invalid": "Invalid or expired verification code"
+            "otp_invalid": "Invalid or expired verification code",
+            "invalid_credentials": "Invalid email or password",
+            "user_data_failed": "Failed to get user data",
+            "google_login_failed": "Failed to sign in with Google",
+            "no_user_logged_in": "No user logged in"
         },
         "password_requirements_hint": "• 8 characters min • 1 uppercase • 1 number",
         "registering": "Creating account...",
@@ -401,7 +427,8 @@
         "delete_account": "Delete Account",
         "delete_confirm_title": "Delete Account",
         "delete_confirm_message": "Are you sure you want to delete your account? This action cannot be undone.",
-        "delete_warning": "All your data and orders will be permanently deleted"
+        "delete_warning": "All your data and orders will be permanently deleted",
+        "no_contact_options": "No contact options available"
     },
     "guest": {
         "login_required": "Login Required",

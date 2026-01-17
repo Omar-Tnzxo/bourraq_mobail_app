@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
 import '../../data/models/promo_code_model.dart';
 import '../../data/repositories/account_content_repository.dart';
 
@@ -40,7 +41,7 @@ class PromoCodesCubit extends Cubit<PromoCodesState> {
       final codes = await _repository.getPromoCodes();
       emit(PromoCodesLoaded(codes));
     } catch (e) {
-      emit(PromoCodesError(e.toString()));
+      emit(PromoCodesError(ErrorHandler.getErrorKey(e)));
     }
   }
 }

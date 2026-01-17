@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import 'package:bourraq/core/services/session_manager.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
 import 'package:bourraq/features/home/data/models/home_section_model.dart';
 import 'package:bourraq/features/home/data/repositories/home_repository.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_banners_carousel.dart';
@@ -19,43 +20,34 @@ class HomeCubit extends Cubit<HomeState> {
     : _repository = repository ?? HomeRepository(),
       super(HomeInitial());
 
-  /// Load all home screen data dynamically based on sections config
+  /// Load all home screen data with cache-first strategy
+  ///
+  /// 1. Immediately emit cached data if available (fast UI response)
+  /// 2. Fetch fresh data from network in background
+  /// 3. Update UI when fresh data arrives
   Future<void> loadHomeData() async {
     if (isClosed) return;
-    emit(HomeLoading());
 
+    // Step 1: Try to load from cache first for instant UI
+    final hasCachedData = await _tryLoadFromCache();
+
+    // Only show loading spinner if no cached data
+    if (!hasCachedData && !isClosed) {
+      emit(HomeLoading());
+    }
+
+    // Step 2: Fetch fresh data from network
     try {
-      // First, fetch the sections configuration
-      final sections = await _repository.getHomeSections();
-      if (isClosed) return;
-
-      // If no sections configured, use defaults
-      if (sections.isEmpty) {
-        await _loadDefaultSections();
-        return;
-      }
-
-      // Load data for each active section
-      final Map<String, dynamic> sectionData = {};
-
-      for (final section in sections) {
-        if (isClosed) return;
-        final data = await _loadSectionData(section);
-        sectionData[section.id] = data;
-      }
-
-      if (isClosed) return;
-      emit(HomeLoaded(sections: sections, sectionData: sectionData));
+      await _fetchAndEmitFreshData();
     } catch (e) {
       if (isClosed) return;
 
-      // Check if it's a JWT error - try refresh first
+      // Handle JWT errors
       final wasJwtError = await _sessionManager.handleSupabaseError(e);
       if (wasJwtError) {
         if (_sessionManager.isSessionValid) {
           return loadHomeData();
         }
-        return loadHomeData();
       }
 
       // If home_sections table doesn't exist, fall back to defaults
@@ -64,9 +56,114 @@ class HomeCubit extends Cubit<HomeState> {
         return;
       }
 
-      if (isClosed) return;
-      emit(HomeError(message: e.toString()));
+      // If we have cached data, keep showing it with stale indicator
+      if (hasCachedData) {
+        // Keep current state but mark as stale if needed
+        return;
+      }
+
+      if (!isClosed) {
+        emit(HomeError(message: ErrorHandler.getErrorKey(e)));
+      }
     }
+  }
+
+  /// Try to load data from cache
+  Future<bool> _tryLoadFromCache() async {
+    if (!_repository.hasHomeCache()) return false;
+
+    try {
+      final cachedBanners = _repository.getCachedBanners(stale: true);
+      final cachedCategories = _repository.getCachedCategories(stale: true);
+      final cachedProducts = _repository.getCachedProducts(stale: true);
+
+      if (cachedBanners == null &&
+          cachedCategories == null &&
+          cachedProducts == null) {
+        return false;
+      }
+
+      final cacheAge = _repository.getHomeCacheAge();
+
+      // Create default sections for cached data
+      final defaultSections = _buildDefaultSections();
+      final sectionData = {
+        'default_banners': _mapBanners(
+          cachedBanners ?? [],
+          const HomeSectionConfig(),
+        ),
+        'default_categories': _mapCategories(cachedCategories ?? []),
+        'default_products': _mapProducts(cachedProducts ?? []),
+      };
+
+      if (!isClosed) {
+        emit(
+          HomeLoadedFromCache(
+            sections: defaultSections,
+            sectionData: sectionData,
+            isStale: true,
+            cacheAgeMinutes: cacheAge,
+            isRefreshing: true, // Will fetch fresh data
+          ),
+        );
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Fetch fresh data from network and emit
+  Future<void> _fetchAndEmitFreshData() async {
+    // Fetch sections configuration
+    final sections = await _repository.getHomeSections();
+    if (isClosed) return;
+
+    // If no sections configured, use defaults
+    if (sections.isEmpty) {
+      await _loadDefaultSections();
+      return;
+    }
+
+    // Load data for each active section
+    final Map<String, dynamic> sectionData = {};
+    for (final section in sections) {
+      if (isClosed) return;
+      final data = await _loadSectionData(section);
+      sectionData[section.id] = data;
+    }
+
+    if (!isClosed) {
+      emit(HomeLoaded(sections: sections, sectionData: sectionData));
+    }
+  }
+
+  /// Build default sections structure
+  List<HomeSection> _buildDefaultSections() {
+    return const [
+      HomeSection(
+        id: 'default_banners',
+        sectionType: 'banners',
+        displayOrder: 1,
+        config: HomeSectionConfig(),
+      ),
+      HomeSection(
+        id: 'default_categories',
+        sectionType: 'categories',
+        titleAr: 'التصنيفات',
+        titleEn: 'Categories',
+        displayOrder: 2,
+        config: HomeSectionConfig(),
+      ),
+      HomeSection(
+        id: 'default_products',
+        sectionType: 'products',
+        titleAr: 'الأكثر مبيعاً',
+        titleEn: 'Best Sellers',
+        displayOrder: 3,
+        config: HomeSectionConfig(source: 'best_sellers', showSeeAll: false),
+      ),
+    ];
   }
 
   /// Load data for a specific section based on its type and config
@@ -106,34 +203,15 @@ class HomeCubit extends Cubit<HomeState> {
         _repository.getBestSellers(),
       ]);
 
-      // Create default sections
-      final defaultSections = [
-        const HomeSection(
-          id: 'default_banners',
-          sectionType: 'banners',
-          displayOrder: 1,
-          config: HomeSectionConfig(),
-        ),
-        const HomeSection(
-          id: 'default_categories',
-          sectionType: 'categories',
-          titleAr: 'التصنيفات',
-          titleEn: 'Categories',
-          displayOrder: 2,
-          config: HomeSectionConfig(),
-        ),
-        const HomeSection(
-          id: 'default_products',
-          sectionType: 'products',
-          titleAr: 'الأكثر مبيعاً',
-          titleEn: 'Best Sellers',
-          displayOrder: 3,
-          config: HomeSectionConfig(
-            source: 'best_sellers',
-            showSeeAll: false, // TODO: Enable when /products route is created
-          ),
-        ),
-      ];
+      // Cache the raw data for offline access
+      await _repository.cacheHomeData(
+        banners: results[0],
+        categories: results[1],
+        products: results[2],
+      );
+
+      // Create default sections using the reusable builder
+      final defaultSections = _buildDefaultSections();
 
       final sectionData = {
         'default_banners': _mapBanners(results[0], const HomeSectionConfig()),
@@ -141,9 +219,13 @@ class HomeCubit extends Cubit<HomeState> {
         'default_products': _mapProducts(results[2]),
       };
 
-      emit(HomeLoaded(sections: defaultSections, sectionData: sectionData));
+      if (!isClosed) {
+        emit(HomeLoaded(sections: defaultSections, sectionData: sectionData));
+      }
     } catch (e) {
-      emit(HomeError(message: e.toString()));
+      if (!isClosed) {
+        emit(HomeError(message: ErrorHandler.getErrorKey(e)));
+      }
     }
   }
 

@@ -165,9 +165,9 @@ class AuthRepository {
       return response.session!;
     } on AuthException catch (e) {
       if (e.message.contains('Invalid login credentials')) {
-        throw Exception('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        throw Exception('auth.errors.invalid_credentials');
       }
-      throw Exception('خطأ في تسجيل الدخول');
+      throw Exception('auth.login_failed');
     }
   }
 

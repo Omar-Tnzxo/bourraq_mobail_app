@@ -42,7 +42,7 @@ class AppConstants {
   // Contact Info
   static const String facebookUrl = 'https://www.facebook.com/Bourraq';
   static const String websiteUrl = 'http://www.bourraq.com/';
-  static const String whatsappNumber = '+20102450471';
+  static const String whatsappNumber = '+201102450471';
   static const String email = 'bourraq.com@gmail.com';
 
   // Supabase (from environment or config)

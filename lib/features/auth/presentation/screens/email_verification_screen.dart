@@ -118,7 +118,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
           ),
         ),
         content: Text(
-          message,
+          message.tr(),
           textAlign: TextAlign.center,
           style: TextStyle(color: AppColors.textSecondary, height: 1.5),
         ),

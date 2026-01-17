@@ -148,10 +148,14 @@ class _HomeTabScreenState extends State<HomeTabScreen>
     AddressPickerBottomSheet.show(
       context: context,
       currentAddress: _defaultAddress,
-      onAddressSelected: (address) {
-        setState(() {
-          _defaultAddress = address;
-        });
+      onAddressSelected: (address) async {
+        // Save the selected address as default in database
+        final success = await _addressService.setDefaultAddress(address.id);
+        if (success && mounted) {
+          setState(() {
+            _defaultAddress = address;
+          });
+        }
       },
     ).then((_) {
       // Reload address after bottom sheet is closed (in case user added/managed addresses)
@@ -177,12 +181,10 @@ class _HomeTabScreenState extends State<HomeTabScreen>
         backgroundColor: AppColors.background,
         body: BlocBuilder<HomeCubit, HomeState>(
           builder: (context, state) {
-            return RefreshIndicator(
-              onRefresh: () => _homeCubit.refresh(),
-              color: AppColors.deepOlive,
-              child: CustomScrollView(
-                slivers: [
-                  // Header (Rabbit-style)
+            return NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  // Header (Rabbit-style) - Pinned outside RefreshIndicator
                   SliverToBoxAdapter(
                     child: BlocBuilder<AuthCubit, AuthState>(
                       builder: (context, authState) {
@@ -205,23 +207,31 @@ class _HomeTabScreenState extends State<HomeTabScreen>
                       },
                     ),
                   ),
+                ];
+              },
+              // RefreshIndicator only wraps the body content (below header)
+              body: RefreshIndicator(
+                onRefresh: () => _homeCubit.refresh(),
+                color: AppColors.deepOlive,
+                child: CustomScrollView(
+                  slivers: [
+                    // Main Content based on state
+                    if (state is HomeLoading) ...[
+                      _buildLoadingState(),
+                    ] else if (state is HomeError) ...[
+                      _buildErrorState(state.message),
+                    ] else if (state is HomeLoaded) ...[
+                      // Dynamic sections based on DB config
+                      ..._buildDynamicSections(state),
+                    ] else ...[
+                      // Initial state - show loading
+                      _buildLoadingState(),
+                    ],
 
-                  // Main Content based on state
-                  if (state is HomeLoading) ...[
-                    _buildLoadingState(),
-                  ] else if (state is HomeError) ...[
-                    _buildErrorState(state.message),
-                  ] else if (state is HomeLoaded) ...[
-                    // Dynamic sections based on DB config
-                    ..._buildDynamicSections(state),
-                  ] else ...[
-                    // Initial state - show loading
-                    _buildLoadingState(),
+                    // Bottom Spacing
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   ],
-
-                  // Bottom Spacing
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
+                ),
               ),
             );
           },
@@ -295,11 +305,8 @@ class _HomeTabScreenState extends State<HomeTabScreen>
   }
 
   Widget _buildErrorState(String message) {
-    // Check if session expired - show friendly message
-    final isSessionExpired = message == 'session_expired';
-    final displayMessage = isSessionExpired
-        ? 'common.session_expired'.tr()
-        : message;
+    // The message is now a translation key from ErrorHandler
+    final displayMessage = message.tr();
 
     return SliverFillRemaining(
       child: Center(

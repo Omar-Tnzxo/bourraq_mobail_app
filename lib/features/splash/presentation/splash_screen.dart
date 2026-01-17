@@ -124,7 +124,20 @@ class _SplashScreenState extends State<SplashScreen>
                     // Text Logo
                     Image.asset(
                       'assets/images/white_text_logo.png',
-                      width: 200,
+                      width: 140,
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Tagline
+                    const Text(
+                      'طلباتك، بين إيديك',
+                      style: TextStyle(
+                        fontFamily: 'PingAR',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),

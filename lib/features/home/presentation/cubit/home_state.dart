@@ -43,6 +43,35 @@ class HomeLoaded extends HomeState {
   }
 }
 
+/// Loaded from cache state - shows data is from cache (may be stale)
+class HomeLoadedFromCache extends HomeLoaded {
+  /// Whether the cache is stale (expired but still usable)
+  final bool isStale;
+
+  /// How old the cache is in minutes
+  final int? cacheAgeMinutes;
+
+  /// Whether background refresh is in progress
+  final bool isRefreshing;
+
+  const HomeLoadedFromCache({
+    required super.sections,
+    required super.sectionData,
+    this.isStale = false,
+    this.cacheAgeMinutes,
+    this.isRefreshing = false,
+  });
+
+  @override
+  List<Object?> get props => [
+    sections,
+    sectionData,
+    isStale,
+    cacheAgeMinutes,
+    isRefreshing,
+  ];
+}
+
 /// Error state
 class HomeError extends HomeState {
   final String message;

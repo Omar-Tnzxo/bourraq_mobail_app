@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/router/app_router.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/core/utils/date_formatter.dart';
+import 'package:bourraq/core/widgets/shimmer_skeleton.dart';
 import 'package:bourraq/features/orders/data/order_model.dart';
 import 'package:bourraq/features/orders/data/orders_service.dart';
 
@@ -64,8 +66,10 @@ class _OrdersScreenState extends State<OrdersScreen>
           _buildAppBar(isArabic, innerBoxIsScrolled),
         ],
         body: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            ? const ShimmerList(
+                itemCount: 4,
+                itemBuilder: ShimmerOrderCard(),
+                padding: EdgeInsets.all(16),
               )
             : TabBarView(
                 controller: _tabController,
@@ -245,7 +249,7 @@ class _OrdersScreenState extends State<OrdersScreen>
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => context.go('/home'),
+              onPressed: () => AppRouter.router.go('/home'),
               icon: const Icon(LucideIcons.shoppingBag),
               label: Text('orders.browse_products'.tr()),
               style: ElevatedButton.styleFrom(

@@ -1,6 +1,12 @@
 {
     "app_name": "بُـــــراق",
     "tagline": "طلباتك، بين إيديك",
+    "app": {
+        "exit_confirm_title": "تأكيد الخروج",
+        "exit_confirm_message": "هل تريد الخروج من التطبيق؟",
+        "exit": "خروج",
+        "stay": "البقاء"
+    },
     "general": {
         "skip": "تخطي",
         "done": "تم"
@@ -25,7 +31,12 @@
         "weak_connection": "اتصال ضعيف بالإنترنت",
         "offline_mode": "أنت غير متصل بالإنترنت",
         "help": "مساعدة",
-        "not_specified": "غير محدد"
+        "not_specified": "غير محدد",
+        "error_occurred": "حدث خطأ",
+        "close": "إغلاق",
+        "viewing_cached_data": "عرض بيانات محفوظة",
+        "last_updated": "آخر تحديث منذ {minutes} دقيقة",
+        "cached_data_offline": "أنت غير متصل، عرض آخر البيانات المحفوظة"
     },
     "location": {
         "area_detected": "منطقة التوصيل: {area}",
@@ -60,6 +71,17 @@
         "page_not_found_desc": "عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها",
         "go_home": "الرجوع للرئيسية",
         "go_back": "العودة للخلف"
+    },
+    "errors": {
+        "general": "حدث خطأ، يرجى المحاولة مرة أخرى",
+        "network": "تعذر الاتصال، تحقق من اتصالك بالإنترنت",
+        "server": "خطأ في الخادم، يرجى المحاولة لاحقاً",
+        "timeout": "انتهت مهلة الاتصال، حاول مرة أخرى",
+        "not_found": "المحتوى غير موجود",
+        "loading_failed": "فشل في تحميل البيانات",
+        "save_failed": "فشل في حفظ البيانات",
+        "delete_failed": "فشل في الحذف",
+        "rate_limit": "طلبات كثيرة، يرجى الانتظار قليلاً"
     },
     "onboarding": {
         "skip": "تخطي",
@@ -139,7 +161,11 @@
             "email_already_in_use": "البريد الإلكتروني مستخدم بالفعل",
             "update_email_failed": "فشل في تحديث البريد الإلكتروني",
             "verify_email_failed": "فشل في التحقق من البريد الإلكتروني",
-            "otp_invalid": "رمز التحقق غير صحيح أو منتهي الصلاحية"
+            "otp_invalid": "رمز التحقق غير صحيح أو منتهي الصلاحية",
+            "invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+            "user_data_failed": "فشل في الحصول على بيانات المستخدم",
+            "google_login_failed": "فشل في تسجيل الدخول عبر Google",
+            "no_user_logged_in": "لا يوجد مستخدم مسجل دخول"
         },
         "password_requirements_hint": "• 8 أحرف على الأقل • حرف كبير • رقم واحد",
         "registering": "جارٍ إنشاء الحساب...",
@@ -401,7 +427,8 @@
         "delete_account": "حذف الحساب",
         "delete_confirm_title": "حذف الحساب",
         "delete_confirm_message": "هل أنت متأكد من حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه.",
-        "delete_warning": "سيتم حذف جميع بياناتك وطلباتك نهائياً"
+        "delete_warning": "سيتم حذف جميع بياناتك وطلباتك نهائياً",
+        "no_contact_options": "لا توجد خيارات تواصل متاحة"
     },
     "guest": {
         "login_required": "يجب تسجيل الدخول",

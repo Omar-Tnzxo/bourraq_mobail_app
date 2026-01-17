@@ -87,21 +87,26 @@ class _HomeBannersCarouselState extends State<HomeBannersCarousel> {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: GestureDetector(
                   onTap: () => widget.onBannerTap?.call(banner),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: AppColors.skeletonBase,
+                    ),
                     child: imageUrl.isNotEmpty
-                        ? Transform.scale(
-                            scale: 1.02, // Slight zoom to fill rounded corners
-                            child: CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              fit: BoxFit.fitWidth,
-                              width: double.infinity,
-                              height: double.infinity,
-                              placeholder: (context, url) =>
-                                  Container(color: AppColors.skeletonBase),
-                              errorWidget: (context, url, error) =>
-                                  _buildPlaceholderBanner(index),
+                        ? CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            placeholder: (context, url) => Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: AppColors.skeletonBase,
+                              ),
                             ),
+                            errorWidget: (context, url, error) =>
+                                _buildPlaceholderBanner(index),
                           )
                         : _buildPlaceholderBanner(index),
                   ),

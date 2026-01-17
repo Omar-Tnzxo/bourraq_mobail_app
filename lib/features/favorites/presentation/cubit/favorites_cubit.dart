@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
 import 'package:bourraq/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:bourraq/features/products/data/models/product_model.dart';
 import 'package:equatable/equatable.dart';
@@ -47,7 +48,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       final favorites = await _repository.getFavorites();
       emit(FavoritesLoaded(favorites));
     } catch (e) {
-      emit(FavoritesError(e.toString()));
+      emit(FavoritesError(ErrorHandler.getErrorKey(e)));
     }
   }
 

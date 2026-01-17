@@ -603,7 +603,7 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(width: 24),
             _buildSocialIcon(
               icon: LucideIcons.phone,
-              onTap: () => _launchUrl('https://wa.me/+20102450471'),
+              onTap: () => _launchUrl('https://wa.me/+201102450471'),
             ),
           ],
         ),

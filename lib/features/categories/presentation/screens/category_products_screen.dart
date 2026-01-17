@@ -12,6 +12,8 @@ import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
 import 'package:bourraq/core/services/analytics_service.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
+import 'package:bourraq/core/widgets/shimmer_skeleton.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/cart/domain/models/cart_item.dart';
 import 'package:bourraq/features/products/presentation/widgets/product_details_sheet.dart';
@@ -110,7 +112,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = ErrorHandler.getErrorKey(e);
         _isLoading = false;
       });
     }
@@ -475,8 +477,11 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(color: AppColors.deepOlive),
+    return const ShimmerProductGrid(
+      crossAxisCount: 3,
+      itemCount: 12,
+      childAspectRatio: 0.52,
+      padding: EdgeInsets.all(8),
     );
   }
 

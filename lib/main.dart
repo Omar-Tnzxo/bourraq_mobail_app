@@ -16,6 +16,7 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/services/session_manager.dart';
 import 'core/services/connectivity_service.dart';
+import 'core/services/cache_service.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/analytics_service.dart';
 import 'core/notifiers/cart_badge_notifier.dart';
@@ -48,6 +49,9 @@ Future<void> main() async {
 
   // Initialize ConnectivityService for network monitoring
   await ConnectivityService().initialize();
+
+  // Initialize CacheService for local data persistence
+  await CacheService().initialize();
 
   // Initialize SessionManager for JWT handling
   SessionManager().initialize();

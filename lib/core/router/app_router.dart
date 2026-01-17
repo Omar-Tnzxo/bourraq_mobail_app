@@ -166,8 +166,12 @@ class AppRouter {
       // Cart Screen
       GoRoute(
         path: cart,
-        builder: (context, state) =>
-            CartScreen(onGoToHome: () => AppRouter.router.go('/home')),
+        builder: (context, state) => CartScreen(
+          onGoToHome: () {
+            // Pop all routes and navigate to home
+            AppRouter.router.go('/home');
+          },
+        ),
       ),
 
       // Category Products Screen

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:bourraq/core/services/analytics_service.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
 import '../../data/models/search_history_item.dart';
 import '../../data/models/popular_search_item.dart';
 import '../../data/search_repository.dart';
@@ -59,7 +60,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
     } catch (e) {
       emit(
-        state.copyWith(status: SearchStatus.error, errorMessage: e.toString()),
+        state.copyWith(
+          status: SearchStatus.error,
+          errorMessage: ErrorHandler.getErrorKey(e),
+        ),
       );
     }
   }
@@ -121,7 +125,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
     } catch (e) {
       emit(
-        state.copyWith(status: SearchStatus.error, errorMessage: e.toString()),
+        state.copyWith(
+          status: SearchStatus.error,
+          errorMessage: ErrorHandler.getErrorKey(e),
+        ),
       );
     }
   }
@@ -142,7 +149,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       emit(state.copyWith(status: SearchStatus.loaded, searchResults: results));
     } catch (e) {
       emit(
-        state.copyWith(status: SearchStatus.error, errorMessage: e.toString()),
+        state.copyWith(
+          status: SearchStatus.error,
+          errorMessage: ErrorHandler.getErrorKey(e),
+        ),
       );
     }
   }

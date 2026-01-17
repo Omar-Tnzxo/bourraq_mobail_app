@@ -506,3 +506,16 @@ CREATE TABLE public.weight_units (
   display_order integer DEFAULT 0,
   CONSTRAINT weight_units_pkey PRIMARY KEY (code)
 );
+CREATE TABLE public.contact_options (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  type text NOT NULL CHECK (type = ANY (ARRAY['whatsapp'::text, 'facebook'::text, 'instagram'::text, 'twitter'::text, 'email'::text, 'phone'::text, 'website'::text])),
+  title_ar text NOT NULL,
+  title_en text NOT NULL,
+  value text NOT NULL,
+  icon_name text,
+  display_order integer DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT contact_options_pkey PRIMARY KEY (id)
+);

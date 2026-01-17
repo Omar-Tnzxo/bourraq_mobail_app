@@ -133,10 +133,11 @@ class _ProductCardState extends State<ProductCard>
       );
     }
 
+    if (!mounted) return;
     setState(() => _quantity++);
     widget.onCartUpdated?.call();
     // Update cart badge in real-time
-    if (mounted) context.read<CartBadgeNotifier>().refresh();
+    context.read<CartBadgeNotifier>().refresh();
   }
 
   Future<void> _decrementQuantity() async {
@@ -147,18 +148,20 @@ class _ProductCardState extends State<ProductCard>
 
     if (_quantity == 1) {
       await widget.cartService!.removeFromCart(widget.product.id);
+      if (!mounted) return;
       setState(() => _quantity = 0);
     } else {
       await widget.cartService!.updateQuantity(
         widget.product.id,
         _quantity - 1,
       );
+      if (!mounted) return;
       setState(() => _quantity--);
     }
 
     widget.onCartUpdated?.call();
     // Update cart badge in real-time
-    if (mounted) context.read<CartBadgeNotifier>().refresh();
+    context.read<CartBadgeNotifier>().refresh();
   }
 
   @override

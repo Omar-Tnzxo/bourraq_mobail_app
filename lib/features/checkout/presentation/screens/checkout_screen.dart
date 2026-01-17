@@ -104,14 +104,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Load delivery settings from Supabase (null = default/global settings)
     final deliverySettings = await _cartRepository.getDeliverySettings(null);
 
-    // Calculate initial fee
-    double fee = deliverySettings.getDeliveryFee(_subtotal);
-    if (selectedAddress != null && selectedAddress.areaId != null) {
-      final areaFee = await _cartRepository.getAreaDeliveryFee(
-        selectedAddress.areaId!,
-      );
-      if (areaFee != null) {
-        fee = areaFee;
+    // Calculate initial fee - التحقق من التوصيل المجاني أولاً
+    double fee = 0;
+    if (!deliverySettings.isFreeDelivery(_subtotal)) {
+      // إذا لم يتحقق التوصيل المجاني، استخدم رسوم المنطقة
+      fee = deliverySettings.deliveryFee;
+      if (selectedAddress != null && selectedAddress.areaId != null) {
+        final areaFee = await _cartRepository.getAreaDeliveryFee(
+          selectedAddress.areaId!,
+        );
+        if (areaFee != null) {
+          fee = areaFee;
+        }
       }
     }
 
@@ -1295,7 +1299,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _updateDeliveryFee() async {
     if (_selectedAddress == null) return;
 
-    double fee = _deliverySettings.getDeliveryFee(_subtotal);
+    // أولاً: تحقق من شرط التوصيل المجاني
+    if (_deliverySettings.isFreeDelivery(_subtotal)) {
+      if (mounted) {
+        setState(() => _deliveryFee = 0);
+      }
+      return;
+    }
+
+    // ثانياً: إذا لم يتحقق التوصيل المجاني، استخدم رسوم المنطقة
+    double fee = _deliverySettings.deliveryFee;
+
     if (_selectedAddress!.areaId != null) {
       final areaFee = await _cartRepository.getAreaDeliveryFee(
         _selectedAddress!.areaId!,

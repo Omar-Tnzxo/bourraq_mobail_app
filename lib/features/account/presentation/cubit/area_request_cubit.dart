@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
 import '../../data/repositories/account_content_repository.dart';
 
 // States
@@ -44,7 +45,7 @@ class AreaRequestCubit extends Cubit<AreaRequestState> {
       );
       emit(AreaRequestSuccess());
     } catch (e) {
-      emit(AreaRequestError(e.toString()));
+      emit(AreaRequestError(ErrorHandler.getErrorKey(e)));
     }
   }
 }

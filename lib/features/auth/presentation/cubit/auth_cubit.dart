@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
 import 'package:bourraq/features/auth/data/auth_repository.dart';
 import 'auth_state.dart';
 
@@ -69,7 +70,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthOtpSent(email: email));
     } catch (e) {
       print('🔴 [CUBIT] Error caught: $e');
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -97,10 +98,10 @@ class AuthCubit extends Cubit<AuthState> {
           ),
         );
       } else {
-        emit(const AuthError(message: 'فشل في الحصول على بيانات المستخدم'));
+        emit(const AuthError(message: 'auth.errors.user_data_failed'));
       }
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -110,7 +111,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _authRepository.resendOtp(email: email);
       emit(AuthOtpSent(email: email));
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -137,10 +138,10 @@ class AuthCubit extends Cubit<AuthState> {
           ),
         );
       } else {
-        emit(const AuthError(message: 'فشل في الحصول على بيانات المستخدم'));
+        emit(const AuthError(message: 'auth.errors.user_data_failed'));
       }
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -173,13 +174,13 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         } else {
-          emit(const AuthError(message: 'فشل في الحصول على بيانات المستخدم'));
+          emit(const AuthError(message: 'auth.errors.user_data_failed'));
         }
       } else {
-        emit(const AuthError(message: 'فشل في تسجيل الدخول عبر Google'));
+        emit(const AuthError(message: 'auth.errors.google_login_failed'));
       }
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -195,7 +196,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _authRepository.sendPasswordResetOTP(email: email);
       emit(AuthPasswordResetOtpSent(email: email));
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -210,7 +211,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _authRepository.verifyPasswordResetOTP(email: email, otp: otp);
       emit(const AuthPasswordResetOtpVerified());
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -230,7 +231,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
       emit(const AuthPasswordResetSuccess());
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -264,7 +265,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _authRepository.logout();
       emit(const AuthUnauthenticated());
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -272,7 +273,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> deleteAccount() async {
     final user = _authRepository.getCurrentUser();
     if (user == null) {
-      emit(const AuthError(message: 'لا يوجد مستخدم مسجل دخول'));
+      emit(const AuthError(message: 'auth.errors.no_user_logged_in'));
       return;
     }
 
@@ -280,7 +281,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _authRepository.deleteAccount(user.id);
       emit(const AuthUnauthenticated());
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -288,7 +289,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> updateProfile({required String name, String? phone}) async {
     final user = _authRepository.getCurrentUser();
     if (user == null) {
-      emit(const AuthError(message: 'لا يوجد مستخدم مسجل دخول'));
+      emit(const AuthError(message: 'auth.errors.no_user_logged_in'));
       return;
     }
 
@@ -313,7 +314,7 @@ class AuthCubit extends Cubit<AuthState> {
         );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -324,7 +325,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _authRepository.updateEmail(newEmail: newEmail);
       emit(AuthEmailUpdateOtpSent(email: newEmail));
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 
@@ -360,7 +361,7 @@ class AuthCubit extends Cubit<AuthState> {
         // Let's refetch user to be safe.
       }
     } catch (e) {
-      emit(AuthError(message: e.toString().replaceAll('Exception: ', '')));
+      emit(AuthError(message: ErrorHandler.getErrorKey(e)));
     }
   }
 }

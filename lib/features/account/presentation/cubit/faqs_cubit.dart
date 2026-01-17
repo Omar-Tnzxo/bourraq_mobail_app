@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:bourraq/core/utils/error_handler.dart';
 import '../../data/models/faq_model.dart';
 import '../../data/repositories/account_content_repository.dart';
 
@@ -40,7 +41,7 @@ class FaqsCubit extends Cubit<FaqsState> {
       final faqs = await _repository.getFaqs();
       emit(FaqsLoaded(faqs));
     } catch (e) {
-      emit(FaqsError(e.toString()));
+      emit(FaqsError(ErrorHandler.getErrorKey(e)));
     }
   }
 }

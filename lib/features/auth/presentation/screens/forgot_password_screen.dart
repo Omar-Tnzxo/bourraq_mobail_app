@@ -172,7 +172,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          message,
+          message.tr(),
           textAlign: TextAlign.center,
           style: TextStyle(color: AppColors.textSecondary, height: 1.5),
         ),

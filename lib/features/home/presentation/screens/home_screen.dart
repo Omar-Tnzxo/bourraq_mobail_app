@@ -7,6 +7,7 @@ import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
 import 'package:bourraq/core/widgets/force_update_sheet.dart';
+import 'package:bourraq/core/widgets/exit_confirmation_dialog.dart';
 import 'package:bourraq/features/home/presentation/screens/home_tab_screen.dart';
 import 'package:bourraq/features/cart/presentation/screens/cart_screen.dart';
 import 'package:bourraq/features/search/presentation/screens/search_screen.dart';
@@ -52,70 +53,78 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<CartBadgeNotifier>.value(
-      value: _cartBadgeNotifier,
-      child: Scaffold(
-        body: _pages[_selectedIndex],
-        bottomNavigationBar: Consumer<CartBadgeNotifier>(
-          builder: (context, cartNotifier, child) {
-            return BottomNavigationBar(
-              currentIndex: _selectedIndex,
-              onTap: (index) {
-                setState(() => _selectedIndex = index);
-                // Refresh cart count when cart tab is selected
-                if (index == 1) {
-                  cartNotifier.refresh();
-                }
-              },
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: AppColors.bottomNavBackground,
-              selectedItemColor: AppColors.bottomNavActive,
-              unselectedItemColor: AppColors.bottomNavInactive,
-              selectedLabelStyle: AppTextStyles.labelSmall,
-              unselectedLabelStyle: AppTextStyles.labelSmall,
-              items: [
-                // Home
-                BottomNavigationBarItem(
-                  icon: const Icon(LucideIcons.house, size: 24),
-                  activeIcon: Icon(
-                    LucideIcons.house,
-                    color: AppColors.bottomNavActive,
-                    size: 26,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          ExitConfirmationDialog.handleBackPress(context, didPop);
+        }
+      },
+      child: ChangeNotifierProvider<CartBadgeNotifier>.value(
+        value: _cartBadgeNotifier,
+        child: Scaffold(
+          body: _pages[_selectedIndex],
+          bottomNavigationBar: Consumer<CartBadgeNotifier>(
+            builder: (context, cartNotifier, child) {
+              return BottomNavigationBar(
+                currentIndex: _selectedIndex,
+                onTap: (index) {
+                  setState(() => _selectedIndex = index);
+                  // Refresh cart count when cart tab is selected
+                  if (index == 1) {
+                    cartNotifier.refresh();
+                  }
+                },
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: AppColors.bottomNavBackground,
+                selectedItemColor: AppColors.bottomNavActive,
+                unselectedItemColor: AppColors.bottomNavInactive,
+                selectedLabelStyle: AppTextStyles.labelSmall,
+                unselectedLabelStyle: AppTextStyles.labelSmall,
+                items: [
+                  // Home
+                  BottomNavigationBarItem(
+                    icon: const Icon(LucideIcons.house, size: 24),
+                    activeIcon: Icon(
+                      LucideIcons.house,
+                      color: AppColors.bottomNavActive,
+                      size: 26,
+                    ),
+                    label: 'home.home_tab'.tr(),
                   ),
-                  label: 'home.home_tab'.tr(),
-                ),
-                // Cart - using shoppingBasket
-                BottomNavigationBarItem(
-                  icon: _buildCartIcon(cartNotifier.count),
-                  activeIcon: _buildCartIcon(
-                    cartNotifier.count,
-                    isActive: true,
+                  // Cart - using shoppingBasket
+                  BottomNavigationBarItem(
+                    icon: _buildCartIcon(cartNotifier.count),
+                    activeIcon: _buildCartIcon(
+                      cartNotifier.count,
+                      isActive: true,
+                    ),
+                    label: 'home.cart_tab'.tr(),
                   ),
-                  label: 'home.cart_tab'.tr(),
-                ),
-                // Search
-                BottomNavigationBarItem(
-                  icon: const Icon(LucideIcons.search, size: 24),
-                  activeIcon: Icon(
-                    LucideIcons.search,
-                    color: AppColors.bottomNavActive,
-                    size: 26,
+                  // Search
+                  BottomNavigationBarItem(
+                    icon: const Icon(LucideIcons.search, size: 24),
+                    activeIcon: Icon(
+                      LucideIcons.search,
+                      color: AppColors.bottomNavActive,
+                      size: 26,
+                    ),
+                    label: 'home.search_tab'.tr(),
                   ),
-                  label: 'home.search_tab'.tr(),
-                ),
-                // Account
-                BottomNavigationBarItem(
-                  icon: const Icon(LucideIcons.user, size: 24),
-                  activeIcon: Icon(
-                    LucideIcons.user,
-                    color: AppColors.bottomNavActive,
-                    size: 26,
+                  // Account
+                  BottomNavigationBarItem(
+                    icon: const Icon(LucideIcons.user, size: 24),
+                    activeIcon: Icon(
+                      LucideIcons.user,
+                      color: AppColors.bottomNavActive,
+                      size: 26,
+                    ),
+                    label: 'home.account_tab'.tr(),
                   ),
-                  label: 'home.account_tab'.tr(),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

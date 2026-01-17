@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
+import 'package:bourraq/core/widgets/shimmer_skeleton.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/cart/data/cart_repository.dart';
 import 'package:bourraq/features/cart/domain/models/cart_item.dart';
@@ -194,7 +195,14 @@ class _CartScreenState extends State<CartScreen> {
             // Content
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const ShimmerList(
+                      itemCount: 4,
+                      itemBuilder: ShimmerListTile(
+                        hasLeading: true,
+                        hasTrailing: true,
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    )
                   : _items.isEmpty
                   ? CartEmptyState(onBrowseProducts: widget.onGoToHome)
                   : _buildCartContent(),

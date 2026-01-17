@@ -1,13 +1,115 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:bourraq/core/services/cache_service.dart';
 import 'package:bourraq/features/home/data/models/home_section_model.dart';
 
 /// Repository for fetching Home Screen data from Supabase
 class HomeRepository {
   final SupabaseClient _supabase;
+  final CacheService _cache = CacheService();
+
+  // Cache keys
+  static const String _cacheKeyBanners = 'home_banners';
+  static const String _cacheKeyCategories = 'home_categories';
+  static const String _cacheKeyProducts = 'home_products';
+  static const String _cacheKeySections = 'home_sections';
 
   HomeRepository({SupabaseClient? supabase})
     : _supabase = supabase ?? Supabase.instance.client;
+
+  // ============================================================================
+  // CACHE METHODS
+  // ============================================================================
+
+  /// Save home data to cache
+  Future<void> cacheHomeData({
+    List<Map<String, dynamic>>? banners,
+    List<Map<String, dynamic>>? categories,
+    List<Map<String, dynamic>>? products,
+    List<Map<String, dynamic>>? sections,
+  }) async {
+    if (banners != null) {
+      await _cache.set(_cacheKeyBanners, banners, cacheType: 'home_banners');
+    }
+    if (categories != null) {
+      await _cache.set(
+        _cacheKeyCategories,
+        categories,
+        cacheType: 'home_categories',
+      );
+    }
+    if (products != null) {
+      await _cache.set(_cacheKeyProducts, products, cacheType: 'home_products');
+    }
+    if (sections != null) {
+      await _cache.set(_cacheKeySections, sections, cacheType: 'home_sections');
+    }
+  }
+
+  /// Get cached banners
+  List<Map<String, dynamic>>? getCachedBanners({bool stale = false}) {
+    final data = stale
+        ? _cache.getStale<List<dynamic>>(_cacheKeyBanners)
+        : _cache.get<List<dynamic>>(
+            _cacheKeyBanners,
+            cacheType: 'home_banners',
+          );
+    return data?.cast<Map<String, dynamic>>();
+  }
+
+  /// Get cached categories
+  List<Map<String, dynamic>>? getCachedCategories({bool stale = false}) {
+    final data = stale
+        ? _cache.getStale<List<dynamic>>(_cacheKeyCategories)
+        : _cache.get<List<dynamic>>(
+            _cacheKeyCategories,
+            cacheType: 'home_categories',
+          );
+    return data?.cast<Map<String, dynamic>>();
+  }
+
+  /// Get cached products
+  List<Map<String, dynamic>>? getCachedProducts({bool stale = false}) {
+    final data = stale
+        ? _cache.getStale<List<dynamic>>(_cacheKeyProducts)
+        : _cache.get<List<dynamic>>(
+            _cacheKeyProducts,
+            cacheType: 'home_products',
+          );
+    return data?.cast<Map<String, dynamic>>();
+  }
+
+  /// Get cached sections
+  List<Map<String, dynamic>>? getCachedSections({bool stale = false}) {
+    final data = stale
+        ? _cache.getStale<List<dynamic>>(_cacheKeySections)
+        : _cache.get<List<dynamic>>(
+            _cacheKeySections,
+            cacheType: 'home_sections',
+          );
+    return data?.cast<Map<String, dynamic>>();
+  }
+
+  /// Check if any home cache exists (even expired)
+  bool hasHomeCache() {
+    return _cache.hasAnyCache(_cacheKeyBanners) ||
+        _cache.hasAnyCache(_cacheKeyCategories) ||
+        _cache.hasAnyCache(_cacheKeyProducts);
+  }
+
+  /// Get cache age in minutes
+  int? getHomeCacheAge() {
+    return _cache.getCacheAge(_cacheKeyProducts);
+  }
+
+  /// Invalidate all home cache
+  Future<void> invalidateHomeCache() async {
+    await _cache.invalidateByPrefix('home_');
+  }
+
+  // ============================================================================
+  // API METHODS
+  // ============================================================================
 
   /// Fetch active home sections ordered by display_order
   Future<List<HomeSection>> getHomeSections() async {
