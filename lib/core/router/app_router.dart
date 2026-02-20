@@ -29,6 +29,8 @@ import 'package:bourraq/features/account/presentation/screens/profile_settings_s
 import 'package:bourraq/features/account/presentation/screens/promo_codes_screen.dart';
 import 'package:bourraq/features/account/presentation/screens/faqs_screen.dart';
 import 'package:bourraq/features/account/presentation/screens/area_request_screen.dart';
+import 'package:bourraq/features/pages/presentation/screens/static_page_screen.dart';
+import 'package:bourraq/core/widgets/web_view_screen.dart';
 
 import 'package:bourraq/core/errors/not_found_screen.dart';
 import 'package:bourraq/core/services/analytics_service.dart';
@@ -64,6 +66,8 @@ class AppRouter {
   static const String faqs = '/faqs';
   static const String areaRequest = '/area-request';
   static const String emailVerification = '/email-verification';
+  static const String webview = '/webview';
+  static const String staticPage = '/pages/:slug';
 
   static final GoRouter router = GoRouter(
     initialLocation: splash,
@@ -275,6 +279,21 @@ class AppRouter {
       GoRoute(
         path: areaRequest,
         builder: (context, state) => const AreaRequestScreen(),
+      ),
+      GoRoute(
+        path: webview,
+        builder: (context, state) {
+          final url = state.uri.queryParameters['url'] ?? '';
+          final title = state.uri.queryParameters['title'] ?? '';
+          return WebViewScreen(url: url, title: title);
+        },
+      ),
+      GoRoute(
+        path: staticPage,
+        builder: (context, state) {
+          final slug = state.pathParameters['slug'] ?? '';
+          return StaticPageScreen(slug: slug);
+        },
       ),
     ],
   );

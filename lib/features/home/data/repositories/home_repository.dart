@@ -189,6 +189,7 @@ class HomeRepository {
         .from('products')
         .select()
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .eq('is_best_seller', true)
         .order('created_at', ascending: false)
         .limit(limit);
@@ -202,6 +203,7 @@ class HomeRepository {
         .from('products')
         .select()
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .order('created_at', ascending: false)
         .limit(limit);
 
@@ -214,6 +216,7 @@ class HomeRepository {
         .from('products')
         .select()
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .not('old_price', 'is', null)
         .order('created_at', ascending: false)
         .limit(limit);
@@ -237,6 +240,7 @@ class HomeRepository {
         .from('products')
         .select()
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .eq('category_id', categoryId)
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
@@ -253,6 +257,7 @@ class HomeRepository {
         .from('products')
         .select()
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
 
@@ -265,6 +270,7 @@ class HomeRepository {
         .from('products')
         .select()
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .or('name_ar.ilike.%$query%,name_en.ilike.%$query%')
         .order('name_ar', ascending: true)
         .limit(50);

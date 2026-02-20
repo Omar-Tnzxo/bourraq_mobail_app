@@ -35,6 +35,8 @@ class CartRepository {
             )
           ''')
           .eq('user_id', _userId!)
+          .eq('products.is_active', true)
+          .isFilter('products.deleted_at', null)
           .order('created_at', ascending: false);
 
       final items = (response as List)

@@ -98,7 +98,7 @@ class AuthCubit extends Cubit<AuthState> {
           ),
         );
       } else {
-        emit(const AuthError(message: 'auth.errors.user_data_failed'));
+        emit(const AuthError(message: 'auth.error_user_data_failed'));
       }
     } catch (e) {
       emit(AuthError(message: ErrorHandler.getErrorKey(e)));
@@ -138,7 +138,7 @@ class AuthCubit extends Cubit<AuthState> {
           ),
         );
       } else {
-        emit(const AuthError(message: 'auth.errors.user_data_failed'));
+        emit(const AuthError(message: 'auth.error_user_data_failed'));
       }
     } catch (e) {
       emit(AuthError(message: ErrorHandler.getErrorKey(e)));
@@ -174,10 +174,10 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         } else {
-          emit(const AuthError(message: 'auth.errors.user_data_failed'));
+          emit(const AuthError(message: 'auth.error_user_data_failed'));
         }
       } else {
-        emit(const AuthError(message: 'auth.errors.google_login_failed'));
+        emit(const AuthError(message: 'auth.error_google_login_failed'));
       }
     } catch (e) {
       emit(AuthError(message: ErrorHandler.getErrorKey(e)));
@@ -273,7 +273,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> deleteAccount() async {
     final user = _authRepository.getCurrentUser();
     if (user == null) {
-      emit(const AuthError(message: 'auth.errors.no_user_logged_in'));
+      emit(const AuthError(message: 'auth.error_no_user_logged_in'));
       return;
     }
 
@@ -289,7 +289,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> updateProfile({required String name, String? phone}) async {
     final user = _authRepository.getCurrentUser();
     if (user == null) {
-      emit(const AuthError(message: 'auth.errors.no_user_logged_in'));
+      emit(const AuthError(message: 'auth.error_no_user_logged_in'));
       return;
     }
 

@@ -1,4 +1,7 @@
 {
+    "maintenance": {
+        "status": "In Progress"
+    },
     "app_name": "Bourraq",
     "tagline": "Your orders, in your hands",
     "app": {
@@ -36,9 +39,18 @@
         "close": "Close",
         "viewing_cached_data": "Viewing cached data",
         "last_updated": "Last updated {minutes} min ago",
+        "last_update": "Last update",
         "cached_data_offline": "You're offline, showing last saved data"
     },
     "location": {
+        "title": "Enable Location",
+        "message": "Bourraq needs access to your location to show available stores and products in your area and deliver your orders accurately.",
+        "allow": "Allow Access",
+        "deny": "Maybe Later",
+        "not_supported_title": "Oops! Area Not Supported",
+        "not_supported_message": "You are currently outside Bourraq's coverage areas. We are working hard to expand to new areas soon.",
+        "detected_area": "Area: {area}",
+        "enable_gps_message": "Please enable GPS service for the best experience.",
         "area_detected": "Delivery area: {area}",
         "delivery_fee_info": "Delivery fee: {fee} EGP",
         "area_not_supported": "Sorry, this area is not supported yet",
@@ -61,7 +73,9 @@
         "location_denied_forever": "Location permission permanently denied",
         "location_error": "Error getting location",
         "no_results": "No search results found",
-        "search_error": "Search error occurred"
+        "search_error": "Search error occurred",
+        "open_settings": "Open Settings",
+        "enable_location_message": "We need access to your location to accurately determine your delivery address"
     },
     "splash": {
         "loading": "Loading..."
@@ -144,29 +158,32 @@
         "didnt_receive": "Didn't receive the code?",
         "resend": "Resend",
         "resend_after": "Resend after {seconds} seconds",
-        "errors": {
-            "email_required": "Please enter your email",
-            "email_invalid": "Invalid email address",
-            "password_required": "Please enter your password",
-            "password_min": "Password must be at least 6 characters",
-            "passwords_not_match": "Passwords do not match",
-            "name_required": "Please enter your name",
-            "name_min": "Name must be at least 3 characters",
-            "phone_required": "Please enter your phone number",
-            "phone_invalid": "Invalid phone number (must start with 01)",
-            "agree_terms_required": "Please agree to the terms and conditions",
-            "otp_required": "Please enter the 6-digit verification code",
-            "password_same_as_old": "New password cannot be the same as the old password",
-            "password_reset_failed": "Failed to reset password",
-            "email_already_in_use": "Email is already in use",
-            "update_email_failed": "Failed to update email",
-            "verify_email_failed": "Failed to verify email",
-            "otp_invalid": "Invalid or expired verification code",
-            "invalid_credentials": "Invalid email or password",
-            "user_data_failed": "Failed to get user data",
-            "google_login_failed": "Failed to sign in with Google",
-            "no_user_logged_in": "No user logged in"
-        },
+        "error_email_required": "Please enter your email",
+        "error_email_invalid": "Invalid email address",
+        "error_password_required": "Please enter your password",
+        "error_password_min": "Password must be at least 6 characters",
+        "error_passwords_not_match": "Passwords do not match",
+        "error_name_required": "Please enter your name",
+        "error_name_min": "Name must be at least 3 characters",
+        "error_phone_required": "Please enter your phone number",
+        "error_phone_invalid": "Invalid phone number (must start with 01)",
+        "error_agree_terms_required": "Please agree to the terms and conditions",
+        "error_otp_required": "Please enter the 6-digit verification code",
+        "error_password_same_as_old": "New password cannot be the same as the old password",
+        "error_password_reset_failed": "Failed to reset password",
+        "error_email_already_in_use": "Email is already in use",
+        "error_update_email_failed": "Failed to update email",
+        "error_verify_email_failed": "Failed to verify email",
+        "error_otp_invalid": "Invalid or expired verification code",
+        "error_invalid_credentials": "Invalid email or password",
+        "error_user_data_failed": "Failed to get user data",
+        "error_google_login_failed": "Failed to sign in with Google",
+        "error_no_user_logged_in": "No user logged in",
+        "error_register_failed": "Failed to create account",
+        "error_otp_send_failed": "Failed to send verification code",
+        "error_verify_otp_failed": "Failed to verify code",
+        "error_delete_account_failed": "Failed to delete account",
+        "error_update_profile_failed": "Failed to update profile",
         "password_requirements_hint": "• 8 characters min • 1 uppercase • 1 number",
         "registering": "Creating account...",
         "create_new_account": "Create new account",
@@ -184,7 +201,8 @@
         "home_tab": "Home",
         "cart_tab": "Cart",
         "search_tab": "Search",
-        "account_tab": "Account"
+        "account_tab": "Account",
+        "products": "Products"
     },
     "cart": {
         "title": "Cart",
@@ -201,7 +219,7 @@
         "checkout": "Checkout",
         "item_added": "Added to cart",
         "item_removed": "Item removed",
-        "items_removed_stock": "{0} out of stock items removed",
+        "items_removed_stock": "{} out of stock items removed",
         "view_cart": "View Cart",
         "quantity": "Quantity",
         "per_item": "per item",
@@ -272,7 +290,7 @@
         "confirm_cancel": "Confirm Cancellation",
         "cancel_success": "Order cancelled successfully",
         "reorder": "Reorder",
-        "reorder_success": "{0} items added to cart",
+        "reorder_success": "{} items added to cart",
         "reorder_error": "Error while reordering",
         "view_cart": "View Cart",
         "rate_order": "Rate Order",
@@ -301,7 +319,21 @@
         "no_active_hint": "Your active orders will appear here",
         "no_completed_hint": "Your completed orders will appear here",
         "no_cancelled_hint": "Your cancelled orders will appear here",
-        "browse_products": "Browse Products"
+        "browse_products": "Browse Products",
+        "rate_experience": "How was your experience?",
+        "rate_description": "Your feedback helps us improve",
+        "rate_comment_hint": "Share your experience (optional)...",
+        "submit_rating": "Submit Rating",
+        "rating_submitted": "Thank you for your feedback!",
+        "already_rated": "You've already rated this order",
+        "rating_labels": {
+            "1": "Poor",
+            "2": "Fair",
+            "3": "Good",
+            "4": "Very Good",
+            "5": "Excellent!",
+            "default": "Choose your rating"
+        }
     },
     "checkout": {
         "title": "Checkout",
@@ -355,10 +387,13 @@
     },
     "favorites": {
         "title": "Favorites",
-        "empty": "No favorite products",
+        "saved_products": "Saved Products",
+        "products_count": "{count} product(s)",
+        "empty": "No saved products",
         "empty_title": "No favorite products",
-        "empty_message": "Start adding your favorite products",
+        "empty_message": "Add your favorite products for easy access",
         "browse_products": "Browse Products",
+        "add_to_cart": "Add to Cart",
         "added": "Added to favorites",
         "removed": "Removed from favorites",
         "clear_all": "Clear All",
@@ -374,6 +409,7 @@
         "sort_by": "Sort by",
         "filters": "Filters",
         "best_selling": "Best Selling",
+        "highest_rated": "Highest Rated",
         "price_low_high": "Price: Low to High",
         "price_high_low": "Price: High to Low",
         "newest": "Newest",
@@ -393,7 +429,7 @@
         "recent_searches": "Recent Searches",
         "popular_searches": "Popular Searches",
         "popular_items": "Popular items in your area",
-        "results_for": "Results for \"{0}\" ({1})",
+        "results_for": "Results for \"{}\" ({})",
         "no_results": "No results found",
         "try_different": "Try different keywords",
         "clear_all": "Clear All",
@@ -462,21 +498,17 @@
         "new_email": "New Email"
     },
     "promo": {
+        "header_title": "Promo Codes",
+        "header_subtitle": "Use a promo code at checkout to get a discount",
         "welcome_desc": "Special welcome discount for new members",
         "freeship_desc": "Free delivery for orders over 200 EGP",
-        "no_codes": "No promo codes available currently",
-        "copied": "Code copied",
-        "expires": "Expires:"
-    },
-    "favorites": {
-        "title": "Favorites",
-        "saved_products": "Saved Products",
-        "products_count": "product(s)",
-        "empty": "No saved products",
-        "empty_message": "Add your favorite products for easy access",
-        "browse_products": "Browse Products",
-        "add_to_cart": "Add to Cart",
-        "removed": "Removed from favorites"
+        "no_codes": "No promo codes available",
+        "no_codes_hint": "Your promo codes will appear here",
+        "start_shopping": "Start Shopping",
+        "copied": "Code copied!",
+        "expires": "Expires on",
+        "expires_soon": "Expires soon!",
+        "off": "OFF"
     },
     "faq": {
         "q1": "How can I track my order?",
@@ -645,16 +677,5 @@
         "title": "Select delivery time",
         "instant": "Instant",
         "schedule_another": "Or schedule another time"
-    },
-    "promo": {
-        "header_title": "Promo Codes",
-        "header_subtitle": "Use a promo code at checkout to get a discount",
-        "no_codes": "No promo codes available",
-        "no_codes_hint": "Your promo codes will appear here",
-        "start_shopping": "Start Shopping",
-        "copied": "Code copied!",
-        "expires": "Expires on",
-        "expires_soon": "Expires soon!",
-        "off": "OFF"
     }
 }

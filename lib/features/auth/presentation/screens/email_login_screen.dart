@@ -383,15 +383,6 @@ class _EmailLoginScreenState extends State<EmailLoginScreen>
               ? [Colors.grey.shade400, Colors.grey.shade500]
               : [AppColors.primaryGreen, const Color(0xFF6BAB3D)],
         ),
-        boxShadow: isLoading
-            ? []
-            : [
-                BoxShadow(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -478,13 +469,6 @@ class _EmailLoginScreenState extends State<EmailLoginScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderLight, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -561,17 +545,7 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
       child: IconButton(
         icon: const Icon(LucideIcons.arrowLeft, color: AppColors.textPrimary),
         onPressed: () => context.pop(),

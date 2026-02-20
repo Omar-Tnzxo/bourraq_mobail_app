@@ -8,25 +8,35 @@ import 'package:bourraq/features/home/data/repositories/home_repository.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_banners_carousel.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_categories_section.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
+import 'package:bourraq/features/products/data/repositories/store_product_repository.dart';
+import 'package:bourraq/features/products/data/models/store_product_model.dart';
 
 part 'home_state.dart';
 
 /// HomeCubit - Manages home screen state with dynamic sections
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository _repository;
+  final StoreProductRepository _storeProductRepo;
   final SessionManager _sessionManager = SessionManager();
 
-  HomeCubit({HomeRepository? repository})
-    : _repository = repository ?? HomeRepository(),
-      super(HomeInitial());
+  /// Current area ID for store-filtered product fetching
+  String? _areaId;
+
+  HomeCubit({
+    HomeRepository? repository,
+    StoreProductRepository? storeProductRepository,
+  }) : _repository = repository ?? HomeRepository(),
+       _storeProductRepo = storeProductRepository ?? StoreProductRepository(),
+       super(HomeInitial());
 
   /// Load all home screen data with cache-first strategy
   ///
   /// 1. Immediately emit cached data if available (fast UI response)
   /// 2. Fetch fresh data from network in background
   /// 3. Update UI when fresh data arrives
-  Future<void> loadHomeData() async {
+  Future<void> loadHomeData({String? areaId}) async {
     if (isClosed) return;
+    _areaId = areaId ?? _areaId;
 
     // Step 1: Try to load from cache first for instant UI
     final hasCachedData = await _tryLoadFromCache();
@@ -181,6 +191,15 @@ class HomeCubit extends Cubit<HomeState> {
         return _mapCategories(data);
 
       case 'products':
+        // Use StoreProductRepository when areaId is available
+        if (_areaId != null) {
+          return _loadStoreProducts(
+            source: config.source ?? 'best_sellers',
+            categoryId: config.categoryId,
+            limit: limit ?? 10,
+          );
+        }
+        // Fallback to legacy query
         final source = config.source ?? 'best_sellers';
         final data = await _repository.getProductsBySource(
           source: source,
@@ -194,29 +213,87 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  /// Load products from StoreProductRepository (area-filtered)
+  Future<List<ProductItem>> _loadStoreProducts({
+    required String source,
+    String? categoryId,
+    int limit = 10,
+  }) async {
+    final areaId = _areaId!;
+    List<StoreProduct> storeProducts;
+
+    switch (source) {
+      case 'best_sellers':
+        storeProducts = await _storeProductRepo.getBestSellersForArea(
+          areaId: areaId,
+          limit: limit,
+        );
+        break;
+      case 'newest':
+        storeProducts = await _storeProductRepo.getNewestForArea(
+          areaId: areaId,
+          limit: limit,
+        );
+        break;
+      case 'offers':
+        storeProducts = await _storeProductRepo.getOffersForArea(
+          areaId: areaId,
+          limit: limit,
+        );
+        break;
+      case 'category':
+        storeProducts = await _storeProductRepo.getStoreProductsByArea(
+          areaId: areaId,
+          categoryId: categoryId,
+          limit: limit,
+        );
+        break;
+      default:
+        storeProducts = await _storeProductRepo.getStoreProductsByArea(
+          areaId: areaId,
+          limit: limit,
+        );
+    }
+
+    return storeProducts.map((sp) => ProductItem.fromStoreProduct(sp)).toList();
+  }
+
   /// Fallback to default sections if home_sections table not configured
   Future<void> _loadDefaultSections() async {
     try {
+      // Fetch banners + categories from HomeRepository
+      final bannersFuture = _repository.getBanners();
+      final categoriesFuture = _repository.getCategories();
+
+      // Fetch products from store-aware repo if areaId available
+      final productsFuture = _areaId != null
+          ? _loadStoreProducts(source: 'best_sellers', limit: 10)
+          : _repository.getBestSellers().then((data) => _mapProducts(data));
+
       final results = await Future.wait([
-        _repository.getBanners(),
-        _repository.getCategories(),
-        _repository.getBestSellers(),
+        bannersFuture,
+        categoriesFuture,
+        productsFuture,
       ]);
 
-      // Cache the raw data for offline access
+      final banners = results[0] as List<Map<String, dynamic>>;
+      final categories = results[1] as List<Map<String, dynamic>>;
+      final products = results[2] as List<ProductItem>;
+
+      // Cache the raw data for offline access (banners + categories only)
       await _repository.cacheHomeData(
-        banners: results[0],
-        categories: results[1],
-        products: results[2],
+        banners: banners,
+        categories: categories,
+        products: const [],
       );
 
       // Create default sections using the reusable builder
       final defaultSections = _buildDefaultSections();
 
       final sectionData = {
-        'default_banners': _mapBanners(results[0], const HomeSectionConfig()),
-        'default_categories': _mapCategories(results[1]),
-        'default_products': _mapProducts(results[2]),
+        'default_banners': _mapBanners(banners, const HomeSectionConfig()),
+        'default_categories': _mapCategories(categories),
+        'default_products': products,
       };
 
       if (!isClosed) {

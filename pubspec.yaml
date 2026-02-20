@@ -92,6 +92,12 @@ dependencies:
   
   # Network Connectivity
   connectivity_plus: ^6.1.0
+  package_info_plus: ^9.0.0
+  
+  # WebView
+  webview_flutter: ^4.10.0
+  scrollable_positioned_list: ^0.3.8
+  flutter_widget_from_html: ^0.15.3
 
 dev_dependencies:
   flutter_test:
@@ -124,7 +130,7 @@ flutter:
     - assets/icons/
     - assets/oneboarding/
     - assets/translations/
-    - bourraq-assets/bourraq-logos-png/
+
     - .env
 
   # PING AR Fonts

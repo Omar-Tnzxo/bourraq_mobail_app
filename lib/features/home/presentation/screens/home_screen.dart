@@ -6,7 +6,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
-import 'package:bourraq/core/widgets/force_update_sheet.dart';
 import 'package:bourraq/core/widgets/exit_confirmation_dialog.dart';
 import 'package:bourraq/features/home/presentation/screens/home_tab_screen.dart';
 import 'package:bourraq/features/cart/presentation/screens/cart_screen.dart';
@@ -31,11 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _cartBadgeNotifier = CartBadgeNotifier();
     _cartBadgeNotifier.init();
-
-    // Check for app updates after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ForceUpdateSheet.checkForUpdate(context);
-    });
   }
 
   @override

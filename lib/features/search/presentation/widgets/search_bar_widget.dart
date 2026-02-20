@@ -31,8 +31,12 @@ class SearchBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: AppColors.white,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 0,
+        vertical: 0,
+      ), // Removed padding as it's now in the header
+      color: Colors
+          .transparent, // Background is now handled by the parent (Header)
       child: Row(
         children: [
           // Search Field
@@ -40,11 +44,15 @@ class SearchBarWidget extends StatelessWidget {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.background,
+                color: AppColors.white, // Search field itself is white
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.border.withValues(alpha: 0.5),
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: TextField(
                 controller: controller,
@@ -91,14 +99,15 @@ class SearchBarWidget extends StatelessWidget {
             TextButton(
               onPressed: onCancel,
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.darkGreen,
+                foregroundColor:
+                    AppColors.white, // White text for visibility on green
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: Text(
                 'common.cancel'.tr(),
                 style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

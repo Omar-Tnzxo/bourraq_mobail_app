@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/features/wallet/data/wallet_service.dart';
 import 'package:bourraq/features/wallet/data/saved_card_model.dart';
@@ -86,30 +87,69 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-            color: AppColors.textPrimary,
-            size: 20,
+      body: Column(
+        children: [
+          BourraqHeader(
+            child: Row(
+              children: [
+                // Back Button
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Title
+                Expanded(
+                  child: Text(
+                    'wallet.saved_cards'.tr(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+
+                // Add Button
+                GestureDetector(
+                  onTap: () => context.push('/wallet/add-card'),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      LucideIcons.plus,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text('wallet.saved_cards'.tr(), style: AppTextStyles.titleLarge),
-        actions: [
-          IconButton(
-            onPressed: () => context.push('/wallet/add-card'),
-            icon: Icon(LucideIcons.plus, color: AppColors.primaryGreen),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _savedCards.isEmpty
+                ? _buildEmptyState()
+                : _buildCardsList(),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _savedCards.isEmpty
-          ? _buildEmptyState()
-          : _buildCardsList(),
     );
   }
 

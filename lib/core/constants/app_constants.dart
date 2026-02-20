@@ -45,8 +45,8 @@ class AppConstants {
   static const String whatsappNumber = '+201102450471';
   static const String email = 'bourraq.com@gmail.com';
 
-  // Supabase (from environment or config)
-  static const String supabaseUrl = 'https://vthdyrqdtudtngachsdl.supabase.co';
-  static const String supabaseAnonKey =
-      'sb_publishable_wvIFjR_izzCDhV_IAXM_Vg_JDg_xWtH';
+  // Supabase Configuration
+  // ⚠️ SECURITY: Keys are loaded from .env file via flutter_dotenv
+  // See main.dart: dotenv.env['SUPABASE_URL'] and dotenv.env['SUPABASE_ANON_KEY']
+  // Never hardcode API keys in source code!
 }

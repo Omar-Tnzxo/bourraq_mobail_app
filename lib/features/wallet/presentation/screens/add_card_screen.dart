@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
-import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/features/wallet/data/wallet_service.dart';
 
 /// صفحة إضافة بطاقة جديدة
@@ -111,22 +111,45 @@ class _AddCardScreenState extends State<AddCardScreen> {
     final isArabic = context.locale.languageCode == 'ar';
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-            color: AppColors.textPrimary,
-            size: 22,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text('wallet.add_card'.tr(), style: AppTextStyles.titleLarge),
-      ),
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
+          // Premium Curved Header
+          BourraqHeader(
+            child: Row(
+              children: [
+                // Back Button
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                      color: AppColors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Title
+                Expanded(
+                  child: Text(
+                    'wallet.add_card'.tr(),
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -225,8 +248,9 @@ class _AddCardScreenState extends State<AddCardScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: Row(
                           children: [

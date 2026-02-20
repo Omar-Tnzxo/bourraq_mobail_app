@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/features/location/data/address_model.dart';
 import 'package:bourraq/features/location/data/address_service.dart';
 
@@ -79,38 +80,76 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'addresses.my_addresses'.tr(),
-          style: AppTextStyles.titleLarge,
-        ),
-        centerTitle: true,
-        actions: [
-          if (canAddMore)
-            IconButton(
-              icon: Icon(LucideIcons.circlePlus, color: AppColors.primaryGreen),
-              onPressed: () async {
-                await context.push('/add-address');
-                _loadAddresses();
-              },
+      body: Column(
+        children: [
+          // Premium Curved Header
+          BourraqHeader(
+            child: Row(
+              children: [
+                // Back Button
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                      color: AppColors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Title
+                Expanded(
+                  child: Text(
+                    'addresses.my_addresses'.tr(),
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+
+                // Add Button (if can add more)
+                if (canAddMore)
+                  GestureDetector(
+                    onTap: () async {
+                      await context.push('/add-address');
+                      _loadAddresses();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        LucideIcons.plus,
+                        color: AppColors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+              ],
             ),
+          ),
+
+          // Content
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _addresses.isEmpty
+                ? _buildEmptyState()
+                : _buildAddressList(),
+          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _addresses.isEmpty
-          ? _buildEmptyState()
-          : _buildAddressList(),
     );
   }
 

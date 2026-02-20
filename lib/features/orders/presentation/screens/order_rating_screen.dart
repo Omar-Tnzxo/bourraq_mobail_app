@@ -88,18 +88,10 @@ class _OrderRatingScreenState extends State<OrderRatingScreen> {
               child: Column(
                 children: [
                   // Illustration
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      LucideIcons.messageSquareHeart,
-                      size: 56,
-                      color: AppColors.primaryGreen,
-                    ),
+                  Image.asset(
+                    'assets/images/feedback-illustration.png',
+                    width: 180,
+                    height: 180,
                   ),
                   const SizedBox(height: 24),
 
@@ -326,17 +318,17 @@ class _OrderRatingScreenState extends State<OrderRatingScreen> {
   String _getRatingLabel(int rating) {
     switch (rating) {
       case 1:
-        return 'سيء';
+        return 'orders.rating_labels.1'.tr();
       case 2:
-        return 'مقبول';
+        return 'orders.rating_labels.2'.tr();
       case 3:
-        return 'جيد';
+        return 'orders.rating_labels.3'.tr();
       case 4:
-        return 'جيد جداً';
+        return 'orders.rating_labels.4'.tr();
       case 5:
-        return 'ممتاز!';
+        return 'orders.rating_labels.5'.tr();
       default:
-        return 'اختر تقييمك';
+        return 'orders.rating_labels.default'.tr();
     }
   }
 }

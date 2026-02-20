@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/features/location/data/address_service.dart';
 import 'package:bourraq/features/location/data/area_service.dart';
 import 'package:bourraq/features/location/data/area_model.dart';
@@ -37,6 +39,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   String _addressText = '';
   bool _isLoading = false;
   bool _isCheckingArea = false;
+  bool _isInitialLocationObtained =
+      false; // لتتبع إذا تم الحصول على الموقع الفعلي
+  Key _mapKey = UniqueKey(); // لإجبار الخريطة على إعادة البناء
 
   // المنطقة المكتشفة
   Area? _detectedArea;
@@ -61,6 +66,76 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void initState() {
     super.initState();
     _loadUserPhone();
+    // Request GPS permission immediately when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationPermissionPersistently();
+    });
+  }
+
+  /// Request location permission persistently until granted or permanently denied
+  Future<void> _requestLocationPermissionPersistently() async {
+    try {
+      // 1. Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Location services are off, will be handled when user tries to save
+        return;
+      }
+
+      // 2. Check current permission status
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      // 3. If denied, request permission (shows native dialog)
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      // 4. If permanently denied, can't do anything from here
+      if (permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      // 5. If granted, get current location and update map
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        await _getCurrentLocationAndUpdate();
+      }
+    } catch (e) {
+      print('❌ [Location] Error in permission request: $e');
+    }
+  }
+
+  /// Get current location and update the map
+  Future<void> _getCurrentLocationAndUpdate() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      if (!mounted) return;
+
+      final newLocation = LatLng(position.latitude, position.longitude);
+      setState(() {
+        _selectedLocation = newLocation;
+        _isInitialLocationObtained = true; // تم الحصول على الموقع الفعلي
+        _mapKey =
+            UniqueKey(); // إجبار الخريطة على إعادة البناء مع الموقع الجديد
+      });
+
+      // Get address and check area
+      _getAddressFromLocation(newLocation);
+      _checkAreaForLocation(newLocation);
+    } catch (e) {
+      // إذا فشل الحصول على الموقع، نعتبر أن الموقع الحالي هو المختار
+      if (mounted) {
+        setState(() {
+          _isInitialLocationObtained = true;
+        });
+        _checkAreaForLocation(_selectedLocation);
+      }
+    }
   }
 
   @override
@@ -123,7 +198,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           // Use locale-appropriate separator
           final separator = context.locale.languageCode == 'ar' ? '، ' : ', ';
           _addressText = parts.join(separator);
-          if (_streetNameController.text.isEmpty && place.street != null) {
+          if (place.street != null && place.street!.isNotEmpty) {
             _streetNameController.text = place.street!;
           }
         });
@@ -159,6 +234,12 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   }
 
   Future<void> _saveAddress() async {
+    // التحقق من الحصول على الموقع أولاً
+    if (!_isInitialLocationObtained) {
+      _showLocationRequiredDialog();
+      return;
+    }
+
     // Validation
     if (_buildingNameController.text.isEmpty) {
       _showError('addresses.enter_building_name'.tr());
@@ -184,7 +265,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final success = await _addressService.addAddress(
+      final result = await _addressService.addAddress(
         addressLabel: label,
         addressType: addressType,
         streetName: _streetNameController.text.isNotEmpty
@@ -206,7 +287,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         areaId: _detectedArea?.id,
       );
 
-      if (success) {
+      if (result == AddressService.resultSuccess) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -217,7 +298,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           context.pop();
         }
       } else {
-        _showError('addresses.max_addresses_reached'.tr());
+        // عرض رسالة خطأ محددة حسب نوع المشكلة
+        if (result == AddressService.resultMaxReached) {
+          _showError('addresses.max_addresses_reached'.tr());
+        } else {
+          // لأي خطأ آخر، نعرض رسالة عامة ودية
+          _showError('addresses.error_saving_address'.tr());
+        }
       }
     } catch (e) {
       _showError('addresses.error_saving_address'.tr());
@@ -232,57 +319,140 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     );
   }
 
+  /// عرض حوار لطلب تفعيل الموقع
+  void _showLocationRequiredDialog() {
+    final isArabic = context.locale.languageCode == 'ar';
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: Icon(LucideIcons.mapPin, size: 48, color: AppColors.primaryGreen),
+        title: Text(
+          isArabic ? 'تحديد الموقع مطلوب' : 'Location Required',
+          style: AppTextStyles.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          isArabic
+              ? 'يجب تحديد موقعك على الخريطة لحفظ العنوان. يرجى تفعيل خدمة الموقع.'
+              : 'Please enable location services to save your address.',
+          style: AppTextStyles.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              isArabic ? 'إلغاء' : 'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // فتح إعدادات الموقع في الهاتف مباشرة
+              await Geolocator.openLocationSettings();
+              // إعادة محاولة الحصول على الموقع بعد العودة
+              await Future.delayed(const Duration(seconds: 1));
+              if (mounted) {
+                _requestLocationPermissionPersistently();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(isArabic ? 'فتح الإعدادات' : 'Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isArabic = context.locale.languageCode == 'ar';
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'addresses.add_address'.tr(),
-          style: AppTextStyles.titleLarge,
-        ),
-        centerTitle: true,
-      ),
       body: Column(
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // === الخريطة ===
-                  _buildMapSection(),
+          // Premium Curved Header
+          BourraqHeader(
+            child: Row(
+              children: [
+                // Back Button
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                      color: AppColors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
 
-                  const SizedBox(height: 24),
-
-                  // === تسمية العنوان (حقل واحد مدمج) ===
-                  _buildAddressLabelSection(isArabic),
-
-                  const SizedBox(height: 20),
-
-                  // === حقول العنوان ===
-                  _buildInputSection(),
-
-                  const SizedBox(height: 24),
-                ],
-              ),
+                // Title
+                Expanded(
+                  child: Text(
+                    'addresses.add_address'.tr(),
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          // === زر الحفظ ===
-          _buildSaveButton(),
+          // Content
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // === الخريطة ===
+                        _buildMapSection(),
+
+                        const SizedBox(height: 24),
+
+                        // === تسمية العنوان (حقل واحد مدمج) ===
+                        _buildAddressLabelSection(isArabic),
+
+                        const SizedBox(height: 20),
+
+                        // === حقول العنوان ===
+                        _buildInputSection(),
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // === زر الحفظ ===
+                _buildSaveButton(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -302,13 +472,15 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           ),
           const SizedBox(height: 12),
           EnhancedMapWidget(
+            key: _mapKey,
             initialLocation: _selectedLocation,
             height: 220,
             onLocationChanged: (location, addressText) {
               setState(() {
                 _selectedLocation = location;
+                _isInitialLocationObtained = true; // المستخدم اختار موقع يدوياً
                 if (addressText != null) _addressText = addressText;
-                if (_streetNameController.text.isEmpty && addressText != null) {
+                if (addressText != null && addressText.isNotEmpty) {
                   _streetNameController.text = addressText;
                 }
               });
@@ -317,6 +489,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               setState(() {
                 _detectedArea = area;
                 _isCheckingArea = false;
+                _isInitialLocationObtained = true; // تم اكتشاف المنطقة
               });
             },
           ),
@@ -327,8 +500,45 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     );
   }
 
-  /// عرض حالة المنطقة (مدعومة أو غير مدعومة)
+  /// عرض حالة المنطقة (فقط إذا كانت غير مدعومة)
   Widget _buildAreaStatusWidget(bool isArabic) {
+    // إذا لم يتم الحصول على الموقع الفعلي بعد، أظهر رسالة انتظار الموقع
+    if (!_isInitialLocationObtained) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.shade200),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isArabic ? 'جاري تحديد موقعك...' : 'Getting your location...',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show loading indicator while checking area
     if (_isCheckingArea) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -358,63 +568,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       );
     }
 
+    // If area is supported, show nothing (no area name or delivery fee)
     if (_detectedArea != null) {
-      // منطقة مدعومة ✅
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.primaryGreen.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.primaryGreen.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  LucideIcons.circleCheck,
-                  color: AppColors.primaryGreen,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _detectedArea!.getName(isArabic ? 'ar' : 'en'),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'location.delivery_fee_info'.tr(
-                        namedArgs: {
-                          'fee': _detectedArea!.deliveryFee.toStringAsFixed(0),
-                        },
-                      ),
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.primaryGreen,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     // منطقة غير مدعومة ❌

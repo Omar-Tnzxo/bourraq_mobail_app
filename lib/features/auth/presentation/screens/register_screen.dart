@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -395,35 +396,46 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                  children: [
-                    TextSpan(text: 'auth.agree_terms'.tr()),
-                    TextSpan(text: ' '),
-                    TextSpan(
-                      text: 'auth.terms'.tr(),
-                      style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    TextSpan(text: ' ${'auth.and'.tr()} '),
-                    TextSpan(
-                      text: 'auth.privacy'.tr(),
-                      style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                  fontFamily: context.locale.languageCode == 'ar'
+                      ? 'PingAR'
+                      : null,
                 ),
+                children: [
+                  TextSpan(
+                    text: 'auth.agree_terms'.tr(),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () =>
+                          setState(() => _agreedToTerms = !_agreedToTerms),
+                  ),
+                  TextSpan(text: ' '),
+                  TextSpan(
+                    text: 'auth.terms'.tr(),
+                    style: TextStyle(
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () => context.push('/pages/terms'),
+                  ),
+                  TextSpan(text: ' ${'auth.and'.tr()} '),
+                  TextSpan(
+                    text: 'auth.privacy'.tr(),
+                    style: TextStyle(
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () => context.push('/pages/privacy'),
+                  ),
+                ],
               ),
             ),
           ),
@@ -443,15 +455,6 @@ class _RegisterScreenState extends State<RegisterScreen>
               ? [Colors.grey.shade400, Colors.grey.shade500]
               : [AppColors.primaryGreen, const Color(0xFF6BAB3D)],
         ),
-        boxShadow: isLoading || !_agreedToTerms
-            ? []
-            : [
-                BoxShadow(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -504,17 +507,7 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
       child: IconButton(
         icon: const Icon(LucideIcons.arrowLeft, color: AppColors.textPrimary),
         onPressed: () => context.pop(),

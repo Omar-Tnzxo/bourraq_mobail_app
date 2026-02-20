@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "2744601197",
+    "project_id": "bourraq-eg",
+    "storage_bucket": "bourraq-eg.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:2744601197:android:32d37ad9d4169e8ed14d64",
+        "android_client_info": {
+          "package_name": "com.bourraq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "2744601197-9ul1l5sp9582c84pq23ql5nchanr5ga6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bourraq",
+            "certificate_hash": "5f856cf05d0ab6ee455904974968328d76df1e57"
+          }
+        },
+        {
+          "client_id": "2744601197-bcu7kjhv7eb5klo3vb4vlkt9ppq5gbbu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOzGkJ0HC4luRT3HfjsO-OVGLdcyUcoS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "2744601197-bcu7kjhv7eb5klo3vb4vlkt9ppq5gbbu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

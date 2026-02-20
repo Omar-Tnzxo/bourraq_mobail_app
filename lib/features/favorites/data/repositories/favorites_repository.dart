@@ -19,6 +19,8 @@ class FavoritesRepository {
           .from('favorites')
           .select('product_id, products(*)')
           .eq('user_id', userId)
+          .eq('products.is_active', true)
+          .isFilter('products.deleted_at', null)
           .order('created_at', ascending: false);
 
       final List<Product> products = [];

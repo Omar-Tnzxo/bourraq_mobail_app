@@ -43,7 +43,6 @@ class _EnhancedMapWidgetState extends State<EnhancedMapWidget>
   double _currentZoom = 15.0;
   bool _isSearching = false;
   bool _isGettingLocation = false;
-  List<Area> _supportedAreas = [];
   List<Location> _searchResults = [];
   Timer? _searchDebounce;
 
@@ -55,7 +54,6 @@ class _EnhancedMapWidgetState extends State<EnhancedMapWidget>
   void initState() {
     super.initState();
     _selectedLocation = widget.initialLocation;
-    _loadSupportedAreas();
     _getAddressFromLocation(_selectedLocation);
 
     // Marker bounce animation
@@ -76,13 +74,6 @@ class _EnhancedMapWidgetState extends State<EnhancedMapWidget>
     _markerAnimController.dispose();
     _searchDebounce?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadSupportedAreas() async {
-    final areas = await _areaService.getSupportedAreas();
-    if (mounted) {
-      setState(() => _supportedAreas = areas);
-    }
   }
 
   Future<void> _getAddressFromLocation(LatLng location) async {
@@ -204,7 +195,6 @@ class _EnhancedMapWidgetState extends State<EnhancedMapWidget>
       MaterialPageRoute(
         builder: (context) => _FullscreenMapPage(
           location: _selectedLocation,
-          areas: _supportedAreas,
           onLocationSelected: (location) {
             setState(() => _selectedLocation = location);
             _mapController.move(location, _currentZoom);
@@ -340,25 +330,6 @@ class _EnhancedMapWidgetState extends State<EnhancedMapWidget>
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.bourraq',
                   ),
-
-                  // Supported Areas Circles
-                  if (_supportedAreas.isNotEmpty)
-                    CircleLayer(
-                      circles: _supportedAreas
-                          .map(
-                            (area) => CircleMarker(
-                              point: LatLng(area.latitude, area.longitude),
-                              radius: area.radiusKm * 1000, // meters
-                              color: AppColors.primaryGreen.withOpacity(0.05),
-                              borderColor: AppColors.primaryGreen.withOpacity(
-                                0.2,
-                              ),
-                              borderStrokeWidth: 1.5,
-                              useRadiusInMeter: true,
-                            ),
-                          )
-                          .toList(),
-                    ),
 
                   // Marker
                   MarkerLayer(
@@ -634,12 +605,10 @@ class _EnhancedMapWidgetState extends State<EnhancedMapWidget>
 
 class _FullscreenMapPage extends StatefulWidget {
   final LatLng location;
-  final List<Area> areas;
   final Function(LatLng) onLocationSelected;
 
   const _FullscreenMapPage({
     required this.location,
-    required this.areas,
     required this.onLocationSelected,
   });
 
@@ -870,22 +839,6 @@ class _FullscreenMapPageState extends State<_FullscreenMapPage>
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.bourraq',
               ),
-              // Supported Areas Circles
-              if (widget.areas.isNotEmpty)
-                CircleLayer(
-                  circles: widget.areas
-                      .map(
-                        (area) => CircleMarker(
-                          point: LatLng(area.latitude, area.longitude),
-                          radius: area.radiusKm * 1000,
-                          color: AppColors.primaryGreen.withOpacity(0.05),
-                          borderColor: AppColors.primaryGreen.withOpacity(0.2),
-                          borderStrokeWidth: 1.5,
-                          useRadiusInMeter: true,
-                        ),
-                      )
-                      .toList(),
-                ),
               // Animated Marker
               MarkerLayer(
                 markers: [

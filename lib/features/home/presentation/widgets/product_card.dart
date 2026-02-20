@@ -172,9 +172,9 @@ class _ProductCardState extends State<ProductCard>
         : widget.product.nameEn;
     final hasDiscount =
         widget.product.oldPrice != null &&
-        widget.product.oldPrice! > widget.product.price;
+        widget.product.oldPrice! > widget.product.displayPrice;
     final discountPercent = hasDiscount
-        ? ((widget.product.oldPrice! - widget.product.price) /
+        ? ((widget.product.oldPrice! - widget.product.displayPrice) /
                   widget.product.oldPrice! *
                   100)
               .round()
@@ -324,6 +324,56 @@ class _ProductCardState extends State<ProductCard>
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        // Rating stars row
+                        if (widget.product.ratingCount > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Row(
+                              children: [
+                                ...List.generate(
+                                  5,
+                                  (i) => Icon(
+                                    i < widget.product.avgRating.round()
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: const Color(0xFFFFB800),
+                                    size: 12,
+                                  ),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '(${widget.product.ratingCount})',
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        // Badge
+                        if (widget.product.badgeName != null)
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _parseBadgeColor(
+                                widget.product.badgeColor,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              widget.product.badgeName!,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.white,
+                              ),
+                            ),
+                          ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -339,7 +389,9 @@ class _ProductCardState extends State<ProductCard>
                             Row(
                               children: [
                                 Text(
-                                  widget.product.price.floor().toString(),
+                                  widget.product.displayPrice
+                                      .floor()
+                                      .toString(),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
@@ -347,7 +399,7 @@ class _ProductCardState extends State<ProductCard>
                                   ),
                                 ),
                                 Text(
-                                  '.${((widget.product.price - widget.product.price.floor()) * 100).round().toString().padLeft(2, '0')}',
+                                  '.${((widget.product.displayPrice - widget.product.displayPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -501,9 +553,20 @@ class _ProductCardState extends State<ProductCard>
       ),
     );
   }
+
+  /// Parse badge hex color
+  Color _parseBadgeColor(String? hex) {
+    if (hex == null || hex.isEmpty) return AppColors.deepOlive;
+    try {
+      final cleanHex = hex.replaceFirst('#', '');
+      return Color(int.parse('FF$cleanHex', radix: 16));
+    } catch (_) {
+      return AppColors.deepOlive;
+    }
+  }
 }
 
-/// Product model for ProductCard
+/// Product model for ProductCard — supports both legacy products and store products
 class ProductItem {
   final String id;
   final String nameAr;
@@ -513,6 +576,16 @@ class ProductItem {
   final String imageUrl;
   final bool isAvailable;
 
+  // Store product fields (merchant system)
+  final String? storeProductId;
+  final String? storeId;
+  final double? customerPrice;
+  final double? merchantPrice;
+  final double avgRating;
+  final int ratingCount;
+  final String? badgeName;
+  final String? badgeColor;
+
   const ProductItem({
     required this.id,
     required this.nameAr,
@@ -521,9 +594,20 @@ class ProductItem {
     this.oldPrice,
     required this.imageUrl,
     this.isAvailable = true,
+    this.storeProductId,
+    this.storeId,
+    this.customerPrice,
+    this.merchantPrice,
+    this.avgRating = 0,
+    this.ratingCount = 0,
+    this.badgeName,
+    this.badgeColor,
   });
 
-  /// Create ProductItem from a Map (useful for Supabase data)
+  /// Effective price displayed to user (customerPrice if available, else price)
+  double get displayPrice => customerPrice ?? price;
+
+  /// Create from legacy products table Map
   factory ProductItem.fromMap(
     Map<String, dynamic> map, {
     bool isArabic = false,
@@ -536,6 +620,26 @@ class ProductItem {
       oldPrice: (map['old_price'] as num?)?.toDouble(),
       imageUrl: map['image_url'] as String? ?? '',
       isAvailable: map['in_stock'] as bool? ?? true,
+    );
+  }
+
+  /// Create from StoreProduct model
+  factory ProductItem.fromStoreProduct(dynamic storeProduct) {
+    return ProductItem(
+      id: storeProduct.productId as String,
+      nameAr: storeProduct.nameAr as String,
+      nameEn: storeProduct.nameEn as String,
+      price: (storeProduct.customerPrice as num).toDouble(),
+      imageUrl: storeProduct.imageUrl as String? ?? '',
+      isAvailable: storeProduct.isAvailable as bool,
+      storeProductId: storeProduct.id as String,
+      storeId: storeProduct.storeId as String,
+      customerPrice: (storeProduct.customerPrice as num).toDouble(),
+      merchantPrice: (storeProduct.merchantPrice as num).toDouble(),
+      avgRating: (storeProduct.avgRating as num).toDouble(),
+      ratingCount: storeProduct.ratingCount as int,
+      badgeName: storeProduct.badgeNameAr as String?,
+      badgeColor: storeProduct.badgeColor as String?,
     );
   }
 }

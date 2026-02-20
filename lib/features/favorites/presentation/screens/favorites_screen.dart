@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/router/app_router.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/features/favorites/presentation/cubit/favorites_cubit.dart';
 import 'package:bourraq/features/products/data/models/product_model.dart';
@@ -53,55 +54,83 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     final isArabic = context.locale.languageCode == 'ar';
+    final cartCount = _cartService?.getCartItemCount() ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [_buildAppBar(isArabic), _buildHeader(), _buildContent()],
-      ),
-    );
-  }
-
-  SliverAppBar _buildAppBar(bool isArabic) {
-    final cartCount = _cartService?.getCartItemCount() ?? 0;
-
-    return SliverAppBar(
-      backgroundColor: Colors.white,
-      pinned: true,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-          color: AppColors.textPrimary,
-        ),
-        onPressed: () => context.pop(),
-      ),
-      title: Text('favorites.title'.tr(), style: AppTextStyles.titleLarge),
-      centerTitle: true,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: IconButton(
-            onPressed: () => context.push('/cart'),
-            icon: Badge(
-              isLabelVisible: cartCount > 0,
-              label: Text(
-                '$cartCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+      body: Column(
+        children: [
+          BourraqHeader(
+            child: Row(
+              children: [
+                // Back Button
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
                 ),
-              ),
-              backgroundColor: AppColors.primaryGreen,
-              child: const Icon(
-                LucideIcons.shoppingBasket,
-                color: AppColors.textPrimary,
-              ),
+                const SizedBox(width: 16),
+
+                // Title
+                Expanded(
+                  child: Text(
+                    'favorites.title'.tr(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+
+                // Cart Button
+                GestureDetector(
+                  onTap: () => context.push('/cart'),
+                  child: Badge(
+                    isLabelVisible: cartCount > 0,
+                    label: Text(
+                      '$cartCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    backgroundColor: const Color(
+                      0xFFE02E4C,
+                    ), // Use favorite red for badge
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        LucideIcons.shoppingBasket,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+          Expanded(
+            child: CustomScrollView(slivers: [_buildHeader(), _buildContent()]),
+          ),
+        ],
+      ),
     );
   }
 

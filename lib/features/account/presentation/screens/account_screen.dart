@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/core/widgets/contact_options_sheet.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_state.dart';
@@ -51,108 +52,119 @@ class _AccountScreenState extends State<AccountScreen> {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                const SizedBox(height: 20),
+          body: Column(
+            children: [
+              // Premium Curved Account Header
+              _buildHeader(context, userName, isGuest),
 
-                // === User Header ===
-                _buildUserHeader(context, userName, isGuest),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                  children: [
+                    // === Quick Actions (3 icons row) ===
+                    if (!isGuest) ...[
+                      _buildQuickActions(context),
+                      const SizedBox(height: 20),
+                    ],
 
-                const SizedBox(height: 24),
+                    // === Wallet Card (for authenticated) OR Login Card (for guests) ===
+                    if (!isGuest) ...[
+                      _buildWalletCard(context),
+                      const SizedBox(height: 24),
+                    ] else ...[
+                      _buildLoginPromotionCard(context),
+                      const SizedBox(height: 24),
+                    ],
 
-                // === Quick Actions (3 icons row) ===
-                if (!isGuest) ...[
-                  _buildQuickActions(context),
-                  const SizedBox(height: 20),
-                ],
+                    // === Account Section ===
+                    _buildSectionTitle('account.section_account'.tr()),
+                    const SizedBox(height: 12),
+                    _buildAccountSection(context, isGuest),
 
-                // === Wallet Card (for authenticated) OR Login Card (for guests) ===
-                if (!isGuest) ...[
-                  _buildWalletCard(context),
-                  const SizedBox(height: 24),
-                ] else ...[
-                  _buildLoginPromotionCard(context),
-                  const SizedBox(height: 24),
-                ],
+                    const SizedBox(height: 24),
 
-                // === Account Section ===
-                _buildSectionTitle('account.section_account'.tr()),
-                const SizedBox(height: 12),
-                _buildAccountSection(context, isGuest),
+                    // === Help & Support Section ===
+                    _buildSectionTitle('account.section_support'.tr()),
+                    const SizedBox(height: 12),
+                    _buildSupportSection(context),
 
-                const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                // === Help & Support Section ===
-                _buildSectionTitle('account.section_support'.tr()),
-                const SizedBox(height: 12),
-                _buildSupportSection(context),
-
-                const SizedBox(height: 24),
-
-                // === Social Media Links ===
-                _buildSocialLinks(context),
-
-                const SizedBox(height: 32),
-              ],
-            ),
+                    // === Social Media Links ===
+                    _buildSocialLinks(context),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  /// User Header with greeting and profile settings link
-  Widget _buildUserHeader(BuildContext context, String userName, bool isGuest) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${'account.hello'.tr()} $userName',
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        if (isGuest)
-          GestureDetector(
-            onTap: () => context.go('/login'),
-            child: Text(
-              'account.login_or_register'.tr(),
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.primaryGreen,
-                fontWeight: FontWeight.w600,
-              ),
+  Widget _buildHeader(BuildContext context, String userName, bool isGuest) {
+    return BourraqHeader(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 48),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${'account.hello'.tr()} $userName',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
             ),
-          )
-        else
-          GestureDetector(
-            onTap: () => context.push('/profile-settings'),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  LucideIcons.settings,
-                  size: 16,
-                  color: AppColors.primaryGreen,
+          ),
+          const SizedBox(height: 4),
+          if (isGuest)
+            GestureDetector(
+              onTap: () => context.go('/login'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'account.profile_settings'.tr(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primaryGreen,
-                    fontWeight: FontWeight.w500,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'account.login_or_register'.tr(),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
+              ),
+            )
+          else
+            GestureDetector(
+              onTap: () => context.push('/profile-settings'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    LucideIcons.settings,
+                    size: 16,
+                    color: Colors.white70,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'account.profile_settings'.tr(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -744,7 +756,7 @@ class _AccountScreenState extends State<AccountScreen> {
               title: Text('account.terms'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
-                _launchUrl('http://www.bourraq.com/terms');
+                context.push('/pages/terms');
               },
             ),
             ListTile(
@@ -752,7 +764,7 @@ class _AccountScreenState extends State<AccountScreen> {
               title: Text('account.privacy'.tr()),
               onTap: () {
                 Navigator.pop(ctx);
-                _launchUrl('http://www.bourraq.com/privacy');
+                context.push('/pages/privacy');
               },
             ),
           ],

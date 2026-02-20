@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Cart item model with full product details and weight support
+/// Cart item model with full product details, weight, and store product support
 class CartItem extends Equatable {
   final String id;
   final String productId;
@@ -15,6 +15,14 @@ class CartItem extends Equatable {
   final int stockQuantity;
   final bool isInStock;
 
+  // Store product fields (merchant system)
+  final String? storeProductId;
+  final String? storeId;
+  final double? merchantPrice;
+  final double? customerPrice;
+  final double? avgRating;
+  final int? ratingCount;
+
   const CartItem({
     required this.id,
     required this.productId,
@@ -28,6 +36,12 @@ class CartItem extends Equatable {
     this.weightUnit,
     this.stockQuantity = 100,
     this.isInStock = true,
+    this.storeProductId,
+    this.storeId,
+    this.merchantPrice,
+    this.customerPrice,
+    this.avgRating,
+    this.ratingCount,
   });
 
   /// Get localized name
@@ -64,7 +78,10 @@ class CartItem extends Equatable {
     return '$valueStr $label';
   }
 
-  double get totalPrice => price * quantity;
+  /// Effective price: uses customerPrice if available, otherwise price
+  double get effectivePrice => customerPrice ?? price;
+
+  double get totalPrice => effectivePrice * quantity;
 
   CartItem copyWith({
     String? id,
@@ -79,6 +96,12 @@ class CartItem extends Equatable {
     String? weightUnit,
     int? stockQuantity,
     bool? isInStock,
+    String? storeProductId,
+    String? storeId,
+    double? merchantPrice,
+    double? customerPrice,
+    double? avgRating,
+    int? ratingCount,
   }) {
     return CartItem(
       id: id ?? this.id,
@@ -93,6 +116,12 @@ class CartItem extends Equatable {
       weightUnit: weightUnit ?? this.weightUnit,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       isInStock: isInStock ?? this.isInStock,
+      storeProductId: storeProductId ?? this.storeProductId,
+      storeId: storeId ?? this.storeId,
+      merchantPrice: merchantPrice ?? this.merchantPrice,
+      customerPrice: customerPrice ?? this.customerPrice,
+      avgRating: avgRating ?? this.avgRating,
+      ratingCount: ratingCount ?? this.ratingCount,
     );
   }
 
@@ -115,12 +144,15 @@ class CartItem extends Equatable {
       isInStock:
           (product?['stock_quantity'] as int?) == null ||
           (product?['stock_quantity'] as int?)! > 0,
+      storeProductId: json['store_product_id'] as String?,
+      storeId: json['store_id'] as String?,
+      merchantPrice: (json['merchant_price'] as num?)?.toDouble(),
+      customerPrice: (json['customer_price'] as num?)?.toDouble(),
     );
   }
 
   /// Create from local storage JSON (with backwards compatibility)
   factory CartItem.fromLocalJson(Map<String, dynamic> json) {
-    // Backwards compatibility: old format used 'productName', new uses 'name_ar/name_en'
     final legacyName = json['productName'] as String? ?? '';
 
     return CartItem(
@@ -136,6 +168,12 @@ class CartItem extends Equatable {
       weightUnit: json['weight_unit'] as String?,
       stockQuantity: json['stock_quantity'] as int? ?? 100,
       isInStock: json['is_in_stock'] as bool? ?? true,
+      storeProductId: json['store_product_id'] as String?,
+      storeId: json['store_id'] as String?,
+      merchantPrice: (json['merchant_price'] as num?)?.toDouble(),
+      customerPrice: (json['customer_price'] as num?)?.toDouble(),
+      avgRating: (json['avg_rating'] as num?)?.toDouble(),
+      ratingCount: json['rating_count'] as int?,
     );
   }
 
@@ -153,6 +191,12 @@ class CartItem extends Equatable {
       'weight_unit': weightUnit,
       'stock_quantity': stockQuantity,
       'is_in_stock': isInStock,
+      'store_product_id': storeProductId,
+      'store_id': storeId,
+      'merchant_price': merchantPrice,
+      'customer_price': customerPrice,
+      'avg_rating': avgRating,
+      'rating_count': ratingCount,
     };
   }
 
@@ -170,5 +214,11 @@ class CartItem extends Equatable {
     weightUnit,
     stockQuantity,
     isInStock,
+    storeProductId,
+    storeId,
+    merchantPrice,
+    customerPrice,
+    avgRating,
+    ratingCount,
   ];
 }

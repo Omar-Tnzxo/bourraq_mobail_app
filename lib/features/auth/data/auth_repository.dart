@@ -33,7 +33,15 @@ class AuthRepository {
       );
 
       if (response.user == null) {
-        throw Exception('فشل في إنشاء الحساب');
+        throw Exception('auth.error_register_failed');
+      }
+
+      // Check if user already exists (Supabase returns user with empty identities)
+      // This happens when email is already registered
+      if (response.user!.identities == null ||
+          response.user!.identities!.isEmpty) {
+        print('⚠️ [AUTH] User already exists: $email');
+        throw Exception('auth.error_email_already_in_use');
       }
 
       print('✅ [AUTH] OTP email sent successfully via Supabase');
@@ -41,9 +49,9 @@ class AuthRepository {
     } on AuthException catch (e) {
       print('❌ [AUTH] Error: ${e.message}');
       if (e.message.contains('already registered')) {
-        throw Exception('البريد الإلكتروني مسجل بالفعل');
+        throw Exception('auth.error_email_already_in_use');
       }
-      throw Exception('فشل في إرسال رمز التحقق');
+      throw Exception('auth.error_otp_send_failed');
     }
   }
 
@@ -57,7 +65,7 @@ class AuthRepository {
       print('✅ [AUTH] OTP resent successfully!');
     } on AuthException catch (e) {
       print('❌ [AUTH] Resend error: ${e.message}');
-      throw Exception('فشل في إعادة إرسال الرمز');
+      throw Exception('auth.error_otp_send_failed');
     }
   }
 
@@ -77,7 +85,7 @@ class AuthRepository {
       );
 
       if (response.session == null) {
-        throw Exception('فشل في التحقق من الرمز');
+        throw Exception('auth.error_verify_otp_failed');
       }
 
       final user = response.user!;
@@ -115,26 +123,15 @@ class AuthRepository {
     } on AuthException catch (e) {
       print('❌ [AUTH] Auth Error: ${e.message}');
       if (e.message.contains('expired')) {
-        throw Exception('رمز التحقق منتهي الصلاحية');
+        throw Exception('auth.error_otp_invalid');
       }
       if (e.message.contains('invalid')) {
-        throw Exception('رمز التحقق غير صحيح');
+        throw Exception('auth.error_otp_invalid');
       }
-      throw Exception('فشل في التحقق من الرمز');
+      throw Exception('auth.error_verify_otp_failed');
     } catch (e) {
       print('❌ [AUTH] Unexpected Error: $e');
-      throw Exception('حدث خطأ غير متوقع');
-    }
-  }
-
-  /// إعادة إرسال OTP
-  Future<void> resendOTP({required String email}) async {
-    try {
-      await _supabase.auth.resend(type: OtpType.signup, email: email);
-      print('✅ [AUTH] OTP resent successfully');
-    } on AuthException catch (e) {
-      print('❌ [AUTH] Resend failed: ${e.message}');
-      throw Exception('فشل في إعادة إرسال الرمز');
+      throw Exception('errors.general');
     }
   }
 
@@ -150,7 +147,7 @@ class AuthRepository {
       );
 
       if (response.session == null) {
-        throw Exception('فشل في تسجيل الدخول');
+        throw Exception('auth.error_invalid_credentials');
       }
 
       await _supabase
@@ -165,7 +162,7 @@ class AuthRepository {
       return response.session!;
     } on AuthException catch (e) {
       if (e.message.contains('Invalid login credentials')) {
-        throw Exception('auth.errors.invalid_credentials');
+        throw Exception('auth.error_invalid_credentials');
       }
       throw Exception('auth.login_failed');
     }
@@ -219,28 +216,96 @@ class AuthRepository {
       // 5. إنشاء/تحديث user profile في جدول users
       final user = response.user;
       if (user != null) {
-        try {
-          await _supabase.from('users').upsert({
-            'auth_user_id': user.id,
-            'email': user.email ?? googleUser.email,
-            'name': googleUser.displayName ?? '',
-            'phone': '', // Google لا يوفر رقم الهاتف
-            'is_email_verified': true,
-            'last_login': DateTime.now().toUtc().toIso8601String(),
-          }, onConflict: 'auth_user_id');
-          print('✅ [AUTH] User profile created/updated');
-        } catch (dbError) {
-          print('⚠️ [AUTH] Failed to create profile: $dbError');
-        }
+        await _ensureUserProfileExists(
+          authUserId: user.id,
+          email: user.email ?? googleUser.email,
+          name: googleUser.displayName ?? '',
+        );
       }
 
       return true;
     } on AuthException catch (e) {
       print('❌ [AUTH] Supabase Auth Error: ${e.message}');
-      throw Exception('خطأ في تسجيل الدخول عبر Google');
+      throw Exception('auth.error_google_login_failed');
     } catch (e) {
       print('❌ [AUTH] Google Sign-In Error: $e');
-      throw Exception('خطأ في تسجيل الدخول عبر Google');
+      throw Exception('auth.error_google_login_failed');
+    }
+  }
+
+  /// ضمان وجود سجل المستخدم في public.users
+  /// يتعامل مع حالات التعارض ويحاول طرق بديلة
+  Future<void> _ensureUserProfileExists({
+    required String authUserId,
+    required String email,
+    required String name,
+  }) async {
+    print('🔵 [AUTH] Ensuring user profile exists for: $authUserId');
+
+    // المحاولة 1: upsert بناءً على auth_user_id
+    try {
+      await _supabase.from('users').upsert({
+        'auth_user_id': authUserId,
+        'email': email,
+        'name': name,
+        'phone': '', // Google لا يوفر رقم الهاتف
+        'is_email_verified': true,
+        'last_login': DateTime.now().toUtc().toIso8601String(),
+      }, onConflict: 'auth_user_id');
+      print('✅ [AUTH] User profile created/updated via auth_user_id upsert');
+      return;
+    } catch (e) {
+      print('⚠️ [AUTH] First upsert attempt failed: $e');
+    }
+
+    // المحاولة 2: فحص وجود سجل بنفس الـ email وتحديثه
+    try {
+      final existingByEmail = await _supabase
+          .from('users')
+          .select('id, auth_user_id')
+          .eq('email', email)
+          .maybeSingle();
+
+      if (existingByEmail != null) {
+        // المستخدم موجود بنفس الإيميل - تحديث auth_user_id
+        print(
+          '🔵 [AUTH] Found existing user by email, updating auth_user_id...',
+        );
+        await _supabase
+            .from('users')
+            .update({
+              'auth_user_id': authUserId,
+              'name': name,
+              'is_email_verified': true,
+              'last_login': DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq('email', email);
+        print('✅ [AUTH] User profile updated via email match');
+        return;
+      }
+    } catch (e) {
+      print('⚠️ [AUTH] Email lookup/update failed: $e');
+    }
+
+    // المحاولة 3: insert مباشر
+    try {
+      print('🔵 [AUTH] Attempting direct insert...');
+      await _supabase.from('users').insert({
+        'auth_user_id': authUserId,
+        'email': email,
+        'name': name,
+        'phone': '',
+        'is_email_verified': true,
+        'last_login': DateTime.now().toUtc().toIso8601String(),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      });
+      print('✅ [AUTH] User profile created via direct insert');
+      return;
+    } catch (e) {
+      print('❌ [AUTH] All attempts to create user profile failed!');
+      print('❌ [AUTH] Final error: $e');
+      // لا نرمي exception لأن Auth نجح - المستخدم يمكنه استخدام التطبيق
+      // الـ sync سيحاول مرة أخرى في Splash Screen
     }
   }
 
@@ -267,7 +332,7 @@ class AuthRepository {
       await _supabase.auth.signOut();
     } catch (e) {
       print('❌ [AUTH] Delete Account Error: $e');
-      throw Exception('فشل في حذف الحساب');
+      throw Exception('auth.error_delete_account_failed');
     }
   }
 
@@ -293,12 +358,12 @@ class AuthRepository {
       if (e.message.contains('not found') ||
           e.message.contains('User not found') ||
           e.message.contains('Unable to validate')) {
-        throw Exception('هذا البريد الإلكتروني غير مسجل');
+        throw Exception('auth.error_invalid_credentials');
       }
-      throw Exception('فشل في إرسال رمز التحقق');
+      throw Exception('auth.error_otp_send_failed');
     } catch (e) {
       print('❌ [AUTH] Error: $e');
-      throw Exception('حدث خطأ غير متوقع');
+      throw Exception('errors.general');
     }
   }
 
@@ -318,19 +383,19 @@ class AuthRepository {
       );
 
       if (response.session == null) {
-        throw Exception('رمز التحقق غير صحيح أو منتهي الصلاحية');
+        throw Exception('auth.error_otp_invalid');
       }
 
       print('✅ [AUTH] Password reset OTP verified');
     } on AuthException catch (e) {
       print('❌ [AUTH] Auth Error: ${e.message}');
       if (e.message.contains('expired')) {
-        throw Exception('رمز التحقق منتهي الصلاحية');
+        throw Exception('auth.error_otp_invalid');
       }
       if (e.message.contains('invalid')) {
-        throw Exception('رمز التحقق غير صحيح');
+        throw Exception('auth.error_otp_invalid');
       }
-      throw Exception('فشل في التحقق من الرمز');
+      throw Exception('auth.error_otp_invalid');
     } catch (e) {
       print('❌ [AUTH] Error: $e');
       rethrow;
@@ -354,10 +419,10 @@ class AuthRepository {
       print('❌ [AUTH] Auth error: ${e.message}');
       if (e.message.contains('different from the old password')) {
         throw Exception(
-          'auth.errors.password_same_as_old',
+          'auth.error_password_same_as_old',
         ); // Will be translated
       }
-      throw Exception('auth.errors.password_reset_failed');
+      throw Exception('auth.error_password_reset_failed');
     } catch (e) {
       print('❌ [AUTH] Error: $e');
       rethrow;
@@ -385,14 +450,14 @@ class AuthRepository {
       );
 
       if (response.user == null) {
-        throw Exception('فشل في تحديث البريد الإلكتروني');
+        throw Exception('auth.error_update_email_failed');
       }
 
       print('✅ [AUTH] Email change requested. OTP sent to $newEmail');
     } on AuthException catch (e) {
       print('❌ [AUTH] Update User Error: ${e.message}');
       if (e.message.contains('already registered')) {
-        throw Exception('auth.errors.email_already_in_use');
+        throw Exception('auth.error_email_already_in_use');
       }
       // Handle "Invalid JWT" or "Unauthorized" specifically if needed
       if (e.message.contains('Invalid JWT') ||
@@ -414,7 +479,7 @@ class AuthRepository {
           print('❌ [AUTH] Retry failed: $retryError');
         }
       }
-      throw Exception('auth.errors.update_email_failed');
+      throw Exception('auth.error_update_email_failed');
     } catch (e) {
       print('❌ [AUTH] Error: $e');
       rethrow;
@@ -436,7 +501,7 @@ class AuthRepository {
       );
 
       if (response.session == null) {
-        throw Exception('رمز التحقق غير صحيح أو منتهي الصلاحية');
+        throw Exception('auth.error_otp_invalid');
       }
 
       final user = response.user!;
@@ -453,9 +518,9 @@ class AuthRepository {
     } on AuthException catch (e) {
       print('❌ [AUTH] Verify Error: ${e.message}');
       if (e.message.contains('invalid') || e.message.contains('expired')) {
-        throw Exception('auth.errors.otp_invalid');
+        throw Exception('auth.error_otp_invalid');
       }
-      throw Exception('auth.errors.verify_email_failed');
+      throw Exception('auth.error_verify_email_failed');
     } catch (e) {
       print('❌ [AUTH] Error: $e');
       rethrow;
@@ -483,7 +548,7 @@ class AuthRepository {
       print('✅ [AUTH] Profile updated successfully');
     } catch (e) {
       print('❌ [AUTH] Error updating profile: $e');
-      throw Exception('فشل في تحديث الملف الشخصي');
+      throw Exception('auth.error_update_profile_failed');
     }
   }
 

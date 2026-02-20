@@ -15,6 +15,7 @@ class AddressService {
   String? get _authUserId => _supabase.auth.currentUser?.id;
 
   /// جلب public.users.id من auth_user_id
+  /// إذا لم يوجد سجل، يتم إنشاؤه تلقائياً
   Future<String?> _getPublicUserId() async {
     // لو موجود في الكاش، ارجعه
     if (_cachedPublicUserId != null) return _cachedPublicUserId;
@@ -23,6 +24,7 @@ class AddressService {
     if (authId == null) return null;
 
     try {
+      // محاولة جلب السجل الموجود
       final response = await _supabase
           .from('users')
           .select('id')
@@ -33,8 +35,50 @@ class AddressService {
         _cachedPublicUserId = response['id'] as String;
         return _cachedPublicUserId;
       }
+
+      // السجل غير موجود - ننشئه تلقائياً
+      print('⚠️ [AddressService] User not found in public.users, creating...');
+
+      final authUser = _supabase.auth.currentUser;
+      if (authUser == null) return null;
+
+      // إنشاء سجل جديد للمستخدم
+      final insertResponse = await _supabase
+          .from('users')
+          .insert({
+            'auth_user_id': authId,
+            'email': authUser.email ?? '',
+            'name':
+                authUser.userMetadata?['full_name'] ??
+                authUser.userMetadata?['name'] ??
+                authUser.email?.split('@').first ??
+                '',
+            'phone': authUser.userMetadata?['phone'] ?? '',
+            'is_email_verified': authUser.emailConfirmedAt != null,
+            'last_login': DateTime.now().toUtc().toIso8601String(),
+          })
+          .select('id')
+          .single();
+
+      _cachedPublicUserId = insertResponse['id'] as String;
+      print('✅ [AddressService] User record created: $_cachedPublicUserId');
+      return _cachedPublicUserId;
     } catch (e) {
-      print('❌ [AddressService] Error getting public user id: $e');
+      print('❌ [AddressService] Error getting/creating public user id: $e');
+
+      // محاولة أخيرة - ربما تم إنشاء السجل بالتوازي
+      try {
+        final retryResponse = await _supabase
+            .from('users')
+            .select('id')
+            .eq('auth_user_id', authId)
+            .maybeSingle();
+
+        if (retryResponse != null) {
+          _cachedPublicUserId = retryResponse['id'] as String;
+          return _cachedPublicUserId;
+        }
+      } catch (_) {}
     }
     return null;
   }
@@ -47,7 +91,7 @@ class AddressService {
     try {
       final response = await _supabase
           .from(_tableName)
-          .select()
+          .select('*, areas(*)')
           .eq('user_id', userId)
           .order('is_default', ascending: false)
           .order('created_at', ascending: false);
@@ -67,7 +111,7 @@ class AddressService {
     try {
       final response = await _supabase
           .from(_tableName)
-          .select()
+          .select('*, areas(*)')
           .eq('user_id', userId)
           .eq('is_default', true)
           .maybeSingle();
@@ -92,8 +136,14 @@ class AddressService {
     }
   }
 
-  /// إضافة عنوان جديد
-  Future<bool> addAddress({
+  /// نتيجة إضافة عنوان
+  static const String resultSuccess = 'success';
+  static const String resultUserNotFound = 'user_not_found';
+  static const String resultMaxReached = 'max_reached';
+  static const String resultError = 'error';
+
+  /// إضافة عنوان جديد - ترجع نوع النتيجة
+  Future<String> addAddress({
     required String addressLabel,
     required String addressType,
     String? streetName,
@@ -109,8 +159,8 @@ class AddressService {
   }) async {
     final userId = await _getPublicUserId();
     if (userId == null) {
-      print('❌ [AddressService] User not logged in');
-      return false;
+      print('❌ [AddressService] User not found in database');
+      return resultUserNotFound;
     }
 
     try {
@@ -118,7 +168,7 @@ class AddressService {
       final currentAddresses = await getAddresses();
       if (currentAddresses.length >= maxAddresses) {
         print('❌ [AddressService] Max addresses reached ($maxAddresses)');
-        return false;
+        return resultMaxReached;
       }
 
       // إذا كان هذا أول عنوان أو setAsDefault، اجعله افتراضي
@@ -150,10 +200,10 @@ class AddressService {
       });
 
       print('✅ [AddressService] Address added: $addressLabel');
-      return true;
+      return resultSuccess;
     } catch (e) {
       print('❌ [AddressService] Error adding address: $e');
-      return false;
+      return resultError;
     }
   }
 

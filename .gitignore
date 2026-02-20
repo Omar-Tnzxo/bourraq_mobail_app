@@ -48,3 +48,9 @@ app.*.map.json
 .env
 .env.local
 .env.*.local
+
+# Google OAuth Client Secrets - DO NOT COMMIT
+client_secret_*.json
+
+# MCP Server Config - Contains API keys
+mcp_server_config.json

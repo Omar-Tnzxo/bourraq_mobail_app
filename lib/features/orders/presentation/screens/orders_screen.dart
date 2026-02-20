@@ -100,32 +100,95 @@ class _OrdersScreenState extends State<OrdersScreen>
 
   SliverAppBar _buildAppBar(bool isArabic, bool innerBoxIsScrolled) {
     return SliverAppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.deepOlive,
+      expandedHeight: 140,
       pinned: true,
-      floating: true,
+      floating: false,
       elevation: 0,
-      forceElevated: innerBoxIsScrolled,
-      leading: IconButton(
-        icon: Icon(
-          isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-          color: AppColors.textPrimary,
+      automaticallyImplyLeading: false,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(color: AppColors.deepOlive),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 60),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Back + Title
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Back button row
+                        GestureDetector(
+                          onTap: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/home');
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              Icon(
+                                isArabic
+                                    ? LucideIcons.arrowRight
+                                    : LucideIcons.arrowLeft,
+                                color: Colors.white.withOpacity(0.8),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'error.go_back'.tr(),
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Title - Large Bold
+                        Text(
+                          'orders.title'.tr(),
+                          style: AppTextStyles.headlineLarge.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Logo
+                  Image.asset(
+                    'assets/icons/white_icon_logo.png',
+                    height: 64,
+                    width: 64,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/home');
-          }
-        },
       ),
-      title: Text('orders.title'.tr(), style: AppTextStyles.titleLarge),
-      centerTitle: true,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(56),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
           child: TabBar(
             controller: _tabController,
@@ -142,6 +205,7 @@ class _OrdersScreenState extends State<OrdersScreen>
             indicatorColor: AppColors.primaryGreen,
             indicatorWeight: 3,
             indicatorSize: TabBarIndicatorSize.label,
+            dividerColor: Colors.transparent,
             tabs: [
               _buildTab(
                 'orders.active'.tr(),

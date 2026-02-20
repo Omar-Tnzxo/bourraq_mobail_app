@@ -197,6 +197,21 @@ serve(async (req) => {
   }
 
   try {
+    // =====================================================
+    // SECURITY: Verify request is from internal service
+    // =====================================================
+    const authHeader = req.headers.get("Authorization");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    // Check if request uses service role key (internal calls only)
+    if (serviceRoleKey && authHeader) {
+      const isInternalRequest = authHeader === `Bearer ${serviceRoleKey}`;
+      if (!isInternalRequest) {
+        console.warn("⚠️ Security: Request not from service role");
+        // Allow but log - could make stricter if needed
+      }
+    }
+
     const payload: NotificationPayload = await req.json();
 
     if (!payload.title || !payload.body) {

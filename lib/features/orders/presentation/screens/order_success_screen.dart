@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/widgets/contact_options_sheet.dart';
 import 'package:bourraq/features/orders/data/order_model.dart';
@@ -26,6 +27,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
   Order? _order;
   bool _isLoading = true;
   bool _isCancelling = false;
+  String _areaEta = '30-45';
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -50,9 +52,35 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
   Future<void> _loadOrder() async {
     final order = await _ordersService.getOrderDetails(widget.orderId);
-    if (!mounted) return;
     setState(() {
       _order = order;
+    });
+
+    // Fetch ETA if area available
+    if (order != null) {
+      try {
+        final addressRes = await Supabase.instance.client
+            .from('user_addresses')
+            .select('area_id')
+            .eq('id', order.addressId)
+            .maybeSingle();
+
+        if (addressRes != null && addressRes['area_id'] != null) {
+          final areaRes = await Supabase.instance.client
+              .from('areas')
+              .select('estimated_delivery_time')
+              .eq('id', addressRes['area_id'])
+              .maybeSingle();
+
+          if (areaRes != null && areaRes['estimated_delivery_time'] != null) {
+            _areaEta = areaRes['estimated_delivery_time'];
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    setState(() {
       _isLoading = false;
     });
     _animationController.forward();
@@ -117,8 +145,13 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
         context.locale.languageCode,
       ).format(_order!.scheduledTime!);
     }
-    // Default: 45-60 minutes from now
-    final arrival = DateTime.now().add(const Duration(minutes: 50));
+    // Use area ETA if available
+    final parts = _areaEta.split('-');
+    int minutes = 45;
+    if (parts.isNotEmpty) {
+      minutes = int.tryParse(parts.last) ?? 45;
+    }
+    final arrival = DateTime.now().add(Duration(minutes: minutes));
     return DateFormat('h:mm a', context.locale.languageCode).format(arrival);
   }
 

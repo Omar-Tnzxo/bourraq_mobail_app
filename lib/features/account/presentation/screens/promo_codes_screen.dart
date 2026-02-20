@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/features/account/presentation/cubit/promo_codes_cubit.dart';
 import 'package:bourraq/features/account/data/repositories/account_content_repository.dart';
@@ -34,30 +35,53 @@ class _PromoCodesView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(context, isArabic),
-          SliverToBoxAdapter(child: _buildHeader(context)),
-          _buildContent(context),
+      body: Column(
+        children: [
+          BourraqHeader(
+            child: Row(
+              children: [
+                // Back Button
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Title
+                Expanded(
+                  child: Text(
+                    'account.promo_codes'.tr(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeader(context)),
+                _buildContent(context),
+              ],
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  SliverAppBar _buildAppBar(BuildContext context, bool isArabic) {
-    return SliverAppBar(
-      backgroundColor: Colors.white,
-      pinned: true,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-          color: AppColors.textPrimary,
-        ),
-        onPressed: () => context.pop(),
-      ),
-      title: Text('account.promo_codes'.tr(), style: AppTextStyles.titleLarge),
-      centerTitle: true,
     );
   }
 

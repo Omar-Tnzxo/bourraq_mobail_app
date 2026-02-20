@@ -101,46 +101,62 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final selectedAddress =
         defaultAddress ?? (addresses.isNotEmpty ? addresses.first : null);
 
-    // Load delivery settings from Supabase (null = default/global settings)
-    final deliverySettings = await _cartRepository.getDeliverySettings(null);
-
-    // Calculate initial fee - التحقق من التوصيل المجاني أولاً
-    double fee = 0;
-    if (!deliverySettings.isFreeDelivery(_subtotal)) {
-      // إذا لم يتحقق التوصيل المجاني، استخدم رسوم المنطقة
-      fee = deliverySettings.deliveryFee;
-      if (selectedAddress != null && selectedAddress.areaId != null) {
-        final areaFee = await _cartRepository.getAreaDeliveryFee(
-          selectedAddress.areaId!,
-        );
-        if (areaFee != null) {
-          fee = areaFee;
-        }
-      }
+    // Load delivery settings - if address has areaId, load its specific settings
+    DeliverySettings deliverySettings;
+    if (selectedAddress?.areaId != null) {
+      deliverySettings = await _cartRepository.getDeliverySettings(
+        selectedAddress!.areaId,
+      );
+    } else {
+      deliverySettings = await _cartRepository.getDeliverySettings(null);
     }
+
+    // Calculate initial fee based on subtotal and settings
+    double fee = deliverySettings.getDeliveryFee(_subtotal);
 
     // Load wallet balance
     final wallet = await _walletService.getWallet();
 
-    // Load service fee and wallet_enabled from app_settings
-    double serviceFee = 0.0;
+    // Load service fee settings from app_settings
+    double serviceFeeValue = 0.0;
+    String serviceFeeType = 'fixed';
+    bool serviceFeeEnabled = true;
     bool walletEnabled = true;
+
     try {
       final settings = await Supabase.instance.client
           .from('app_settings')
           .select('key, value')
-          .inFilter('key', ['service_fee', 'wallet_enabled']);
+          .inFilter('key', [
+            'service_fee',
+            'service_fee_type',
+            'service_fee_enabled',
+            'wallet_enabled',
+          ]);
 
       for (final setting in settings) {
         final key = setting['key'] as String;
         final value = setting['value'] as String;
         if (key == 'service_fee') {
-          serviceFee = double.tryParse(value) ?? 0.0;
+          serviceFeeValue = double.tryParse(value) ?? 0.0;
+        } else if (key == 'service_fee_type') {
+          serviceFeeType = value.toLowerCase();
+        } else if (key == 'service_fee_enabled') {
+          serviceFeeEnabled = value.toLowerCase() == 'true';
         } else if (key == 'wallet_enabled') {
           walletEnabled = value.toLowerCase() == 'true';
         }
       }
     } catch (_) {}
+
+    double finalServiceFee = 0.0;
+    if (serviceFeeEnabled) {
+      if (serviceFeeType == 'percentage') {
+        finalServiceFee = _subtotal * (serviceFeeValue / 100);
+      } else {
+        finalServiceFee = serviceFeeValue;
+      }
+    }
 
     if (!mounted) return;
     setState(() {
@@ -150,7 +166,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _deliverySettings = deliverySettings;
       _deliveryFee = fee;
       _wallet = wallet;
-      _serviceFee = serviceFee;
+      _serviceFee = finalServiceFee;
       _walletEnabled = walletEnabled;
       _isLoading = false;
     });
@@ -192,6 +208,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         paymentMethod: _selectedPayment,
         subtotal: _subtotal,
         deliveryFee: _deliveryFee,
+        serviceFee: _serviceFee,
         discount: _discount,
         total: _total,
         isScheduled: _selectedDeliveryTime != null,
@@ -426,44 +443,56 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // تنبيه إذا كان العنوان بدون منطقة مدعومة
-                        if (_selectedAddress!.areaId == null) ...[
-                          const SizedBox(height: 8),
-                          Container(
+                      ],
+                    ),
+                  ),
+                  // ETA Badge if available
+                  if (_selectedAddress?.areaId != null)
+                    FutureBuilder(
+                      future: Supabase.instance.client
+                          .from('areas')
+                          .select('estimated_delivery_time')
+                          .eq('id', _selectedAddress!.areaId!)
+                          .maybeSingle(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData &&
+                            snapshot.data?['estimated_delivery_time'] != null) {
+                          return Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(6),
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                            child: Column(
                               children: [
                                 Icon(
-                                  LucideIcons.circleAlert,
+                                  LucideIcons.clock,
                                   size: 14,
-                                  color: Colors.red.shade700,
+                                  color: AppColors.primaryGreen,
                                 ),
-                                const SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    'location.area_not_supported'.tr(),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.red.shade700,
-                                    ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${snapshot.data!['estimated_delivery_time']} ${'common.min'.tr()}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryGreen,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
                     ),
-                  ),
                   // Arrow
+                  const SizedBox(width: 8),
                   Icon(
                     LucideIcons.chevronLeft,
                     color: AppColors.textSecondary,

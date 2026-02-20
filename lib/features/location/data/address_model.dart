@@ -1,9 +1,12 @@
+import 'area_model.dart';
+
 /// نموذج العنوان - متوافق مع Supabase user_addresses table
 class Address {
   final String id;
   final String userId;
   final String addressType; // home, work, other
   final String? areaId;
+  final Area? area; // المنطقة المرتبطة
   final double latitude;
   final double longitude;
   final String? buildingName;
@@ -21,6 +24,7 @@ class Address {
     required this.userId,
     required this.addressType,
     this.areaId,
+    this.area,
     required this.latitude,
     required this.longitude,
     this.buildingName,
@@ -41,6 +45,7 @@ class Address {
       userId: json['user_id'] as String,
       addressType: json['address_type'] as String? ?? 'home',
       areaId: json['area_id'] as String?,
+      area: json['areas'] != null ? Area.fromJson(json['areas']) : null,
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       buildingName: json['building_name'] as String?,
@@ -82,6 +87,7 @@ class Address {
     String? userId,
     String? addressType,
     String? areaId,
+    Area? area,
     double? latitude,
     double? longitude,
     String? buildingName,
@@ -99,6 +105,7 @@ class Address {
       userId: userId ?? this.userId,
       addressType: addressType ?? this.addressType,
       areaId: areaId ?? this.areaId,
+      area: area ?? this.area,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       buildingName: buildingName ?? this.buildingName,
@@ -116,6 +123,14 @@ class Address {
   /// العنوان الكامل للعرض
   String getFullAddress(String locale) {
     final parts = <String>[];
+
+    // إضافة المنطقة (المدينة - المحافظة) إذا وجدت
+    if (area != null) {
+      final city = area!.getCity(locale);
+      final gov = area!.getGovernorate(locale);
+      parts.add('$city - $gov');
+    }
+
     if (streetName != null && streetName!.isNotEmpty) parts.add(streetName!);
     if (buildingName != null && buildingName!.isNotEmpty) {
       parts.add(buildingName!);

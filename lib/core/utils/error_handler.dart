@@ -44,7 +44,32 @@ class ErrorHandler {
       return 'errors.not_found';
     }
 
+    // Check if the error message itself is a translation key
+    // We look for patterns like auth.xxx, errors.xxx, common.xxx
+    if (message.contains('auth.') ||
+        message.contains('errors.') ||
+        message.contains('common.')) {
+      // Extract the key part
+      final keyRegex = RegExp(r'((?:auth|errors|common)\.[a-z_]+)');
+      final match = keyRegex.firstMatch(message);
+      if (match != null) {
+        return match.group(0)!;
+      }
+    }
+
     // Default fallback
+    // Check for Arabic error messages from our code (for legacy/custom exceptions)
+    if (message.contains('البريد الإلكتروني مسجل بالفعل')) {
+      return 'auth.error_email_already_in_use';
+    }
+    if (message.contains('رمز التحقق غير صحيح') ||
+        message.contains('منتهي الصلاحية')) {
+      return 'auth.error_otp_invalid';
+    }
+    if (message.contains('غير سجل')) {
+      return 'auth.error_invalid_credentials';
+    }
+
     return 'errors.general';
   }
 
@@ -55,20 +80,20 @@ class ErrorHandler {
     if (message.contains('invalid login') ||
         message.contains('credentials') ||
         message.contains('invalid email or password')) {
-      return 'auth.errors.invalid_credentials';
+      return 'auth.error_invalid_credentials';
     }
 
     if (message.contains('already registered') ||
         message.contains('already in use')) {
-      return 'auth.errors.email_already_in_use';
+      return 'auth.error_email_already_in_use';
     }
 
     if (message.contains('expired')) {
-      return 'auth.errors.otp_invalid';
+      return 'auth.error_otp_invalid';
     }
 
     if (message.contains('invalid') && message.contains('otp')) {
-      return 'auth.errors.otp_invalid';
+      return 'auth.error_otp_invalid';
     }
 
     if (message.contains('rate limit')) {

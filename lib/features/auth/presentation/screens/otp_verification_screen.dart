@@ -237,6 +237,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
                   // Verify Button
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(elevation: 0),
                     onPressed: isLoading ? null : _verifyOtp,
                     child: isLoading
                         ? const SizedBox(

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/services/user_sync_service.dart';
+import 'package:bourraq/core/widgets/force_update_sheet.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -65,13 +67,24 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateToNextScreen() async {
-    await Future.delayed(const Duration(seconds: 3));
+    // Check for updates & maintenance mode before proceeding
+    if (mounted) {
+      await ForceUpdateSheet.checkForUpdate(context);
+    }
 
+    // Check if still mounted after potential navigation (e.g., to MaintenanceView)
     if (!mounted) return;
+
+    await Future.delayed(const Duration(seconds: 2));
 
     final prefs = await SharedPreferences.getInstance();
     final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
     final session = Supabase.instance.client.auth.currentSession;
+
+    // مزامنة بيانات المستخدم إذا كان مسجل دخول
+    if (session != null) {
+      await UserSyncService().syncCurrentUser();
+    }
 
     if (!mounted) return;
 
@@ -94,56 +107,132 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF113511),
-      body: Center(
-        child: AnimatedBuilder(
-          animation: Listenable.merge([_fadeController, _floatController]),
-          builder: (context, child) {
-            // Gentle float - smooth sine wave
-            final float = math.sin(_floatController.value * math.pi) * 10;
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primaryGreen, // Deep Olive
+              Color(0xFF1B4D1B), // Slightly lighter deep green
+              Color(0xFF0D250D), // Almost black green
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Decorative Stars & Crescent
+            _buildDecorations(),
 
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Floating Logo
-                    Transform.translate(
-                      offset: Offset(0, -float),
-                      child: Image.asset(
-                        'assets/icons/white_icon_logo.png',
-                        width: 200,
-                        height: 200,
+            Center(
+              child: AnimatedBuilder(
+                animation: Listenable.merge([
+                  _fadeController,
+                  _floatController,
+                ]),
+                builder: (context, child) {
+                  final float = math.sin(_floatController.value * math.pi) * 12;
+
+                  return FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Floating Ramadan Logo
+                          Transform.translate(
+                            offset: Offset(0, -float),
+                            child: Image.asset(
+                              'assets/images/ramadan_logo.png',
+                              width: 240,
+                              height: 240,
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Ramadan Greeting Arabic
+                          const Text(
+                            'رمضانك أسهل مع بُراق',
+                            style: TextStyle(
+                              fontFamily: 'PingAR',
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.accentYellow, // Lime Gold
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 15.0,
+                                  color: Colors.black54,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const SizedBox(height: 4), // Reduced spacing
+                          // Original Tagline
+                          const Text(
+                            'طلباتك، بين إيديك',
+                            style: TextStyle(
+                              fontFamily: 'PingAR',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white70,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                    const SizedBox(height: 24),
-
-                    // Text Logo
-                    Image.asset(
-                      'assets/images/white_text_logo.png',
-                      width: 140,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Tagline
-                    const Text(
-                      'طلباتك، بين إيديك',
-                      style: TextStyle(
-                        fontFamily: 'PingAR',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+  Widget _buildDecorations() {
+    return Positioned.fill(
+      child: Opacity(
+        opacity: 0.25,
+        child: Stack(
+          children: [
+            // Crescent Moon
+            Positioned(
+              top: 80,
+              right: 50,
+              child: Transform.rotate(
+                angle: -math.pi / 6,
+                child: const Icon(
+                  Icons.dark_mode_rounded,
+                  size: 60,
+                  color: AppColors.accentYellow,
                 ),
               ),
-            );
-          },
+            ),
+            // Stars
+            for (var i = 0; i < 30; i++)
+              Positioned(
+                top: math.Random().nextDouble() * 800,
+                left: math.Random().nextDouble() * 500,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.3, end: 1.0),
+                  duration: Duration(milliseconds: 1000 + (i * 100)),
+                  builder: (context, opacity, _) {
+                    return Icon(
+                      Icons.star_rounded,
+                      size: math.Random().nextDouble() * 6 + 3,
+                      color: Colors.white.withOpacity(opacity * 0.6),
+                    );
+                  },
+                ),
+              ),
+          ],
         ),
       ),
     );

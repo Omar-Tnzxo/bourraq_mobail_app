@@ -331,17 +331,7 @@ class _ResetPasswordOTPScreenState extends State<ResetPasswordOTPScreen>
 
   Widget _buildBackButton() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
       child: IconButton(
         icon: const Icon(LucideIcons.arrowLeft, color: AppColors.textPrimary),
         onPressed: () => context.pop(),
@@ -614,15 +604,6 @@ class _ResetPasswordOTPScreenState extends State<ResetPasswordOTPScreen>
               ? [Colors.grey.shade400, Colors.grey.shade500]
               : [AppColors.primaryGreen, const Color(0xFF6BAB3D)],
         ),
-        boxShadow: isLoading
-            ? []
-            : [
-                BoxShadow(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
       ),
       child: Material(
         color: Colors.transparent,

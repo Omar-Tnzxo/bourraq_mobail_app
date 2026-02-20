@@ -85,9 +85,13 @@ class CartItemTile extends StatelessWidget {
                   // Price Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Price
-                      _buildPrice(),
+                      // Price (flexible to shrink if needed)
+                      Flexible(child: _buildPrice()),
+
+                      // Spacing between price and quantity controls
+                      const SizedBox(width: 12),
 
                       // Quantity Controls
                       _buildQuantityControls(),
@@ -189,9 +193,10 @@ class CartItemTile extends StatelessWidget {
 
   Widget _buildQuantityControls() {
     return Container(
+      height: 36,
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.deepOlive, width: 1.5),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -204,13 +209,14 @@ class CartItemTile extends StatelessWidget {
 
           // Quantity Display
           Container(
-            constraints: const BoxConstraints(minWidth: 44),
+            constraints: const BoxConstraints(minWidth: 32),
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               '${item.quantity}',
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.deepOlive,
+                fontSize: 15,
               ),
               textAlign: TextAlign.center,
             ),
@@ -238,20 +244,20 @@ class CartItemTile extends StatelessWidget {
         onTap();
       },
       child: Container(
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
           color: isAdd ? AppColors.deepOlive : Colors.transparent,
           borderRadius: BorderRadius.only(
-            topLeft: isAdd ? Radius.zero : const Radius.circular(8),
-            bottomLeft: isAdd ? Radius.zero : const Radius.circular(8),
-            topRight: isAdd ? const Radius.circular(8) : Radius.zero,
-            bottomRight: isAdd ? const Radius.circular(8) : Radius.zero,
+            topLeft: isAdd ? Radius.zero : const Radius.circular(6.5),
+            bottomLeft: isAdd ? Radius.zero : const Radius.circular(6.5),
+            topRight: isAdd ? const Radius.circular(6.5) : Radius.zero,
+            bottomRight: isAdd ? const Radius.circular(6.5) : Radius.zero,
           ),
         ),
         child: Icon(
           icon,
-          size: 20,
+          size: 18,
           color: isAdd ? AppColors.white : AppColors.deepOlive,
         ),
       ),

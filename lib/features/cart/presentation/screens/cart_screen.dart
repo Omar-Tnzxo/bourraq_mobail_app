@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
 import 'package:bourraq/core/widgets/shimmer_skeleton.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
@@ -17,6 +18,7 @@ import 'package:bourraq/features/cart/presentation/widgets/cart_item_tile.dart';
 import 'package:bourraq/features/cart/presentation/widgets/cart_empty_state.dart';
 import 'package:bourraq/features/cart/presentation/widgets/free_delivery_banner.dart';
 import 'package:bourraq/features/location/data/address_service.dart';
+import 'package:bourraq/core/utils/guest_restriction_helper.dart';
 
 /// Cart Screen - Premium Rabbit-style design
 class CartScreen extends StatefulWidget {
@@ -169,6 +171,9 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> _onCheckout() async {
     HapticFeedback.selectionClick();
 
+    // Block guest users from checkout - require login first
+    if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
+
     // Check if user has address
     final addressService = AddressService();
     final defaultAddress = await addressService.getDefaultAddress();
@@ -186,32 +191,30 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Custom Header (No AppBar)
-            _buildHeader(),
+      body: Column(
+        children: [
+          // Premium Curved Header
+          _buildHeader(),
 
-            // Content
-            Expanded(
-              child: _isLoading
-                  ? const ShimmerList(
-                      itemCount: 4,
-                      itemBuilder: ShimmerListTile(
-                        hasLeading: true,
-                        hasTrailing: true,
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    )
-                  : _items.isEmpty
-                  ? CartEmptyState(onBrowseProducts: widget.onGoToHome)
-                  : _buildCartContent(),
-            ),
+          // Content
+          Expanded(
+            child: _isLoading
+                ? const ShimmerList(
+                    itemCount: 4,
+                    itemBuilder: ShimmerListTile(
+                      hasLeading: true,
+                      hasTrailing: true,
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  )
+                : _items.isEmpty
+                ? CartEmptyState(onBrowseProducts: widget.onGoToHome)
+                : _buildCartContent(),
+          ),
 
-            // Checkout Button (only if items exist)
-            if (!_isLoading && _items.isNotEmpty) _buildCheckoutButton(),
-          ],
-        ),
+          // Checkout Button (only if items exist)
+          if (!_isLoading && _items.isNotEmpty) _buildCheckoutButton(),
+        ],
       ),
     );
   }
@@ -219,9 +222,7 @@ class _CartScreenState extends State<CartScreen> {
   Widget _buildHeader() {
     final canPop = Navigator.of(context).canPop();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(color: AppColors.deepOlive),
+    return BourraqHeader(
       child: Row(
         children: [
           // Back Button (only when navigated via push)
@@ -235,7 +236,9 @@ class _CartScreenState extends State<CartScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  LucideIcons.arrowRight,
+                  _locale == 'ar'
+                      ? LucideIcons.arrowRight
+                      : LucideIcons.arrowLeft,
                   color: AppColors.white,
                   size: 22,
                 ),

@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
 import '../bloc/search_bloc.dart';
 import '../bloc/search_event.dart';
@@ -67,13 +68,14 @@ class _SearchScreenState extends State<SearchScreen> {
       create: (context) => SearchBloc()..add(const SearchInitialized()),
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: SafeArea(
-          child: BlocBuilder<SearchBloc, SearchState>(
-            builder: (context, state) {
-              return Column(
-                children: [
-                  // Search Bar
-                  SearchBarWidget(
+        body: BlocBuilder<SearchBloc, SearchState>(
+          builder: (context, state) {
+            return Column(
+              children: [
+                // Premium Curved Search Header
+                BourraqHeader(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+                  child: SearchBarWidget(
                     controller: _searchController,
                     focusNode: _focusNode,
                     hintText: 'search.hint'.tr(),
@@ -93,13 +95,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       context.read<SearchBloc>().add(const SearchCleared());
                     },
                   ),
+                ),
 
-                  // Content
-                  Expanded(child: _buildContent(context, state)),
-                ],
-              );
-            },
-          ),
+                // Content
+                Expanded(child: _buildContent(context, state)),
+              ],
+            );
+          },
         ),
       ),
     );

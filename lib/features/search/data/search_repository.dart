@@ -47,6 +47,7 @@ class SearchRepository {
         .from('products')
         .select('*')
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .or(
           'name_ar.ilike.$searchPattern,name_en.ilike.$searchPattern,description_ar.ilike.$searchPattern,description_en.ilike.$searchPattern',
         )
@@ -70,6 +71,7 @@ class SearchRepository {
         .from('products')
         .select('*')
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .eq('category_id', categoryId)
         .or('name_ar.ilike.$searchPattern,name_en.ilike.$searchPattern')
         .order('is_best_seller', ascending: false)
@@ -212,6 +214,7 @@ class SearchRepository {
         .from('products')
         .select('*')
         .eq('is_active', true)
+        .isFilter('deleted_at', null)
         .eq('is_best_seller', true)
         .order('created_at', ascending: false)
         .limit(limit);

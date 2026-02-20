@@ -14,19 +14,19 @@
       },
       "oauth_client": [
         {
-          "client_id": "2744601197-9ul1l5sp9582c84pq23ql5nchanr5ga6.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.bourraq",
-            "certificate_hash": "5F856CF05D0AB6EE455904974968328D76DF1E57"
-          }
-        },
-        {
           "client_id": "2744601197-cg48tp95asv6sltmdj2vt9ntn8i3jdnk.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.bourraq",
-            "certificate_hash": "7AE76D21D88643C68DBF3FB49AC8CA732185C674"
+            "certificate_hash": "bf691de0ae7d58a7ed067db11882e2e74a6efbc9"
+          }
+        },
+        {
+          "client_id": "2744601197-9ul1l5sp9582c84pq23ql5nchanr5ga6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bourraq",
+            "certificate_hash": "5f856cf05d0ab6ee455904974968328d76df1e57"
           }
         },
         {

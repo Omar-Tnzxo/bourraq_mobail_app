@@ -150,6 +150,7 @@ $_fcmToken
         'device_id': deviceId,
         'user_id': userId, // null for guests
         'token': token,
+        'app_type': 'customer',
         'platform': Platform.isAndroid ? 'android' : 'ios',
         'app_version': appVersion,
         'is_active': true,

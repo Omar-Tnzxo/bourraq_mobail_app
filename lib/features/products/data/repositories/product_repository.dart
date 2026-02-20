@@ -13,6 +13,7 @@ class ProductRepository {
           .select()
           .eq('id', id)
           .eq('is_active', true)
+          .isFilter('deleted_at', null)
           .maybeSingle();
 
       if (response == null) return null;
@@ -35,6 +36,7 @@ class ProductRepository {
           .select()
           .eq('category_id', categoryId)
           .eq('is_active', true)
+          .isFilter('deleted_at', null)
           .neq('id', excludeProductId)
           .limit(limit);
 
