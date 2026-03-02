@@ -1,3 +1,4 @@
+import 'package:bourraq/features/categories/data/models/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -56,7 +57,7 @@ class HomeCategoriesSection extends StatelessWidget {
                 category: category,
                 isArabic: isArabic,
                 onTap: () => context.push(
-                  '/category/${category.id}?name=${Uri.encodeComponent(isArabic ? category.nameAr : category.nameEn)}',
+                  '/category/${category.slug}?name=${Uri.encodeComponent(isArabic ? category.nameAr : category.nameEn)}',
                 ),
               );
             },
@@ -80,16 +81,20 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categoryName = isArabic ? category.nameAr : category.nameEn;
+    final hasName = categoryName.isNotEmpty;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderLight),
+          border: hasName ? Border.all(color: AppColors.borderLight) : null,
           boxShadow: [
             BoxShadow(
-              color: AppColors.black.withOpacity(0.04),
+              color: AppColors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -97,40 +102,59 @@ class _CategoryCard extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Category Image
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: category.imageUrl.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: category.imageUrl,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.skeletonBase,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) =>
-                            _buildPlaceholderIcon(),
-                      )
-                    : _buildPlaceholderIcon(),
-              ),
-            ),
-            // Category Name
-            Padding(
-              padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
-              child: Text(
-                isArabic ? category.nameAr : category.nameEn,
-                style: AppTextStyles.labelMedium.copyWith(
-                  fontWeight: FontWeight.w500,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child:
+                      category
+                          .getImageUrl(context.locale.languageCode)
+                          .isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: category.getImageUrl(
+                            context.locale.languageCode,
+                          ),
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              _buildPlaceholderIcon(),
+                          errorWidget: (context, url, error) =>
+                              _buildPlaceholderIcon(),
+                        )
+                      : _buildPlaceholderIcon(),
+                ),
               ),
             ),
+            if (!category.hideNameOnCard) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
+                child: Text(
+                  isArabic ? category.nameAr : category.nameEn,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -155,16 +179,3 @@ class _CategoryCard extends StatelessWidget {
 }
 
 /// Category model
-class CategoryItem {
-  final String id;
-  final String nameAr;
-  final String nameEn;
-  final String imageUrl;
-
-  const CategoryItem({
-    required this.id,
-    required this.nameAr,
-    required this.nameEn,
-    required this.imageUrl,
-  });
-}

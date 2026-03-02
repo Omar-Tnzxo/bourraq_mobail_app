@@ -10,6 +10,7 @@ import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
 import 'package:bourraq/core/utils/guest_restriction_helper.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/cart/domain/models/cart_item.dart';
+import 'package:bourraq/features/products/data/models/product_model.dart';
 
 /// Product Card Widget - Grabit Style
 /// Features: image with quantity counter overlay, discount badge, favorite icon
@@ -21,6 +22,8 @@ class ProductCard extends StatefulWidget {
   final VoidCallback? onFavoriteTap;
   final CartService? cartService;
   final VoidCallback? onCartUpdated;
+  final bool hasAddress;
+  final VoidCallback? onLocationRequired;
 
   const ProductCard({
     super.key,
@@ -30,6 +33,8 @@ class ProductCard extends StatefulWidget {
     this.onFavoriteTap,
     this.cartService,
     this.onCartUpdated,
+    this.hasAddress = true,
+    this.onLocationRequired,
   });
 
   @override
@@ -106,8 +111,14 @@ class _ProductCardState extends State<ProductCard>
     }
   }
 
-  Future<void> _incrementQuantity() async {
-    // Check if guest - block action and show login prompt
+  void _incrementQuantity() {
+    // 1. Check if location is required first
+    if (!widget.hasAddress) {
+      widget.onLocationRequired?.call();
+      return;
+    }
+
+    // 2. Check if guest - block action and show login prompt
     if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
 
     HapticFeedback.mediumImpact();
@@ -115,7 +126,12 @@ class _ProductCardState extends State<ProductCard>
 
     _animateTap();
 
-    if (_quantity == 0) {
+    // Optimistic update
+    final newQuantity = _quantity + 1;
+    setState(() => _quantity = newQuantity);
+
+    if (newQuantity == 1) {
+      // Was 0
       final cartItem = CartItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         productId: widget.product.id,
@@ -125,38 +141,36 @@ class _ProductCardState extends State<ProductCard>
         quantity: 1,
         imageUrl: widget.product.imageUrl,
       );
-      await widget.cartService!.addToCart(cartItem);
+      widget.cartService!.addToCart(cartItem); // Fire and forget
     } else {
-      await widget.cartService!.updateQuantity(
+      widget.cartService!.updateQuantity(
         widget.product.id,
-        _quantity + 1,
-      );
+        newQuantity,
+      ); // Fire and forget
     }
 
-    if (!mounted) return;
-    setState(() => _quantity++);
     widget.onCartUpdated?.call();
     // Update cart badge in real-time
     context.read<CartBadgeNotifier>().refresh();
   }
 
-  Future<void> _decrementQuantity() async {
+  void _decrementQuantity() {
     HapticFeedback.lightImpact();
     if (widget.cartService == null || _quantity <= 0) return;
 
     _animateTap();
 
-    if (_quantity == 1) {
-      await widget.cartService!.removeFromCart(widget.product.id);
-      if (!mounted) return;
-      setState(() => _quantity = 0);
+    // Optimistic update
+    final newQuantity = _quantity - 1;
+    setState(() => _quantity = newQuantity);
+
+    if (newQuantity == 0) {
+      widget.cartService!.removeFromCart(widget.product.id); // Fire and forget
     } else {
-      await widget.cartService!.updateQuantity(
+      widget.cartService!.updateQuantity(
         widget.product.id,
-        _quantity - 1,
-      );
-      if (!mounted) return;
-      setState(() => _quantity--);
+        newQuantity,
+      ); // Fire and forget
     }
 
     widget.onCartUpdated?.call();
@@ -183,6 +197,7 @@ class _ProductCardState extends State<ProductCard>
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(12),
@@ -201,50 +216,49 @@ class _ProductCardState extends State<ProductCard>
                   child: Stack(
                     children: [
                       // Product image
-                      Container(
+                      SizedBox(
                         width: double.infinity,
                         height: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: widget.product.imageUrl.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: widget.product.imageUrl,
-                                  fit: BoxFit.contain,
-                                  placeholder: (_, __) => _buildPlaceholder(),
-                                  errorWidget: (_, __, ___) =>
-                                      _buildPlaceholder(),
-                                )
-                              : _buildPlaceholder(),
-                        ),
+                        child: widget.product.imageUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: widget.product.imageUrl,
+                                fit: BoxFit.contain,
+                                placeholder: (_, _) => _buildPlaceholder(),
+                                errorWidget: (_, _, _) => _buildPlaceholder(),
+                              )
+                            : _buildPlaceholder(),
                       ),
                       // Discount badge
                       if (hasDiscount)
                         Positioned(
-                          top: 6,
-                          left: 6,
+                          top: -1,
+                          left: isArabic ? null : -1,
+                          right: isArabic ? -1 : null,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
+                              horizontal: 10,
+                              vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.error,
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(
+                                0xFFFF6B6B,
+                              ), // Soft red from reference
+                              borderRadius: isArabic
+                                  ? const BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomLeft: Radius.circular(20),
+                                    )
+                                  : const BorderRadius.only(
+                                      topLeft: Radius.circular(12),
+                                      bottomRight: Radius.circular(20),
+                                    ),
                             ),
                             child: Text(
                               '-$discountPercent%',
                               style: const TextStyle(
                                 color: AppColors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
@@ -252,7 +266,8 @@ class _ProductCardState extends State<ProductCard>
                       // Favorite button
                       Positioned(
                         top: 6,
-                        right: 6,
+                        left: isArabic ? 6 : null,
+                        right: isArabic ? null : 6,
                         child: Material(
                           color: AppColors.white,
                           shape: const CircleBorder(),
@@ -261,8 +276,9 @@ class _ProductCardState extends State<ProductCard>
                               // Check if guest - block action and show login prompt
                               if (GuestRestrictionHelper.checkAndPromptLogin(
                                 context,
-                              ))
+                              )) {
                                 return;
+                              }
                               HapticFeedback.selectionClick();
                               setState(() => _isFavorite = !_isFavorite);
                               widget.onFavoriteTap?.call();
@@ -296,8 +312,8 @@ class _ProductCardState extends State<ProductCard>
                       // Quantity counter or Add button
                       Positioned(
                         bottom: 8,
-                        right: 8,
-                        left: _quantity > 0 ? 8 : null,
+                        left: isArabic || _quantity > 0 ? 8 : null,
+                        right: isArabic ? (_quantity > 0 ? 8 : null) : 8,
                         child: _quantity > 0
                             ? _buildQuantityCounter()
                             : _buildAddButton(),
@@ -374,48 +390,71 @@ class _ProductCardState extends State<ProductCard>
                               ),
                             ),
                           ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 4,
                           children: [
+                            Container(
+                              padding: hasDiscount
+                                  ? const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 0,
+                                    )
+                                  : EdgeInsets.zero,
+                              decoration: BoxDecoration(
+                                color: hasDiscount
+                                    ? AppColors.bottomNavActive
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    widget.product.displayPrice
+                                        .floor()
+                                        .toString(),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.deepOlive,
+                                    ),
+                                  ),
+                                  Text(
+                                    '.${((widget.product.displayPrice - widget.product.displayPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.deepOlive,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'common.currency_short'.tr(),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.deepOlive,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             if (hasDiscount)
                               Text(
-                                '${widget.product.oldPrice!.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
+                                widget.product.oldPrice!.toStringAsFixed(2),
                                 style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textLight,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
                                   decoration: TextDecoration.lineThrough,
+                                  decorationColor: AppColors.error,
+                                  decorationThickness: 2.0,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            Row(
-                              children: [
-                                Text(
-                                  widget.product.displayPrice
-                                      .floor()
-                                      .toString(),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.deepOlive,
-                                  ),
-                                ),
-                                Text(
-                                  '.${((widget.product.displayPrice - widget.product.displayPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.deepOlive,
-                                  ),
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  'common.currency_short'.tr(),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ],
@@ -566,7 +605,7 @@ class _ProductCardState extends State<ProductCard>
   }
 }
 
-/// Product model for ProductCard — supports both legacy products and store products
+/// Product model for ProductCard — supports both legacy products and branch products
 class ProductItem {
   final String id;
   final String nameAr;
@@ -576,11 +615,11 @@ class ProductItem {
   final String imageUrl;
   final bool isAvailable;
 
-  // Store product fields (merchant system)
-  final String? storeProductId;
-  final String? storeId;
+  // Branch product fields (partner system)
+  final String? branchProductId;
+  final String? branchId;
   final double? customerPrice;
-  final double? merchantPrice;
+  final double? partnerPrice;
   final double avgRating;
   final int ratingCount;
   final String? badgeName;
@@ -594,10 +633,10 @@ class ProductItem {
     this.oldPrice,
     required this.imageUrl,
     this.isAvailable = true,
-    this.storeProductId,
-    this.storeId,
+    this.branchProductId,
+    this.branchId,
     this.customerPrice,
-    this.merchantPrice,
+    this.partnerPrice,
     this.avgRating = 0,
     this.ratingCount = 0,
     this.badgeName,
@@ -606,6 +645,20 @@ class ProductItem {
 
   /// Effective price displayed to user (customerPrice if available, else price)
   double get displayPrice => customerPrice ?? price;
+
+  /// Create from base Product model
+  factory ProductItem.fromProduct(Product p) {
+    return ProductItem(
+      id: p.id,
+      nameAr: p.nameAr,
+      nameEn: p.nameEn,
+      price: p.price,
+      oldPrice: p.oldPrice,
+      imageUrl: p.imageUrl ?? '',
+      isAvailable: p.isActive,
+      customerPrice: p.price,
+    );
+  }
 
   /// Create from legacy products table Map
   factory ProductItem.fromMap(
@@ -623,23 +676,23 @@ class ProductItem {
     );
   }
 
-  /// Create from StoreProduct model
-  factory ProductItem.fromStoreProduct(dynamic storeProduct) {
+  /// Create from BranchProduct model
+  factory ProductItem.fromBranchProduct(dynamic branchProduct) {
     return ProductItem(
-      id: storeProduct.productId as String,
-      nameAr: storeProduct.nameAr as String,
-      nameEn: storeProduct.nameEn as String,
-      price: (storeProduct.customerPrice as num).toDouble(),
-      imageUrl: storeProduct.imageUrl as String? ?? '',
-      isAvailable: storeProduct.isAvailable as bool,
-      storeProductId: storeProduct.id as String,
-      storeId: storeProduct.storeId as String,
-      customerPrice: (storeProduct.customerPrice as num).toDouble(),
-      merchantPrice: (storeProduct.merchantPrice as num).toDouble(),
-      avgRating: (storeProduct.avgRating as num).toDouble(),
-      ratingCount: storeProduct.ratingCount as int,
-      badgeName: storeProduct.badgeNameAr as String?,
-      badgeColor: storeProduct.badgeColor as String?,
+      id: branchProduct.productId as String,
+      nameAr: branchProduct.nameAr as String,
+      nameEn: branchProduct.nameEn as String,
+      price: (branchProduct.customerPrice as num).toDouble(),
+      imageUrl: branchProduct.imageUrl as String? ?? '',
+      isAvailable: branchProduct.isAvailable as bool,
+      branchProductId: branchProduct.id as String,
+      branchId: branchProduct.branchId as String,
+      customerPrice: (branchProduct.customerPrice as num).toDouble(),
+      partnerPrice: (branchProduct.partnerPrice as num).toDouble(),
+      avgRating: (branchProduct.avgRating as num).toDouble(),
+      ratingCount: branchProduct.ratingCount as int,
+      badgeName: branchProduct.badgeNameAr as String?,
+      badgeColor: branchProduct.badgeColor as String?,
     );
   }
 }

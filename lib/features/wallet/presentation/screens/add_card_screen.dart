@@ -26,7 +26,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final WalletService _walletService = WalletService();
 
   bool _saveCard = true;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   String _detectedBrand = '';
 
   @override

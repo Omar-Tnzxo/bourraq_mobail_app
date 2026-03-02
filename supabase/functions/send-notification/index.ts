@@ -148,7 +148,7 @@ async function sendFCMNotification(
         priority: "high",
         notification: {
           channel_id: "bourraq_notifications",
-          icon: "ic_notification",
+          icon: "ic_stat_white_icon_logo",
           color: "#6EAE3B",
         },
       },

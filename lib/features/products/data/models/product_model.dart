@@ -12,6 +12,7 @@ class Product {
   final double? oldPrice;
   final String? imageUrl;
   final String? categoryId;
+  final String? subCategoryId;
   final bool isActive;
   final bool isBestSeller;
   final int stockQuantity;
@@ -26,6 +27,7 @@ class Product {
     this.oldPrice,
     this.imageUrl,
     this.categoryId,
+    this.subCategoryId,
     this.isActive = true,
     this.isBestSeller = false,
     this.stockQuantity = 100,
@@ -47,6 +49,7 @@ class Product {
           : null,
       imageUrl: json['image_url'] as String?,
       categoryId: json['category_id'] as String?,
+      subCategoryId: json['sub_category_id'] as String?,
       isActive: json['is_active'] as bool? ?? true,
       isBestSeller: json['is_best_seller'] as bool? ?? false,
       stockQuantity: json['stock_quantity'] as int? ?? 100,
@@ -64,6 +67,7 @@ class Product {
       'old_price': oldPrice,
       'image_url': imageUrl,
       'category_id': categoryId,
+      'sub_category_id': subCategoryId,
       'is_active': isActive,
       'is_best_seller': isBestSeller,
       'stock_quantity': stockQuantity,

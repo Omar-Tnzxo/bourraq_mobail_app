@@ -544,6 +544,12 @@ class _OrdersScreenState extends State<OrdersScreen>
         return Colors.blue;
       case OrderStatus.preparing:
         return Colors.purple;
+      case OrderStatus.ready:
+        return Colors.indigo;
+      case OrderStatus.assigned:
+      case OrderStatus.accepted:
+        return Colors.teal;
+      case OrderStatus.pickedUp:
       case OrderStatus.onTheWay:
         return AppColors.primaryGreen;
       case OrderStatus.delivered:
@@ -561,6 +567,13 @@ class _OrdersScreenState extends State<OrdersScreen>
         return LucideIcons.circleCheck;
       case OrderStatus.preparing:
         return LucideIcons.chefHat;
+      case OrderStatus.ready:
+        return LucideIcons.package;
+      case OrderStatus.assigned:
+      case OrderStatus.accepted:
+        return LucideIcons.userCheck;
+      case OrderStatus.pickedUp:
+        return LucideIcons.box;
       case OrderStatus.onTheWay:
         return LucideIcons.bike;
       case OrderStatus.delivered:

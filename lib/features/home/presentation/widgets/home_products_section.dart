@@ -20,6 +20,8 @@ class HomeProductsSection extends StatelessWidget {
   final Set<String> favoriteIds;
   final CartService? cartService;
   final VoidCallback? onCartUpdated;
+  final bool hasAddress;
+  final VoidCallback? onLocationRequired;
 
   const HomeProductsSection({
     super.key,
@@ -32,6 +34,8 @@ class HomeProductsSection extends StatelessWidget {
     this.favoriteIds = const {},
     this.cartService,
     this.onCartUpdated,
+    this.hasAddress = true,
+    this.onLocationRequired,
   });
 
   @override
@@ -85,7 +89,7 @@ class HomeProductsSection extends StatelessWidget {
               crossAxisCount: 3,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
-              childAspectRatio: 0.52,
+              childAspectRatio: 0.64,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -103,6 +107,8 @@ class HomeProductsSection extends StatelessWidget {
                 onFavoriteTap: () => onFavoriteToggle?.call(product),
                 cartService: cartService,
                 onCartUpdated: onCartUpdated,
+                hasAddress: hasAddress,
+                onLocationRequired: onLocationRequired,
               );
             },
           ),

@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:bourraq/features/location/data/address_service.dart';
+import 'package:bourraq/features/products/data/repositories/branch_product_repository.dart';
+
 import 'models/search_history_item.dart';
 import 'models/popular_search_item.dart';
 
@@ -38,9 +41,48 @@ class SearchRepository {
   Future<List<Map<String, dynamic>>> searchProducts(String query) async {
     if (query.trim().isEmpty) return [];
 
-    // Normalize Arabic text for better matching
     final normalizedQuery = _normalizeArabic(query.trim());
     final searchPattern = '%$normalizedQuery%';
+
+    // Check for user's selected area
+    final addressService = AddressService();
+    final defaultAddress = await addressService.getDefaultAddress();
+
+    if (defaultAddress?.areaId != null) {
+      final areaId = defaultAddress!.areaId!;
+      final branchProductRepo = BranchProductRepository();
+
+      // Perform search using branch products in the specific area
+      final branchProducts = await branchProductRepo.searchInArea(
+        areaId: areaId,
+        query: query.trim(),
+        limit: 50,
+      );
+
+      return branchProducts
+          .map(
+            (sp) => {
+              'id': sp
+                  .productId, // ID must map to product ID for details to fetch properly
+              'branch_product_id': sp.id,
+              'branch_id': sp.branchId,
+              'name_ar': sp.nameAr,
+              'name_en': sp.nameEn,
+              'price': sp.customerPrice,
+              'partner_price': sp.partnerPrice,
+              'old_price': null,
+              'image_url': sp.imageUrl,
+              'is_active': sp.isActive,
+              'category_id': sp.categoryId,
+              'sub_category_id': sp.subCategoryId,
+              'avg_rating': sp.avgRating,
+              'rating_count': sp.ratingCount,
+              'branch_name_ar': sp.branchNameAr,
+              'branch_name_en': sp.branchNameEn,
+            },
+          )
+          .toList();
+    }
 
     // Search in both Arabic and English names
     final response = await _supabase
@@ -210,6 +252,42 @@ class SearchRepository {
   Future<List<Map<String, dynamic>>> getPopularProducts({
     int limit = 10,
   }) async {
+    final addressService = AddressService();
+    final defaultAddress = await addressService.getDefaultAddress();
+
+    if (defaultAddress?.areaId != null) {
+      final areaId = defaultAddress!.areaId!;
+      final branchProductRepo = BranchProductRepository();
+
+      final branchProducts = await branchProductRepo.getBestSellersForArea(
+        areaId: areaId,
+        limit: limit,
+      );
+
+      return branchProducts
+          .map(
+            (sp) => {
+              'id': sp.productId,
+              'branch_product_id': sp.id,
+              'branch_id': sp.branchId,
+              'name_ar': sp.nameAr,
+              'name_en': sp.nameEn,
+              'price': sp.customerPrice,
+              'partner_price': sp.partnerPrice,
+              'old_price': null,
+              'image_url': sp.imageUrl,
+              'is_active': sp.isActive,
+              'category_id': sp.categoryId,
+              'sub_category_id': sp.subCategoryId,
+              'avg_rating': sp.avgRating,
+              'rating_count': sp.ratingCount,
+              'branch_name_ar': sp.branchNameAr,
+              'branch_name_en': sp.branchNameEn,
+            },
+          )
+          .toList();
+    }
+
     final response = await _supabase
         .from('products')
         .select('*')

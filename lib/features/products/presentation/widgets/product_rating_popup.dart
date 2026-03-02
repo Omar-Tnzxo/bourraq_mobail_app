@@ -6,7 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/features/products/data/repositories/product_rating_service.dart';
 
-/// Pop-up dialog for rating store products after delivery
+/// Pop-up dialog for rating partner products after delivery
 class ProductRatingPopup extends StatefulWidget {
   final String orderId;
   final String userId;
@@ -79,10 +79,10 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
     setState(() => _isSubmitting = true);
     HapticFeedback.mediumImpact();
 
-    final storeProductId = _currentItem['store_product_id'] as String;
+    final branchProductId = _currentItem['branch_product_id'] as String;
 
     await _ratingService.submitProductRating(
-      storeProductId: storeProductId,
+      branchProductId: branchProductId,
       orderId: widget.orderId,
       userId: widget.userId,
       rating: _selectedRating,

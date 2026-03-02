@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
@@ -13,12 +12,16 @@ class PopularItemsSection extends StatelessWidget {
   final List<Map<String, dynamic>> products;
   final CartService? cartService;
   final VoidCallback? onCartUpdated;
+  final bool hasAddress;
+  final VoidCallback? onLocationRequired;
 
   const PopularItemsSection({
     super.key,
     required this.products,
     this.cartService,
     this.onCartUpdated,
+    this.hasAddress = true,
+    this.onLocationRequired,
   });
 
   @override
@@ -57,7 +60,7 @@ class PopularItemsSection extends StatelessWidget {
               crossAxisCount: 3,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
-              childAspectRatio: 0.52,
+              childAspectRatio: 0.64,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -66,6 +69,8 @@ class PopularItemsSection extends StatelessWidget {
                 product: ProductItem.fromMap(product),
                 cartService: cartService,
                 onCartUpdated: onCartUpdated,
+                hasAddress: hasAddress,
+                onLocationRequired: onLocationRequired,
                 onTap: () => ProductDetailsSheet.show(context, product['id']),
               );
             },

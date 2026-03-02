@@ -3,21 +3,27 @@ class OrderItem {
   final String id;
   final String orderId;
   final String productId;
+  final String? branchProductId;
+  final String? branchId;
   final String productName;
   final String? productImage;
   final double price;
   final int quantity;
   final double totalPrice;
+  final String? redirectedBranchId;
 
   const OrderItem({
     required this.id,
     required this.orderId,
     required this.productId,
+    this.branchProductId,
+    this.branchId,
     required this.productName,
     this.productImage,
     required this.price,
     required this.quantity,
     required this.totalPrice,
+    this.redirectedBranchId,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
@@ -25,33 +31,43 @@ class OrderItem {
       id: json['id'] as String,
       orderId: json['order_id'] as String,
       productId: json['product_id'] as String,
+      branchProductId: json['branch_product_id'] as String?,
+      branchId: json['branch_id'] as String?,
       productName: json['product_name'] as String,
       productImage: json['product_image'] as String?,
       price: (json['price'] as num).toDouble(),
       quantity: json['quantity'] as int,
       totalPrice: (json['total_price'] as num).toDouble(),
+      redirectedBranchId: json['redirected_branch_id'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'order_id': orderId,
     'product_id': productId,
+    'branch_product_id': branchProductId,
+    'branch_id': branchId,
     'product_name': productName,
     'product_image': productImage,
     'price': price,
     'quantity': quantity,
     'total_price': totalPrice,
+    'redirected_branch_id': redirectedBranchId,
   };
 }
 
 /// حالات الطلب
 enum OrderStatus {
-  pending, // قيد المراجعة
-  confirmed, // تم التأكيد
-  preparing, // جاري التحضير
-  onTheWay, // في الطريق
-  delivered, // تم التوصيل
-  cancelled, // ملغي
+  pending,
+  confirmed,
+  preparing,
+  ready,
+  assigned,
+  accepted,
+  pickedUp,
+  onTheWay,
+  delivered,
+  cancelled,
 }
 
 extension OrderStatusExtension on OrderStatus {
@@ -63,6 +79,14 @@ extension OrderStatusExtension on OrderStatus {
         return 'confirmed';
       case OrderStatus.preparing:
         return 'preparing';
+      case OrderStatus.ready:
+        return 'ready';
+      case OrderStatus.assigned:
+        return 'assigned';
+      case OrderStatus.accepted:
+        return 'accepted';
+      case OrderStatus.pickedUp:
+        return 'picked_up';
       case OrderStatus.onTheWay:
         return 'on_the_way';
       case OrderStatus.delivered:
@@ -80,6 +104,14 @@ extension OrderStatusExtension on OrderStatus {
         return 'تم التأكيد';
       case OrderStatus.preparing:
         return 'جاري التحضير';
+      case OrderStatus.ready:
+        return 'جاهز للاستلام';
+      case OrderStatus.assigned:
+        return 'تم إسناد طيار';
+      case OrderStatus.accepted:
+        return 'جاري التنفيذ';
+      case OrderStatus.pickedUp:
+        return 'تم الاستلام';
       case OrderStatus.onTheWay:
         return 'في الطريق';
       case OrderStatus.delivered:
@@ -97,6 +129,14 @@ extension OrderStatusExtension on OrderStatus {
         return 'Confirmed';
       case OrderStatus.preparing:
         return 'Preparing';
+      case OrderStatus.ready:
+        return 'Ready for Pickup';
+      case OrderStatus.assigned:
+        return 'Pilot Assigned';
+      case OrderStatus.accepted:
+        return 'In Progress';
+      case OrderStatus.pickedUp:
+        return 'Picked up';
       case OrderStatus.onTheWay:
         return 'On The Way';
       case OrderStatus.delivered:
@@ -106,7 +146,6 @@ extension OrderStatusExtension on OrderStatus {
     }
   }
 
-  /// Translation key for easy_localization
   String get translationKey {
     switch (this) {
       case OrderStatus.pending:
@@ -115,6 +154,14 @@ extension OrderStatusExtension on OrderStatus {
         return 'orders.status.confirmed';
       case OrderStatus.preparing:
         return 'orders.status.preparing';
+      case OrderStatus.ready:
+        return 'orders.status.ready';
+      case OrderStatus.assigned:
+        return 'orders.status.assigned';
+      case OrderStatus.accepted:
+        return 'orders.status.accepted';
+      case OrderStatus.pickedUp:
+        return 'orders.status.picked_up';
       case OrderStatus.onTheWay:
         return 'orders.status.on_the_way';
       case OrderStatus.delivered:
@@ -131,7 +178,11 @@ extension OrderStatusExtension on OrderStatus {
       case OrderStatus.confirmed:
         return 1;
       case OrderStatus.preparing:
+      case OrderStatus.ready:
         return 2;
+      case OrderStatus.assigned:
+      case OrderStatus.accepted:
+      case OrderStatus.pickedUp:
       case OrderStatus.onTheWay:
         return 3;
       case OrderStatus.delivered:
@@ -141,13 +192,38 @@ extension OrderStatusExtension on OrderStatus {
     }
   }
 
+  int get granularIndex {
+    switch (this) {
+      case OrderStatus.pending:
+        return 0;
+      case OrderStatus.confirmed:
+        return 1;
+      case OrderStatus.preparing:
+        return 2;
+      case OrderStatus.ready:
+        return 3;
+      case OrderStatus.assigned:
+        return 4;
+      case OrderStatus.accepted:
+        return 5;
+      case OrderStatus.pickedUp:
+        return 6;
+      case OrderStatus.onTheWay:
+        return 7;
+      case OrderStatus.delivered:
+        return 8;
+      case OrderStatus.cancelled:
+        return -1;
+    }
+  }
+
   bool get canCancel {
     return this == OrderStatus.pending ||
         this == OrderStatus.confirmed ||
-        this == OrderStatus.preparing;
+        this == OrderStatus.preparing ||
+        this == OrderStatus.ready;
   }
 
-  /// Returns true if the order is still active (not delivered or cancelled)
   bool get isActive {
     return this != OrderStatus.delivered && this != OrderStatus.cancelled;
   }
@@ -160,6 +236,14 @@ extension OrderStatusExtension on OrderStatus {
         return OrderStatus.confirmed;
       case 'preparing':
         return OrderStatus.preparing;
+      case 'ready':
+        return OrderStatus.ready;
+      case 'assigned':
+        return OrderStatus.assigned;
+      case 'accepted':
+        return OrderStatus.accepted;
+      case 'picked_up':
+        return OrderStatus.pickedUp;
       case 'on_the_way':
         return OrderStatus.onTheWay;
       case 'delivered':
@@ -236,6 +320,8 @@ class Order {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<OrderItem> items;
+  final List<String> branchIds;
+  final double branchTotal;
   final int? _itemsCount; // For list view when items aren't loaded
 
   const Order({
@@ -257,6 +343,8 @@ class Order {
     required this.createdAt,
     required this.updatedAt,
     this.items = const [],
+    this.branchIds = const [],
+    this.branchTotal = 0.0,
     int? itemsCount,
   }) : _itemsCount = itemsCount;
 
@@ -290,6 +378,10 @@ class Order {
           ? DateTime.parse(json['updated_at'] as String)
           : DateTime.now(),
       items: items ?? [],
+      branchIds: json['branch_ids'] != null
+          ? List<String>.from(json['branch_ids'] as List)
+          : [],
+      branchTotal: (json['branch_total'] as num?)?.toDouble() ?? 0.0,
       itemsCount: json['items_count'] as int?,
     );
   }
@@ -309,6 +401,8 @@ class Order {
     'notes': notes,
     'is_scheduled': isScheduled,
     'scheduled_time': scheduledTime?.toIso8601String(),
+    'branch_ids': branchIds,
+    'branch_total': branchTotal,
   };
 
   /// عدد المنتجات في الطلب

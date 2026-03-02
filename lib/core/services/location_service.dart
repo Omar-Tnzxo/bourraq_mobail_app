@@ -24,35 +24,48 @@ class LocationService {
   /// Request permissions and system dialog to enable location
   Future<Position?> getCurrentPosition() async {
     try {
+      debugPrint(
+        '📍 [LocationService] Checking location services and permissions...',
+      );
+
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        // This will NOT open the system dialog on its own in some versions,
-        // but geolocator's getCurrentPosition often triggers it if service is off depending on settings.
-        // Actually, we should call openLocationSettings() if we want them to enable it manually,
-        // or just rely on getCurrentPosition which might prompt.
-        // On Android, Geolocator.getCurrentPosition() usually triggers the "High Accuracy" prompt if possible.
+        debugPrint(
+          '📍 [LocationService] Location services are disabled. System prompt might appear on request...',
+        );
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
+      debugPrint('📍 [LocationService] Current permission: $permission');
+
       if (permission == LocationPermission.denied) {
+        debugPrint('📍 [LocationService] Requesting permission...');
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
+          debugPrint('📍 [LocationService] Permission denied by user');
           return null;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
+        debugPrint('📍 [LocationService] Permission denied forever');
+        // On Android, we can't show the native prompt anymore if it's denied forever
         return null;
       }
 
+      debugPrint('📍 [LocationService] Getting position...');
+      // This call usually triggers the native GMS Location Settings prompt if services are off
       return await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+          timeLimit: Duration(seconds: 15),
         ),
       );
     } catch (e) {
-      debugPrint('❌ [LocationService] Error: $e');
+      debugPrint('❌ [LocationService] Error getting current position: $e');
+      if (e is LocationServiceDisabledException) {
+        debugPrint('📍 [LocationService] Location Services are disabled');
+      }
       return null;
     }
   }

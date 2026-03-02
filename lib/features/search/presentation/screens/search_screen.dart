@@ -6,6 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
+import 'package:bourraq/features/location/data/address_service.dart';
+import 'package:bourraq/features/location/data/address_model.dart';
+import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
 import '../bloc/search_bloc.dart';
 import '../bloc/search_event.dart';
 import '../bloc/search_state.dart';
@@ -28,7 +31,9 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final AddressService _addressService = AddressService();
   CartService? _cartService;
+  Address? _defaultAddress;
 
   @override
   void initState() {
@@ -42,9 +47,37 @@ class _SearchScreenState extends State<SearchScreen> {
     // Use maybeOf pattern to avoid ProviderNotFoundException
     try {
       _cartService = Provider.of<CartService>(context, listen: false);
+      _loadDefaultAddress();
     } catch (_) {
       _cartService = null;
     }
+  }
+
+  Future<void> _loadDefaultAddress() async {
+    final address = await _addressService.getDefaultAddress();
+    if (mounted) {
+      setState(() {
+        _defaultAddress = address;
+      });
+    }
+  }
+
+  void _showLocationPrompt() {
+    AddressPickerBottomSheet.show(
+      context: context,
+      currentAddress: _defaultAddress,
+      onAddressSelected: (address) async {
+        final success = await _addressService.setDefaultAddress(address.id);
+        if (success && mounted) {
+          setState(() {
+            _defaultAddress = address;
+          });
+        }
+      },
+    ).then((_) {
+      // Re-load default address to be sure
+      _loadDefaultAddress();
+    });
   }
 
   @override
@@ -126,6 +159,8 @@ class _SearchScreenState extends State<SearchScreen> {
         results: state.searchResults,
         query: state.query,
         cartService: _cartService,
+        hasAddress: _defaultAddress != null,
+        onLocationRequired: _showLocationPrompt,
       );
     }
 
@@ -165,6 +200,8 @@ class _SearchScreenState extends State<SearchScreen> {
         PopularItemsSection(
           products: state.popularProducts,
           cartService: _cartService,
+          hasAddress: _defaultAddress != null,
+          onLocationRequired: _showLocationPrompt,
         ),
       ],
     );

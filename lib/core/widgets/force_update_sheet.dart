@@ -100,35 +100,33 @@ class ForceUpdateSheet extends StatelessWidget {
             '("maintenance_mode_enabled","maintenance_message_ar","maintenance_message_en")',
           );
 
-      if (settingsResponse != null && settingsResponse is List) {
-        final settings = {
-          for (var item in settingsResponse) item['key']: item['value'],
-        };
-        final isMaintenance = settings['maintenance_mode_enabled'] == 'true';
+      final settings = {
+        for (var item in settingsResponse) item['key']: item['value'],
+      };
+      final isMaintenance = settings['maintenance_mode_enabled'] == 'true';
 
-        if (isMaintenance) {
-          debugPrint('🚧 [ForceUpdate] Maintenance mode IS ENABLED');
-          if (context.mounted) {
-            final isArabic =
-                Localizations.localeOf(context).languageCode == 'ar';
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (_) => MaintenanceView(
-                  title: isArabic ? 'نحن نطور بوراق' : 'Developing Bourraq',
-                  message: isArabic
-                      ? (settings['maintenance_message_ar'] ??
-                            'نحن نقوم ببعض التحسينات، سنعود قريبا.')
-                      : (settings['maintenance_message_en'] ??
-                            'We are making some improvements, we will be back soon.'),
-                ),
+      if (isMaintenance) {
+        debugPrint('🚧 [ForceUpdate] Maintenance mode IS ENABLED');
+        if (context.mounted) {
+          final isArabic =
+              Localizations.localeOf(context).languageCode == 'ar';
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => MaintenanceView(
+                title: isArabic ? 'نحن نطور بوراق' : 'Developing Bourraq',
+                message: isArabic
+                    ? (settings['maintenance_message_ar'] ??
+                          'نحن نقوم ببعض التحسينات، سنعود قريبا.')
+                    : (settings['maintenance_message_en'] ??
+                          'We are making some improvements, we will be back soon.'),
               ),
-              (route) => false,
-            );
-            return; // Stop update check if maintenance is on
-          }
+            ),
+            (route) => false,
+          );
+          return; // Stop update check if maintenance is on
         }
       }
-
+    
       // 2. Check for App Updates
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;

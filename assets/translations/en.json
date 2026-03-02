@@ -40,11 +40,12 @@
         "viewing_cached_data": "Viewing cached data",
         "last_updated": "Last updated {minutes} min ago",
         "last_update": "Last update",
-        "cached_data_offline": "You're offline, showing last saved data"
+        "cached_data_offline": "You're offline, showing last saved data",
+        "min": "min"
     },
     "location": {
         "title": "Enable Location",
-        "message": "Bourraq needs access to your location to show available stores and products in your area and deliver your orders accurately.",
+        "message": "Bourraq needs access to your location to show available branches and products in your area and deliver your orders accurately.",
         "allow": "Allow Access",
         "deny": "Maybe Later",
         "not_supported_title": "Oops! Area Not Supported",
@@ -101,8 +102,8 @@
         "skip": "Skip",
         "next": "Next",
         "get_started": "Get Started",
-        "page1_title": "Order from your favorite store",
-        "page1_desc": "Choose from hundreds of stores and products in your area",
+        "page1_title": "Order from your favorite partner",
+        "page1_desc": "Choose from hundreds of branches and products in your area",
         "page2_title": "Fast Delivery",
         "page2_desc": "Receive your order in less than 30 minutes",
         "page3_title": "Pay Easily",
@@ -263,6 +264,10 @@
             "pending": "Pending Review",
             "confirmed": "Confirmed",
             "preparing": "Preparing",
+            "ready": "Ready for Pickup",
+            "assigned": "Pilot Assigned",
+            "accepted": "In Progress",
+            "picked_up": "Picked up from Branch",
             "on_the_way": "On The Way",
             "delivered": "Delivered",
             "cancelled": "Cancelled"
@@ -271,6 +276,10 @@
             "pending": "Your order is under review",
             "confirmed": "Your order is confirmed",
             "preparing": "Your order is being prepared",
+            "ready": "Your order is ready for pickup",
+            "assigned": "A pilot has been assigned",
+            "accepted": "Pilot is heading to branch",
+            "picked_up": "Order picked up from branch",
             "on_the_way": "Your order is on the way",
             "delivered": "Order delivered successfully!",
             "cancelled": "Order cancelled"
@@ -279,8 +288,12 @@
             "pending": "We're reviewing your order now",
             "confirmed": "Preparation will start soon",
             "preparing": "Your products are being prepared",
-            "on_the_way": "Driver is heading to you",
-            "delivered": "Enjoy your meal!",
+            "ready": "Order is ready and waiting for pilot",
+            "assigned": "A pilot has been chosen for your delivery",
+            "accepted": "The pilot is on their way to the branch",
+            "picked_up": "The pilot has your order and is starting delivery",
+            "on_the_way": "The pilot is on their way with your order",
+            "delivered": "Have a great day!",
             "cancelled": "This order has been cancelled"
         },
         "cancelled_message": "This order has been cancelled. You can place a new order anytime.",
@@ -400,6 +413,7 @@
         "clear_all_confirm": "Do you want to remove all products from favorites?"
     },
     "category": {
+        "all_categories": "All Categories",
         "all": "All",
         "fresh": "Fresh",
         "imported": "Imported",

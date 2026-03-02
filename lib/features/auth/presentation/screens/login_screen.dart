@@ -392,7 +392,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           customIcon: Image.asset(
                             'assets/icons/google.png',
                             height: 22,
-                            errorBuilder: (_, __, ___) => const Icon(
+                            errorBuilder: (_, _, _) => const Icon(
                               LucideIcons.globe,
                               size: 24,
                               color: Color(0xFF4285F4), // Google blue
@@ -511,8 +511,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             if (icon != null)
               Icon(icon, size: 22, color: iconColor ?? AppColors.textPrimary)
-            else if (customIcon != null)
-              customIcon,
+            else ?customIcon,
             const SizedBox(width: 12),
             Text(
               label,

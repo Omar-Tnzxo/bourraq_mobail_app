@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-/// A product offered by a specific store with its own price and rating.
-/// Each store can offer the same base product at a different price.
-class StoreProduct {
+/// A product offered by a specific branch with its own price and rating.
+/// Each branch can offer the same base product at a different price.
+class BranchProduct {
   final String id;
-  final String storeId;
+  final String branchId;
   final String productId;
 
   // Product base info (from joined products table)
@@ -15,24 +15,24 @@ class StoreProduct {
   final String? descriptionEn;
   final String? imageUrl;
   final String? categoryId;
+  final String? subCategoryId;
   final bool isActive;
 
-  // Store-specific pricing
-  final double merchantPrice;
+  // Branch-specific pricing
+  final double partnerPrice;
   final double customerPrice;
 
   // Rating
   final double avgRating;
   final int ratingCount;
 
-  // Store location (for distance sorting)
-  final double? storeLat;
-  final double? storeLng;
-
-  // Store info
-  final String? storeNameAr;
-  final String? storeNameEn;
-  final String? storeAreaId;
+  // Branch location (for distance sorting)
+  final double? branchLat;
+  final double? branchLng;
+  // Branch info
+  final String? branchNameAr;
+  final String? branchNameEn;
+  final String? branchAreaId;
 
   // Availability
   final bool isAvailable;
@@ -43,9 +43,9 @@ class StoreProduct {
   final String? badgeNameEn;
   final String? badgeColor;
 
-  const StoreProduct({
+  const BranchProduct({
     required this.id,
-    required this.storeId,
+    required this.branchId,
     required this.productId,
     required this.nameAr,
     required this.nameEn,
@@ -53,16 +53,17 @@ class StoreProduct {
     this.descriptionEn,
     this.imageUrl,
     this.categoryId,
+    this.subCategoryId,
     this.isActive = true,
-    required this.merchantPrice,
+    required this.partnerPrice,
     required this.customerPrice,
     this.avgRating = 0,
     this.ratingCount = 0,
-    this.storeLat,
-    this.storeLng,
-    this.storeNameAr,
-    this.storeNameEn,
-    this.storeAreaId,
+    this.branchLat,
+    this.branchLng,
+    this.branchNameAr,
+    this.branchNameEn,
+    this.branchAreaId,
     this.isAvailable = true,
     this.approvalStatus = 'approved',
     this.badgeNameAr,
@@ -89,15 +90,15 @@ class StoreProduct {
     return context.locale.languageCode == 'ar' ? badgeNameAr : badgeNameEn;
   }
 
-  /// Create from Supabase JSON (store_products join products, stores, badges)
-  factory StoreProduct.fromJson(Map<String, dynamic> json) {
+  /// Create from Supabase JSON (partner_products join products, branches, badges)
+  factory BranchProduct.fromJson(Map<String, dynamic> json) {
     final product = json['products'] as Map<String, dynamic>?;
-    final store = json['stores'] as Map<String, dynamic>?;
+    final branch = json['branches'] as Map<String, dynamic>?;
     final badge = json['product_badges'] as Map<String, dynamic>?;
 
-    return StoreProduct(
+    return BranchProduct(
       id: json['id'] as String,
-      storeId: json['store_id'] as String,
+      branchId: json['branch_id'] as String,
       productId: json['product_id'] as String,
       nameAr:
           product?['name_ar'] as String? ?? json['name_ar'] as String? ?? '',
@@ -107,35 +108,88 @@ class StoreProduct {
       descriptionEn: product?['description_en'] as String?,
       imageUrl: product?['image_url'] as String?,
       categoryId: product?['category_id'] as String?,
+      subCategoryId: product?['sub_category_id'] as String?,
       isActive: product?['is_active'] as bool? ?? true,
-      merchantPrice: (json['merchant_price'] as num?)?.toDouble() ?? 0,
+      partnerPrice: (json['partner_price'] as num?)?.toDouble() ?? 0,
       customerPrice: (json['customer_price'] as num?)?.toDouble() ?? 0,
       avgRating: (json['avg_rating'] as num?)?.toDouble() ?? 0,
       ratingCount: json['rating_count'] as int? ?? 0,
-      storeLat: (store?['latitude'] as num?)?.toDouble(),
-      storeLng: (store?['longitude'] as num?)?.toDouble(),
-      storeNameAr: store?['name_ar'] as String?,
-      storeNameEn: store?['name_en'] as String?,
-      storeAreaId: store?['area_id'] as String?,
+      branchLat: (branch?['latitude'] as num?)?.toDouble(),
+      branchLng: (branch?['longitude'] as num?)?.toDouble(),
+      branchNameAr: branch?['name_ar'] as String?,
+      branchNameEn: branch?['name_en'] as String?,
+      branchAreaId: branch?['area_id'] as String?,
       isAvailable: json['is_available'] as bool? ?? true,
       approvalStatus: json['approval_status'] as String? ?? 'approved',
-      badgeNameAr: badge?['name_ar'] as String?,
-      badgeNameEn: badge?['name_en'] as String?,
-      badgeColor: badge?['color'] as String?,
+      badgeNameAr: _getBadgeNameAr(badge?['badge_type'] as String?),
+      badgeNameEn: _getBadgeNameEn(badge?['badge_type'] as String?),
+      badgeColor: _getBadgeColor(badge?['badge_type'] as String?),
     );
+  }
+
+  static String? _getBadgeNameAr(String? type) {
+    switch (type) {
+      case 'featured':
+        return 'مميز';
+      case 'best_seller':
+        return 'الأكثر مبيعاً';
+      case 'new':
+        return 'جديد';
+      case 'top_rated':
+        return 'الأعلى تقييماً';
+      default:
+        return null;
+    }
+  }
+
+  static String? _getBadgeNameEn(String? type) {
+    switch (type) {
+      case 'featured':
+        return 'Featured';
+      case 'best_seller':
+        return 'Best Seller';
+      case 'new':
+        return 'New';
+      case 'top_rated':
+        return 'Top Rated';
+      default:
+        return null;
+    }
+  }
+
+  static String? _getBadgeColor(String? type) {
+    switch (type) {
+      case 'featured':
+        return 'FFD700'; // Gold
+      case 'best_seller':
+        return 'FF4500'; // OrangeRed
+      case 'new':
+        return '32CD32'; // LimeGreen
+      case 'top_rated':
+        return '1E90FF'; // DodgerBlue
+      default:
+        return null;
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'store_id': storeId,
+      'branch_id': branchId,
       'product_id': productId,
-      'merchant_price': merchantPrice,
+      'partner_price': partnerPrice,
       'customer_price': customerPrice,
       'avg_rating': avgRating,
       'rating_count': ratingCount,
       'is_available': isAvailable,
       'approval_status': approvalStatus,
     };
+  }
+
+  /// Convert to ProductItem for use with ProductCard widget
+  dynamic toProductItem() {
+    // Import cycle hack: use external mapper or dynamic
+    // but here we just return the object because ProductCard.fromBranchProduct expects dynamic
+    return this;
   }
 }

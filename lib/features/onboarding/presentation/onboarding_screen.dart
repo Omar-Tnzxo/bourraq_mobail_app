@@ -53,9 +53,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         imageUrl: 'assets/oneboarding/online_order.png',
         titleAr: 'تسوق بسهولة',
         titleEn: 'Shop Easily',
-        descriptionAr: 'تصفح آلاف المنتجات من متاجر مختلفة في مكان واحد',
+        descriptionAr: 'تصفح آلاف المنتجات من فروع مختلفة في مكان واحد',
         descriptionEn:
-            'Browse thousands of products from different stores in one place',
+            'Browse thousands of products from different branches in one place',
         displayOrder: 1,
       ),
       OnboardingScreenModel(

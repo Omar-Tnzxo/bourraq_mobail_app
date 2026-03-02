@@ -827,6 +827,28 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           title: 'orders.status_title.preparing'.tr(),
           subtitle: 'orders.status_subtitle.preparing'.tr(),
         );
+      case OrderStatus.ready:
+        return _StatusConfig(
+          icon: LucideIcons.package,
+          color: Colors.indigo,
+          title: 'orders.status_title.ready'.tr(),
+          subtitle: 'orders.status_subtitle.ready'.tr(),
+        );
+      case OrderStatus.assigned:
+      case OrderStatus.accepted:
+        return _StatusConfig(
+          icon: LucideIcons.userCheck,
+          color: Colors.teal,
+          title: 'orders.status_title.assigned'.tr(),
+          subtitle: 'orders.status_subtitle.assigned'.tr(),
+        );
+      case OrderStatus.pickedUp:
+        return _StatusConfig(
+          icon: LucideIcons.box,
+          color: AppColors.primaryGreen,
+          title: 'orders.status_title.picked_up'.tr(),
+          subtitle: 'orders.status_subtitle.picked_up'.tr(),
+        );
       case OrderStatus.onTheWay:
         return _StatusConfig(
           icon: LucideIcons.bike,

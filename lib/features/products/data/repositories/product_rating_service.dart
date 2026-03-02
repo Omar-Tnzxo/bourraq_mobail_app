@@ -1,28 +1,28 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Service for rating store products after purchase
+/// Service for rating partner products after purchase
 class ProductRatingService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  /// Submit a rating for a specific store product
+  /// Submit a rating for a specific branch product
   Future<bool> submitProductRating({
-    required String storeProductId,
+    required String branchProductId,
     required String orderId,
     required String userId,
     required int rating,
     String? comment,
   }) async {
     try {
-      await _client.from('store_product_ratings').insert({
-        'store_product_id': storeProductId,
+      await _client.from('partner_product_ratings').insert({
+        'partner_product_id': branchProductId,
         'order_id': orderId,
         'user_id': userId,
         'rating': rating,
-        'comment': comment?.trim().isEmpty == true ? null : comment?.trim(),
+        'review': comment?.trim().isEmpty == true ? null : comment?.trim(),
       });
 
-      // Update avg_rating and rating_count on store_products
-      await _recalculateAvgRating(storeProductId);
+      // Update avg_rating and rating_count on partner_products
+      await _recalculateAvgRating(branchProductId);
 
       return true;
     } catch (e) {
@@ -30,16 +30,16 @@ class ProductRatingService {
     }
   }
 
-  /// Check if user has already rated a store product for a specific order
+  /// Check if user has already rated a branch product for a specific order
   Future<bool> hasRatedProduct({
-    required String storeProductId,
+    required String branchProductId,
     required String orderId,
   }) async {
     try {
       final response = await _client
-          .from('store_product_ratings')
+          .from('partner_product_ratings')
           .select('id')
-          .eq('store_product_id', storeProductId)
+          .eq('partner_product_id', branchProductId)
           .eq('order_id', orderId)
           .maybeSingle();
 
@@ -49,32 +49,32 @@ class ProductRatingService {
     }
   }
 
-  /// Get all unrated store products for a delivered order
+  /// Get all unrated branch products for a delivered order
   Future<List<Map<String, dynamic>>> getUnratedProductsForOrder({
     required String orderId,
     required String userId,
   }) async {
     try {
-      // Get order items with store_product info
+      // Get order items with branch_product info
       final orderItems = await _client
           .from('order_items')
           .select('''
-            id, product_name, store_product_id, store_id,
-            store_products (
+            id, product_name, branch_product_id, branch_id,
+            partner_products (
               id, avg_rating
             )
           ''')
           .eq('order_id', orderId)
-          .not('store_product_id', 'is', null);
+          .not('branch_product_id', 'is', null);
 
       // Filter out already-rated items
       final unrated = <Map<String, dynamic>>[];
       for (final item in (orderItems as List)) {
-        final spId = item['store_product_id'] as String?;
+        final spId = item['branch_product_id'] as String?;
         if (spId == null) continue;
 
         final alreadyRated = await hasRatedProduct(
-          storeProductId: spId,
+          branchProductId: spId,
           orderId: orderId,
         );
 
@@ -89,15 +89,15 @@ class ProductRatingService {
     }
   }
 
-  /// Get average rating for a specific store product
+  /// Get average rating for a specific branch product
   Future<Map<String, dynamic>?> getProductRatingSummary(
-    String storeProductId,
+    String branchProductId,
   ) async {
     try {
       final response = await _client
-          .from('store_products')
+          .from('partner_products')
           .select('avg_rating, rating_count')
-          .eq('id', storeProductId)
+          .eq('id', branchProductId)
           .maybeSingle();
 
       return response;
@@ -107,12 +107,12 @@ class ProductRatingService {
   }
 
   /// Recalculate average rating after a new review
-  Future<void> _recalculateAvgRating(String storeProductId) async {
+  Future<void> _recalculateAvgRating(String branchProductId) async {
     try {
       final ratings = await _client
-          .from('store_product_ratings')
+          .from('partner_product_ratings')
           .select('rating')
-          .eq('store_product_id', storeProductId);
+          .eq('partner_product_id', branchProductId);
 
       if ((ratings as List).isEmpty) return;
 
@@ -121,9 +121,9 @@ class ProductRatingService {
       final avg = (sum / count * 10).round() / 10; // 1 decimal
 
       await _client
-          .from('store_products')
+          .from('partner_products')
           .update({'avg_rating': avg, 'rating_count': count})
-          .eq('id', storeProductId);
+          .eq('id', branchProductId);
     } catch (e) {
       // Non-critical — next rating will fix it
     }

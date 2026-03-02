@@ -1,30 +1,30 @@
 import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bourraq/features/products/data/models/store_product_model.dart';
+import 'package:bourraq/features/products/data/models/branch_product_model.dart';
 
-/// Repository for fetching store products — area-filtered, sorted by price/rating/distance
-class StoreProductRepository {
+/// Repository for fetching branch products — area-filtered, sorted by price/rating/distance
+class BranchProductRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Common select query for store_products with joins
+  /// Common select query for partner_products with joins
   static const String _selectQuery = '''
-    id, store_id, product_id, merchant_price, customer_price,
+    id, branch_id, product_id, partner_price, customer_price,
     avg_rating, rating_count, is_available, approval_status, badge_id,
     products (
       id, name_ar, name_en, description_ar, description_en,
-      image_url, category_id, is_active, is_best_seller
+      image_url, category_id, sub_category_id, is_active, is_best_seller
     ),
-    stores (
+    branches (
       id, name_ar, name_en, latitude, longitude, area_id, is_active
     ),
-    product_badges (
-      id, name_ar, name_en, color
+    product_badges!partner_products_badge_id_fkey (
+      id, badge_type
     )
   ''';
 
-  /// Fetch store products filtered by area, with smart sorting
+  /// Fetch branch products filtered by area, with smart sorting
   /// Sort priority: price ASC → avg_rating DESC → distance ASC
-  Future<List<StoreProduct>> getStoreProductsByArea({
+  Future<List<BranchProduct>> getBranchProductsByArea({
     required String areaId,
     String? categoryId,
     int limit = 40,
@@ -33,12 +33,12 @@ class StoreProductRepository {
     double? userLng,
   }) async {
     var query = _supabase
-        .from('store_products')
+        .from('partner_products')
         .select(_selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('stores.area_id', areaId)
-        .eq('stores.is_active', true)
+        .eq('branches.area_id', areaId)
+        .eq('branches.is_active', true)
         .eq('products.is_active', true);
 
     if (categoryId != null) {
@@ -50,10 +50,10 @@ class StoreProductRepository {
         .order('avg_rating', ascending: false)
         .range(offset, offset + limit - 1);
 
-    // Filter out items where the joined store/product is null (filtered by PostgREST)
+    // Filter out items where the joined branch/product is null (filtered by PostgREST)
     final items = (response as List)
-        .where((json) => json['products'] != null && json['stores'] != null)
-        .map((json) => StoreProduct.fromJson(json))
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .map((json) => BranchProduct.fromJson(json))
         .toList();
 
     // Apply distance-based secondary sort if user location is available
@@ -68,8 +68,8 @@ class StoreProductRepository {
         if (ratingDiff != 0) return ratingDiff;
 
         // Tertiary: distance (closer first)
-        final distA = _calcDistance(userLat, userLng, a.storeLat, a.storeLng);
-        final distB = _calcDistance(userLat, userLng, b.storeLat, b.storeLng);
+        final distA = _calcDistance(userLat, userLng, a.branchLat, a.branchLng);
+        final distB = _calcDistance(userLat, userLng, b.branchLat, b.branchLng);
         return distA.compareTo(distB);
       });
     }
@@ -78,136 +78,138 @@ class StoreProductRepository {
   }
 
   /// Fetch best seller products for an area
-  Future<List<StoreProduct>> getBestSellersForArea({
+  Future<List<BranchProduct>> getBestSellersForArea({
     required String areaId,
     int limit = 10,
   }) async {
     final response = await _supabase
-        .from('store_products')
+        .from('partner_products')
         .select(_selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('stores.area_id', areaId)
-        .eq('stores.is_active', true)
+        .eq('branches.area_id', areaId)
+        .eq('branches.is_active', true)
         .eq('products.is_active', true)
         .eq('products.is_best_seller', true)
         .order('avg_rating', ascending: false)
         .limit(limit);
 
     return (response as List)
-        .where((json) => json['products'] != null && json['stores'] != null)
-        .map((json) => StoreProduct.fromJson(json))
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .map((json) => BranchProduct.fromJson(json))
         .toList();
   }
 
   /// Fetch newest products for an area
-  Future<List<StoreProduct>> getNewestForArea({
+  Future<List<BranchProduct>> getNewestForArea({
     required String areaId,
     int limit = 10,
   }) async {
     final response = await _supabase
-        .from('store_products')
+        .from('partner_products')
         .select(_selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('stores.area_id', areaId)
-        .eq('stores.is_active', true)
+        .eq('branches.area_id', areaId)
+        .eq('branches.is_active', true)
         .eq('products.is_active', true)
         .order('created_at', ascending: false)
         .limit(limit);
 
     return (response as List)
-        .where((json) => json['products'] != null && json['stores'] != null)
-        .map((json) => StoreProduct.fromJson(json))
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .map((json) => BranchProduct.fromJson(json))
         .toList();
   }
 
   /// Fetch offer products (customer_price < product.old_price)
-  Future<List<StoreProduct>> getOffersForArea({
+  Future<List<BranchProduct>> getOffersForArea({
     required String areaId,
     int limit = 10,
   }) async {
     final response = await _supabase
-        .from('store_products')
+        .from('partner_products')
         .select(_selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('stores.area_id', areaId)
-        .eq('stores.is_active', true)
+        .eq('branches.area_id', areaId)
+        .eq('branches.is_active', true)
         .eq('products.is_active', true)
         .order('customer_price', ascending: true)
         .limit(limit);
 
     // Filter client-side for offers (old_price > price)
     return (response as List)
-        .where((json) => json['products'] != null && json['stores'] != null)
-        .map((json) => StoreProduct.fromJson(json))
-        .where((sp) {
-          final oldPrice =
-              (sp.toJson()['products'] as Map?)?['old_price'] as num?;
-          return oldPrice != null && oldPrice > sp.customerPrice;
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .where((json) {
+          final productJson = json['products'] as Map?;
+          final customerPrice =
+              (json['customer_price'] as num?)?.toDouble() ?? 0;
+          final oldPrice = (productJson?['old_price'] as num?)?.toDouble();
+          return oldPrice != null && oldPrice > customerPrice;
         })
+        .map((json) => BranchProduct.fromJson(json))
         .toList();
   }
 
-  /// Search store products by name in an area
-  Future<List<StoreProduct>> searchInArea({
+  /// Search branch products by name in an area
+  Future<List<BranchProduct>> searchInArea({
     required String areaId,
     required String query,
     int limit = 50,
   }) async {
     final response = await _supabase
-        .from('store_products')
+        .from('partner_products')
         .select(_selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('stores.area_id', areaId)
-        .eq('stores.is_active', true)
+        .eq('branches.area_id', areaId)
+        .eq('branches.is_active', true)
         .eq('products.is_active', true)
         .or('products.name_ar.ilike.%$query%,products.name_en.ilike.%$query%')
         .order('avg_rating', ascending: false)
         .limit(limit);
 
     return (response as List)
-        .where((json) => json['products'] != null && json['stores'] != null)
-        .map((json) => StoreProduct.fromJson(json))
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .map((json) => BranchProduct.fromJson(json))
         .toList();
   }
 
-  /// Fetch a single store product by ID
-  Future<StoreProduct?> getById(String storeProductId) async {
+  /// Fetch a single branch product by ID
+  Future<BranchProduct?> getById(String branchProductId) async {
     try {
       final response = await _supabase
-          .from('store_products')
+          .from('partner_products')
           .select(_selectQuery)
-          .eq('id', storeProductId)
+          .eq('id', branchProductId)
           .maybeSingle();
 
       if (response == null) return null;
-      return StoreProduct.fromJson(response);
+      return BranchProduct.fromJson(response);
     } catch (e) {
       return null;
     }
   }
 
-  /// Fetch all store products for a specific base product (for displaying multiple offers)
-  Future<List<StoreProduct>> getOffersForProduct({
+  /// Fetch all branch products for a specific base product (for displaying multiple offers)
+  Future<List<BranchProduct>> getOffersForProduct({
     required String productId,
     required String areaId,
   }) async {
     final response = await _supabase
-        .from('store_products')
+        .from('partner_products')
         .select(_selectQuery)
         .eq('product_id', productId)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('stores.area_id', areaId)
-        .eq('stores.is_active', true)
+        .eq('branches.area_id', areaId)
+        .eq('branches.is_active', true)
         .order('customer_price', ascending: true);
 
     return (response as List)
-        .where((json) => json['products'] != null && json['stores'] != null)
-        .map((json) => StoreProduct.fromJson(json))
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .map((json) => BranchProduct.fromJson(json))
         .toList();
   }
 
@@ -227,23 +229,23 @@ class StoreProductRepository {
 
   double _toRad(double deg) => deg * pi / 180;
 
-  /// Fetch ALL store products for an area (for Scrollable Tab View)
-  Future<List<StoreProduct>> getAllStoreProductsForArea({
+  /// Fetch ALL branch products for an area (for Scrollable Tab View)
+  Future<List<BranchProduct>> getAllBranchProductsForArea({
     required String areaId,
   }) async {
     final response = await _supabase
-        .from('store_products')
+        .from('partner_products')
         .select(_selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('stores.area_id', areaId)
-        .eq('stores.is_active', true)
+        .eq('branches.area_id', areaId)
+        .eq('branches.is_active', true)
         .eq('products.is_active', true)
         .order('customer_price', ascending: true);
 
     return (response as List)
-        .where((json) => json['products'] != null && json['stores'] != null)
-        .map((json) => StoreProduct.fromJson(json))
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .map((json) => BranchProduct.fromJson(json))
         .toList();
   }
 }

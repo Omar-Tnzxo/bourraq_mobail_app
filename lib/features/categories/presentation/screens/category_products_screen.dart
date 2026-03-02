@@ -3,27 +3,25 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
-import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
 import 'package:bourraq/core/services/analytics_service.dart';
 import 'package:bourraq/core/utils/error_handler.dart';
 import 'package:bourraq/core/widgets/shimmer_skeleton.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
-import 'package:bourraq/features/cart/domain/models/cart_item.dart';
 import 'package:bourraq/features/products/presentation/widgets/product_details_sheet.dart';
-import 'package:bourraq/features/products/data/repositories/store_product_repository.dart';
+import 'package:bourraq/features/products/data/repositories/branch_product_repository.dart';
 import 'package:bourraq/features/location/data/address_service.dart';
-import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:bourraq/features/home/data/repositories/home_repository.dart';
-import 'package:bourraq/features/home/presentation/widgets/home_categories_section.dart';
+import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
+import 'package:bourraq/features/categories/data/models/category_model.dart';
+import 'package:bourraq/features/products/data/models/product_model.dart';
+import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
+import 'package:bourraq/features/categories/presentation/screens/categories_list_screen.dart';
 
-/// Category Products Screen - Rabbit Style UI
 class CategoryProductsScreen extends StatefulWidget {
   final String categoryId;
   final String categoryName;
@@ -38,10 +36,354 @@ class CategoryProductsScreen extends StatefulWidget {
   State<CategoryProductsScreen> createState() => _CategoryProductsScreenState();
 }
 
-class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
+class _CategoryProductsScreenState extends State<CategoryProductsScreen>
+    with SingleTickerProviderStateMixin {
   final SupabaseClient _supabase = Supabase.instance.client;
-  final StoreProductRepository _storeProductRepo = StoreProductRepository();
-  final HomeRepository _homeRepo = HomeRepository();
+  List<CategoryItem> _mainCategories = [];
+  bool _isLoading = true;
+  String? _error;
+  TabController? _tabController;
+  String? _resolvedCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMainCategories();
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMainCategories() async {
+    try {
+      final response = await _supabase
+          .from('categories')
+          .select()
+          .eq('is_active', true)
+          .isFilter('parent_id', null)
+          .order('display_order', ascending: true);
+
+      final categories = (response as List)
+          .map<CategoryItem>((data) => CategoryItem.fromJson(data))
+          .toList();
+
+      if (mounted) {
+        String targetId = widget.categoryId;
+        // Resolve slug to ID
+        final matchCat = categories.firstWhere(
+          (c) => c.id == widget.categoryId || c.slug == widget.categoryId,
+          orElse: () => categories.first,
+        );
+        targetId = matchCat.id;
+
+        setState(() {
+          _mainCategories = categories;
+          _resolvedCategoryId = targetId;
+          _isLoading = false;
+        });
+
+        int initialIndex = _mainCategories.indexWhere((c) => c.id == targetId);
+        if (initialIndex == -1 && _mainCategories.isNotEmpty) {
+          initialIndex = 0;
+        }
+
+        if (_mainCategories.isNotEmpty) {
+          _tabController = TabController(
+            length: _mainCategories.length,
+            vsync: this,
+            initialIndex: initialIndex,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = ErrorHandler.getErrorKey(e);
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Removed blocking full-screen loading to show skeleton body immediately
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.primaryGreen,
+          leading: IconButton(
+            icon: Icon(
+              context.locale.languageCode == 'ar'
+                  ? LucideIcons.chevronRight
+                  : LucideIcons.chevronLeft,
+              color: AppColors.accentYellow,
+              size: 28,
+            ),
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                context.go('/');
+              }
+            },
+          ),
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(LucideIcons.circleAlert, size: 64, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                _error != null
+                    ? 'common.error'.tr()
+                    : 'category.no_products'.tr(),
+                style: AppTextStyles.titleLarge,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _loadMainCategories,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.deepOlive,
+                ),
+                child: Text('common.retry'.tr()),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final isArabic = context.locale.languageCode == 'ar';
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // Custom Curved Header combining AppBar + Main Categories Tabs
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(
+                  bottom: 12,
+                ), // Tighter space for curve
+                decoration: const BoxDecoration(color: AppColors.primaryGreen),
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Custom AppBar Row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                isArabic
+                                    ? LucideIcons.chevronRight
+                                    : LucideIcons.chevronLeft,
+                                color: AppColors.accentYellow,
+                                size: 28,
+                              ),
+                              onPressed: () {
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).pop();
+                                } else {
+                                  context.go('/');
+                                }
+                              },
+                            ),
+                            Expanded(
+                              child: _mainCategories.isEmpty
+                                  ? _buildCategoriesShimmer()
+                                  : TabBar(
+                                      controller: _tabController,
+                                      isScrollable: true,
+                                      tabAlignment: TabAlignment.center,
+                                      indicatorColor: AppColors.accentYellow,
+                                      indicatorWeight: 3,
+                                      indicatorSize: TabBarIndicatorSize.label,
+                                      labelColor: AppColors.accentYellow,
+                                      unselectedLabelColor: AppColors.white,
+                                      labelStyle: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      unselectedLabelStyle: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      dividerColor: Colors.transparent,
+                                      tabs: _mainCategories.map((c) {
+                                        return Tab(
+                                          text: isArabic ? c.nameAr : c.nameEn,
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                LucideIcons.layoutGrid,
+                                color: AppColors.white,
+                                size: 24,
+                              ),
+                              onPressed: () async {
+                                final selectedId = await Navigator.of(context)
+                                    .push<String>(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CategoriesListScreen(
+                                              categories: _mainCategories,
+                                            ),
+                                        fullscreenDialog: true,
+                                      ),
+                                    );
+
+                                if (selectedId != null && mounted) {
+                                  final newIndex = _mainCategories.indexWhere(
+                                    (c) => c.id == selectedId,
+                                  );
+                                  if (newIndex != -1) {
+                                    _tabController?.animateTo(newIndex);
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Bottom Curve Overlay matching Home page aesthetics
+              Positioned(
+                bottom: -1,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 24, // Keep curve height but overlap more
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Full Screen Body (Sub-categories inside TabBarView)
+          Expanded(
+            child: _tabController == null
+                ? _buildInitialBodyShimmer()
+                : TabBarView(
+                    controller: _tabController,
+                    children: _mainCategories.map((c) {
+                      return _CategoryProductsBody(
+                        mainCategoryId: c.id,
+                        mainCategoryName: isArabic ? c.nameAr : c.nameEn,
+                      );
+                    }).toList(),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInitialBodyShimmer() {
+    return Column(
+      children: [
+        // Dummy Subcategories
+        Container(
+          height: 48,
+          color: AppColors.background,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: List.generate(
+              3,
+              (index) => Container(
+                width: 80,
+                height: 32,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.skeletonBase,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Dummy Products
+        const Expanded(
+          child: ShimmerProductGrid(crossAxisCount: 3, itemCount: 9),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoriesShimmer() {
+    return SizedBox(
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 4,
+        physics: const NeverScrollableScrollPhysics(),
+        itemBuilder: (context, index) => Container(
+          width: 80,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryProductsBody extends StatefulWidget {
+  final String mainCategoryId;
+  final String mainCategoryName;
+
+  const _CategoryProductsBody({
+    required this.mainCategoryId,
+    required this.mainCategoryName,
+  });
+
+  @override
+  State<_CategoryProductsBody> createState() => _CategoryProductsBodyState();
+}
+
+class _CategoryProductsBodyState extends State<_CategoryProductsBody>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // Keep state when swiping tabs
+
+  final SupabaseClient _supabase = Supabase.instance.client;
+  final BranchProductRepository _branchProductRepo = BranchProductRepository();
   final AddressService _addressService = AddressService();
 
   // Controllers for Scrollable Lists
@@ -53,22 +395,17 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   CartService? _cartService;
   String? _areaId;
 
-  // Data
-  List<CategoryItem> _allCategories = [];
-  List<CategoryItem> _activeCategories =
+  List<CategoryItem> _allSubCategories = [];
+  List<CategoryItem> _activeSubCategories =
       []; // Categories with products after filter
   List<Map<String, dynamic>> _allProducts = [];
-  Map<String, List<Map<String, dynamic>>> _groupedProducts =
-      {}; // Grouped by categoryId
-
-  // State
+  Map<String, List<Map<String, dynamic>>> _groupedProducts = {};
   bool _isLoading = true;
   String? _error;
-  int _selectedCategoryIndex = 0;
-  bool _isTabClick = false; // Prevent feedback loop during tab click
+  int _selectedSubCategoryIndex = 0;
+  bool _isTabClick = false;
 
-  // Filters
-  String _sortBy = 'newest';
+  final String _sortBy = 'newest';
   RangeValues _priceRange = const RangeValues(0, 1000);
   bool _inStockOnly = false;
   bool _isSearching = false;
@@ -85,12 +422,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     _loadData();
     _loadUserFavorites();
 
-    // Listen to scroll positions to update active tab
     _itemPositionsListener.itemPositions.addListener(_onScrollPositionChanged);
-
     AnalyticsService().trackCategoryView(
-      categoryId: widget.categoryId,
-      categoryName: widget.categoryName,
+      categoryId: widget.mainCategoryId,
+      categoryName: widget.mainCategoryName,
     );
   }
 
@@ -109,36 +444,65 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
-    // Find the item with the minimum index that is visible
-    final minIndex = positions
-        .where(
-          (item) => item.itemLeadingEdge < 0.5,
-        ) // Adjust based on visibility preference
-        .reduce((min, item) => item.index < min.index ? item : min)
-        .index;
+    // Sort positions to ensure logic works regardless of delivery order
+    final sortedPositions = positions.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
 
-    if (minIndex != _selectedCategoryIndex &&
-        minIndex < _activeCategories.length) {
-      setState(() {
-        _selectedCategoryIndex = minIndex;
-      });
-      _scrollToTab(minIndex);
+    // BOTTOM OF PAGE DETECTION:
+    // If the last item is visible and its trailing edge is close to 1.0 (bottom of viewport),
+    // it likely means we can't scroll any further. Force select the last tab.
+    final lastItem = sortedPositions.last;
+    if (lastItem.index == _activeSubCategories.length - 1 &&
+        lastItem.itemTrailingEdge <= 1.05) {
+      if (_selectedSubCategoryIndex != lastItem.index) {
+        if (mounted) {
+          setState(() => _selectedSubCategoryIndex = lastItem.index);
+          // _scrollToTab(lastItem.index); // Removed disturbing animation
+        }
+      }
+      return;
+    }
+
+    // NORMAL SCROLL SPY LOGIC:
+    // Find the item that is at the top of the viewport or just below the sticky area.
+    // itemLeadingEdge: 0.0 is the top of the viewport.
+    // We look for the first item whose leading edge is past the threshold (e.g., 0.1)
+    int minIndex = _selectedSubCategoryIndex;
+
+    // We find the first item that is prominently visible (top-most)
+    final firstVisibleItem = sortedPositions.firstWhere(
+      (item) => item.itemLeadingEdge > -0.1,
+      orElse: () => sortedPositions.first,
+    );
+
+    minIndex = firstVisibleItem.index;
+
+    if (minIndex != _selectedSubCategoryIndex &&
+        minIndex < _activeSubCategories.length) {
+      if (mounted) {
+        setState(() {
+          _selectedSubCategoryIndex = minIndex;
+        });
+        // _scrollToTab(minIndex); // Removed disturbing animation
+      }
     }
   }
 
   void _scrollToTab(int index) {
-    _tabsScrollController.scrollTo(
-      index: index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      alignment: 0.4, // Center align
-    );
+    if (_tabsScrollController.isAttached) {
+      _tabsScrollController.scrollTo(
+        index: index,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.0,
+      );
+    }
   }
 
   Future<void> _initCartService() async {
     final prefs = await SharedPreferences.getInstance();
     _cartService = CartService(prefs);
-    _updateCartCount();
+    if (mounted) _updateCartCount();
   }
 
   void _updateCartCount() {
@@ -148,6 +512,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -159,42 +524,65 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         _areaId = defaultAddress?.areaId;
       }
 
-      // 1. Fetch Categories
-      final categoriesData = await _homeRepo.getCategories();
-      _allCategories = categoriesData
-          .map(
-            (data) => CategoryItem(
-              id: data['id'],
-              nameAr: data['name_ar'],
-              nameEn: data['name_en'],
-              imageUrl: data['image_url'] ?? '',
-            ),
-          )
+      // Fetch Sub-categories for this Main Category
+      final subCategoriesData = await _supabase
+          .from('categories')
+          .select()
+          .eq('is_active', true)
+          .eq('parent_id', widget.mainCategoryId)
+          .order('display_order', ascending: true);
+
+      _allSubCategories = (subCategoriesData as List)
+          .map<CategoryItem>((data) => CategoryItem.fromJson(data))
           .toList();
 
-      // 2. Fetch Products (Store-aware or Fallback)
-      if (_areaId != null) {
-        final storeProducts = await _storeProductRepo
-            .getAllStoreProductsForArea(areaId: _areaId!);
+      if (_allSubCategories.isNotEmpty) {
+        _allSubCategories.insert(
+          0,
+          CategoryItem(
+            id: widget.mainCategoryId, // Fallback ID for null subcategories
+            slug: widget.mainCategoryId,
+            nameAr: 'الكل',
+            nameEn: 'All',
+            imageUrl: '',
+          ),
+        );
+      } else {
+        _allSubCategories.add(
+          CategoryItem(
+            id: widget.mainCategoryId,
+            slug: widget.mainCategoryId,
+            nameAr: widget.mainCategoryName,
+            nameEn: widget.mainCategoryName,
+            imageUrl: '',
+          ),
+        );
+      }
 
-        _allProducts = storeProducts
+      // Fetch Products
+      if (_areaId != null) {
+        final branchProducts = await _branchProductRepo
+            .getAllBranchProductsForArea(areaId: _areaId!);
+        _allProducts = branchProducts
+            .where((p) => p.categoryId == widget.mainCategoryId)
             .map(
               (sp) => {
                 'id': sp.productId,
-                'store_product_id': sp.id,
-                'store_id': sp.storeId,
+                'branch_product_id': sp.id,
+                'branch_id': sp.branchId,
                 'name_ar': sp.nameAr,
                 'name_en': sp.nameEn,
                 'price': sp.customerPrice,
-                'merchant_price': sp.merchantPrice,
+                'partner_price': sp.partnerPrice,
                 'old_price': null,
                 'image_url': sp.imageUrl,
                 'is_active': sp.isActive,
                 'category_id': sp.categoryId,
+                'sub_category_id': sp.subCategoryId,
                 'avg_rating': sp.avgRating,
                 'rating_count': sp.ratingCount,
-                'store_name_ar': sp.storeNameAr,
-                'store_name_en': sp.storeNameEn,
+                'branch_name_ar': sp.branchNameAr,
+                'branch_name_en': sp.branchNameEn,
                 'badge_name_ar': sp.badgeNameAr,
                 'badge_name_en': sp.badgeNameEn,
                 'badge_color': sp.badgeColor,
@@ -204,10 +592,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             )
             .toList();
       } else {
-        // Fallback: Fetch from base products table if no area selected
         final response = await _supabase
             .from('products')
             .select()
+            .eq('category_id', widget.mainCategoryId)
             .eq('is_active', true)
             .isFilter('deleted_at', null);
 
@@ -215,37 +603,33 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           final productMap = Map<String, dynamic>.from(p as Map);
           return {
             ...productMap,
-            'store_name_ar': 'Bourraq',
-            'store_name_en': 'Bourraq',
-            'merchant_price': productMap['price'],
+            'branch_name_ar': 'Bourraq',
+            'branch_name_en': 'Bourraq',
+            'partner_price': productMap['price'],
             'avg_rating': 0.0,
             'rating_count': 0,
           };
         }).toList();
       }
 
-      // 3. Process Data
       _applyFiltersAndSort();
 
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
 
-      // 4. Initial Scroll to selected Category
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final initialIndex = _activeCategories.indexWhere(
-          (c) => c.id == widget.categoryId,
-        );
-        if (initialIndex != -1) {
-          _onTabSelected(initialIndex);
-        }
-      });
+        // We do not call _onTabSelected(0) here because it triggers explicit scroll
+        // animations out of nowhere when the page loads. The page is already naturally
+        // at index 0 initially.
+      }
     } catch (e) {
-      debugPrint('❌ Error loading products: $e');
-      setState(() {
-        _error = ErrorHandler.getErrorKey(e);
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = ErrorHandler.getErrorKey(e);
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -257,19 +641,20 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           .from('favorites')
           .select('product_id')
           .eq('user_id', user.id);
-      setState(() {
-        _favoriteIds.clear();
-        for (final fav in response) {
-          _favoriteIds.add(fav['product_id'] as String);
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _favoriteIds.clear();
+          for (final fav in response) {
+            _favoriteIds.add(fav['product_id'] as String);
+          }
+        });
+      }
     } catch (_) {}
   }
 
   void _applyFiltersAndSort() {
     List<Map<String, dynamic>> filtered = List.from(_allProducts);
 
-    // 1. Filter by Search
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       filtered = filtered.where((p) {
@@ -279,22 +664,16 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       }).toList();
     }
 
-    // 2. Filter by Price
     filtered = filtered.where((p) {
       final price = (p['price'] as num?)?.toDouble() ?? 0;
       return price >= _priceRange.start && price <= _priceRange.end;
     }).toList();
 
-    // 3. Filter by Stock
     if (_inStockOnly) {
       filtered = filtered.where((p) => p['is_active'] == true).toList();
     }
 
-    // 4. Sort
     switch (_sortBy) {
-      case 'newest':
-        // Mock created_at sort or keep default
-        break;
       case 'price_low':
         filtered.sort(
           (a, b) => ((a['price'] as num).toDouble()).compareTo(
@@ -318,154 +697,243 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         break;
     }
 
-    // 5. Group by Category
     _groupedProducts = {};
     Set<String> activeCategoryIds = {};
 
     for (var product in filtered) {
-      final catId = product['category_id'] as String?;
-      if (catId != null) {
-        if (!_groupedProducts.containsKey(catId)) {
-          _groupedProducts[catId] = [];
-          activeCategoryIds.add(catId);
+      final mainCatId = product['category_id'] as String?;
+      final subCatId = product['sub_category_id'] as String?;
+
+      if (mainCatId != widget.mainCategoryId) continue;
+
+      final groupKey = subCatId ?? mainCatId;
+
+      if (groupKey != null) {
+        if (!_groupedProducts.containsKey(groupKey)) {
+          _groupedProducts[groupKey] = [];
+          activeCategoryIds.add(groupKey);
         }
-        _groupedProducts[catId]!.add(product);
+        _groupedProducts[groupKey]!.add(product);
       }
     }
 
-    // 6. Update Active Categories List (maintain order from _allCategories)
-    _activeCategories = _allCategories
+    _activeSubCategories = _allSubCategories
         .where((c) => activeCategoryIds.contains(c.id))
         .toList();
 
-    // Ensure selected index is valid
-    if (_selectedCategoryIndex >= _activeCategories.length) {
-      _selectedCategoryIndex = 0;
+    if (_selectedSubCategoryIndex >= _activeSubCategories.length) {
+      _selectedSubCategoryIndex = 0;
     }
   }
 
   void _onTabSelected(int index) {
     setState(() {
-      _selectedCategoryIndex = index;
+      _selectedSubCategoryIndex = index;
       _isTabClick = true;
     });
 
-    _scrollToTab(index);
-    _itemScrollController
-        .scrollTo(
-          index: index,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        )
-        .then((_) {
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (mounted) setState(() => _isTabClick = false);
+    // _scrollToTab(index); // Removed disturbing animation
+    if (_itemScrollController.isAttached) {
+      _itemScrollController
+          .scrollTo(
+            index: index,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOut,
+          )
+          .then((_) {
+            Future.delayed(const Duration(milliseconds: 200), () {
+              if (mounted) setState(() => _isTabClick = false);
+            });
           });
+    } else {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) setState(() => _isTabClick = false);
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite(String productId) async {
+    final user = _supabase.auth.currentUser;
+    final wasFavorite = _favoriteIds.contains(productId);
+
+    setState(() {
+      if (wasFavorite) {
+        _favoriteIds.remove(productId);
+      } else {
+        _favoriteIds.add(productId);
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          wasFavorite ? 'favorites.removed'.tr() : 'favorites.added'.tr(),
+        ),
+        backgroundColor: wasFavorite
+            ? AppColors.textSecondary
+            : AppColors.deepOlive,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+
+    if (user != null) {
+      try {
+        if (wasFavorite) {
+          await _supabase
+              .from('favorites')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('product_id', productId);
+        } else {
+          await _supabase
+              .from('favorites')
+              .upsert(
+                {'user_id': user.id, 'product_id': productId},
+                onConflict: 'user_id,product_id',
+                ignoreDuplicates: true,
+              );
+        }
+      } catch (_) {
+        setState(() {
+          if (wasFavorite) {
+            _favoriteIds.add(productId);
+          } else {
+            _favoriteIds.remove(productId);
+          }
         });
+      }
+    }
+  }
+
+  void _showLocationPrompt() {
+    AddressPickerBottomSheet.show(
+      context: context,
+      currentAddress: null,
+      onAddressSelected: (address) async {
+        final success = await _addressService.setDefaultAddress(address.id);
+        if (success && mounted) {
+          setState(() {
+            _areaId = address.areaId;
+          });
+          _loadData();
+        }
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // From AutomaticKeepAliveClientMixin
     final isArabic = context.locale.languageCode == 'ar';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Stack(
+    return Stack(
+      children: [
+        Column(
           children: [
-            Column(
-              children: [
-                if (_isSearching) _buildTopSearchBar(),
-                if (!_isSearching) _buildCustomAppBar(context),
-                if (!_isSearching && !_isLoading && _error == null)
-                  _buildCategoriesTabBar(isArabic),
+            if (_isSearching) _buildTopSearchBar(),
+            if (!_isSearching && _error == null)
+              _buildSubCategoriesTabBar(isArabic),
 
-                Expanded(
-                  child: _isLoading
-                      ? _buildLoadingState()
-                      : _error != null
-                      ? _buildErrorState()
-                      : _activeCategories.isEmpty
-                      ? _buildEmptyState()
-                      : _buildScrollableContent(isArabic),
-                ),
-              ],
+            Expanded(
+              child: _isLoading
+                  ? _buildBodyLoadingState() // Use the new loading state for the body
+                  : _error != null
+                  ? _buildErrorState()
+                  : _activeSubCategories.isEmpty
+                  ? _buildEmptyState()
+                  : _buildScrollableContent(isArabic),
             ),
-            if (!_isSearching && !_isLoading && _error == null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 24,
-                child: _buildFloatingButtons(context),
-              ),
           ],
+        ),
+        if (!_isSearching && !_isLoading && _error == null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 24,
+            child: _buildFloatingButtons(context),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBodyLoadingState() {
+    return Column(
+      children: [
+        // Subcategories bar shimmer
+        Container(
+          height: 48,
+          color: AppColors.background,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: List.generate(
+              3,
+              (index) => Container(
+                width: 80,
+                height: 32,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.skeletonBase,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Products grid shimmer
+        const Expanded(
+          child: ShimmerProductGrid(crossAxisCount: 3, itemCount: 9),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoriesShimmer() {
+    return SizedBox(
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 4,
+        physics: const NeverScrollableScrollPhysics(),
+        itemBuilder: (context, index) => Container(
+          width: 80,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.skeletonBase,
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCustomAppBar(BuildContext context) {
+  Widget _buildSubCategoriesTabBar(bool isArabic) {
+    if (_isLoading) {
+      // Show shimmer if loading
+      return _buildCategoriesShimmer();
+    }
+    if (_activeSubCategories.isEmpty) return const SizedBox.shrink();
+
     return Container(
-      color: AppColors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(
-              context.locale.languageCode == 'ar'
-                  ? LucideIcons.chevronRight
-                  : LucideIcons.chevronLeft,
-              color: AppColors.deepOlive,
-              size: 28,
-            ),
-            onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                context.go('/');
-              }
-            },
-          ),
-          Expanded(
-            child: Text(
-              'home.products'.tr(), // Or 'All Products'
-              style: AppTextStyles.headlineSmall.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppColors.deepOlive,
-                fontSize: 20,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(LucideIcons.arrowUpDown, size: 22),
-            color: AppColors.textPrimary,
-            onPressed: () => _showSortSheet(context),
-          ),
-          IconButton(
-            icon: const Icon(LucideIcons.slidersHorizontal, size: 22),
-            color: AppColors.textPrimary,
-            onPressed: () => _showFilterSheet(context),
+      height: 48,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCategoriesTabBar(bool isArabic) {
-    if (_activeCategories.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      height: 50,
-      color: AppColors.white,
       child: ScrollablePositionedList.builder(
         itemScrollController: _tabsScrollController,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        itemCount: _activeCategories.length,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        itemCount: _activeSubCategories.length,
         itemBuilder: (context, index) {
-          final category = _activeCategories[index];
-          final isSelected = _selectedCategoryIndex == index;
+          final category = _activeSubCategories[index];
+          final isSelected = _selectedSubCategoryIndex == index;
           return GestureDetector(
             onTap: () => _onTabSelected(index),
             child: Container(
@@ -473,22 +941,17 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.deepOlive
-                    : AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.deepOlive
-                      : AppColors.borderLight,
-                ),
+                    ? AppColors.accentYellow
+                    : const Color(0xFFEBEBEB),
+                borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Text(
                 isArabic ? category.nameAr : category.nameEn,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? AppColors.white : AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  color: AppColors.primaryGreen,
                 ),
               ),
             ),
@@ -503,9 +966,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       itemScrollController: _itemScrollController,
       itemPositionsListener: _itemPositionsListener,
       padding: const EdgeInsets.only(bottom: 100), // Space for floating buttons
-      itemCount: _activeCategories.length,
+      itemCount: _activeSubCategories.length,
       itemBuilder: (context, index) {
-        final category = _activeCategories[index];
+        final category = _activeSubCategories[index];
         final products = _groupedProducts[category.id] ?? [];
         if (products.isEmpty) return const SizedBox.shrink();
 
@@ -526,13 +989,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       color: AppColors.deepOlive,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '(${products.length})',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -545,20 +1001,23 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 crossAxisCount: 3,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 0.52,
+                childAspectRatio: 0.64,
               ),
               itemCount: products.length,
               itemBuilder: (context, pIndex) {
-                final product = products[pIndex];
-                final productId = product['id'] as String;
-                return _ProductCard(
-                  product: product,
-                  isArabic: isArabic,
+                final productData = products[pIndex];
+                final productId = productData['id'] as String;
+                final productModel = Product.fromJson(productData);
+
+                return ProductCard(
+                  product: ProductItem.fromProduct(productModel),
                   isFavorite: _favoriteIds.contains(productId),
                   onTap: () => ProductDetailsSheet.show(context, productId),
                   onFavoriteTap: () => _toggleFavorite(productId),
                   cartService: _cartService,
                   onCartUpdated: _updateCartCount,
+                  hasAddress: _areaId != null,
+                  onLocationRequired: _showLocationPrompt,
                 );
               },
             ),
@@ -567,8 +1026,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       },
     );
   }
-
-  // --- Search & UI Components (kept similar but simplified) ---
 
   Widget _buildTopSearchBar() {
     return Container(
@@ -649,15 +1106,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return const ShimmerProductGrid(
-      crossAxisCount: 3,
-      itemCount: 12,
-      childAspectRatio: 0.52,
-      padding: EdgeInsets.all(8),
     );
   }
 
@@ -793,722 +1241,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           child: Icon(icon, color: AppColors.lightGreen, size: 26),
         ),
-      ),
-    );
-  }
-
-  // --- Sort & Filter Sheets (Simplified) ---
-
-  void _showSortSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('category.sort_by'.tr(), style: AppTextStyles.titleMedium),
-            const SizedBox(height: 16),
-            _buildSortOption(
-              'newest',
-              LucideIcons.sparkles,
-              'category.newest'.tr(),
-            ),
-            _buildSortOption(
-              'price_low',
-              LucideIcons.arrowUp,
-              'category.price_low_high'.tr(),
-            ),
-            _buildSortOption(
-              'price_high',
-              LucideIcons.arrowDown,
-              'category.price_high_low'.tr(),
-            ),
-            _buildSortOption(
-              'rating',
-              LucideIcons.star,
-              'category.highest_rated'.tr(),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSortOption(String value, IconData icon, String label) {
-    final isSelected = _sortBy == value;
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? AppColors.deepOlive : AppColors.textSecondary,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          color: isSelected ? AppColors.deepOlive : AppColors.textPrimary,
-        ),
-      ),
-      trailing: isSelected
-          ? const Icon(LucideIcons.check, color: AppColors.deepOlive)
-          : null,
-      onTap: () {
-        setState(() => _sortBy = value);
-        _applyFiltersAndSort();
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  void _showFilterSheet(BuildContext context) {
-    // Reuse existing filter logic...
-    RangeValues tempPriceRange = _priceRange;
-    bool tempInStockOnly = _inStockOnly;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'category.filters'.tr(),
-                    style: AppTextStyles.titleLarge,
-                  ),
-                  TextButton(
-                    onPressed: () => setSheetState(() {
-                      tempPriceRange = const RangeValues(0, 1000);
-                      tempInStockOnly = false;
-                    }),
-                    child: Text('category.reset'.tr()),
-                  ),
-                ],
-              ),
-              const Divider(),
-              const SizedBox(height: 8),
-              Text(
-                'category.price_range'.tr(),
-                style: AppTextStyles.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${tempPriceRange.start.round()} ${'common.currency'.tr()}',
-                  ),
-                  Text(
-                    '${tempPriceRange.end.round()} ${'common.currency'.tr()}',
-                  ),
-                ],
-              ),
-              RangeSlider(
-                values: tempPriceRange,
-                min: 0,
-                max: 1000,
-                divisions: 100,
-                activeColor: AppColors.deepOlive,
-                onChanged: (values) =>
-                    setSheetState(() => tempPriceRange = values),
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: Text('category.in_stock_only'.tr()),
-                value: tempInStockOnly,
-                activeColor: AppColors.deepOlive,
-                onChanged: (value) =>
-                    setSheetState(() => tempInStockOnly = value),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _priceRange = tempPriceRange;
-                      _inStockOnly = tempInStockOnly;
-                    });
-                    _applyFiltersAndSort();
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.deepOlive,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: Text('category.apply'.tr()),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _toggleFavorite(String productId) async {
-    final user = _supabase.auth.currentUser;
-    final wasFavorite = _favoriteIds.contains(productId);
-
-    setState(() {
-      if (wasFavorite) {
-        _favoriteIds.remove(productId);
-      } else {
-        _favoriteIds.add(productId);
-      }
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          wasFavorite ? 'favorites.removed'.tr() : 'favorites.added'.tr(),
-        ),
-        backgroundColor: wasFavorite
-            ? AppColors.textSecondary
-            : AppColors.deepOlive,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-
-    if (user != null) {
-      try {
-        if (wasFavorite) {
-          await _supabase
-              .from('favorites')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('product_id', productId);
-        } else {
-          await _supabase
-              .from('favorites')
-              .upsert(
-                {'user_id': user.id, 'product_id': productId},
-                onConflict: 'user_id,product_id',
-                ignoreDuplicates: true,
-              );
-        }
-      } catch (_) {
-        setState(() {
-          if (wasFavorite) {
-            _favoriteIds.add(productId);
-          } else {
-            _favoriteIds.remove(productId);
-          }
-        });
-      }
-    }
-  }
-}
-
-/// Product Card with Quantity Counter - Grabit Style
-class _ProductCard extends StatefulWidget {
-  final Map<String, dynamic> product;
-  final bool isArabic;
-  final bool isFavorite;
-  final VoidCallback onTap;
-  final VoidCallback onFavoriteTap;
-  final CartService? cartService;
-  final VoidCallback onCartUpdated;
-
-  const _ProductCard({
-    required this.product,
-    required this.isArabic,
-    required this.isFavorite,
-    required this.onTap,
-    required this.onFavoriteTap,
-    required this.cartService,
-    required this.onCartUpdated,
-  });
-
-  @override
-  State<_ProductCard> createState() => _ProductCardState();
-}
-
-class _ProductCardState extends State<_ProductCard>
-    with SingleTickerProviderStateMixin {
-  int _quantity = 0;
-  late bool _isFavorite;
-  AnimationController? _scaleController;
-  Animation<double>? _scaleAnimation;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _isFavorite = widget.isFavorite;
-    _initAnimation();
-    _loadQuantity();
-    // Listen to cart changes for realtime updates
-    widget.cartService?.addListener(_loadQuantity);
-  }
-
-  void _initAnimation() {
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
-      CurvedAnimation(parent: _scaleController!, curve: Curves.easeInOut),
-    );
-    _isInitialized = true;
-  }
-
-  @override
-  void dispose() {
-    // Remove listener before disposing
-    widget.cartService?.removeListener(_loadQuantity);
-    _scaleController?.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant _ProductCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isFavorite != widget.isFavorite) {
-      setState(() => _isFavorite = widget.isFavorite);
-    }
-    // Handle cartService change
-    if (oldWidget.cartService != widget.cartService) {
-      oldWidget.cartService?.removeListener(_loadQuantity);
-      widget.cartService?.addListener(_loadQuantity);
-      _loadQuantity();
-    }
-  }
-
-  void _loadQuantity() {
-    if (!mounted) return;
-    if (widget.cartService != null) {
-      final productId = widget.product['id'] as String;
-      final items = widget.cartService!.getCartItems();
-      final cartItem = items
-          .where((item) => item.productId == productId)
-          .firstOrNull;
-      setState(() => _quantity = cartItem?.quantity ?? 0);
-    }
-  }
-
-  void _animateTap() {
-    if (_isInitialized && _scaleController != null) {
-      _scaleController!.forward().then((_) {
-        if (mounted) _scaleController?.reverse();
-      });
-    }
-  }
-
-  Future<void> _incrementQuantity() async {
-    HapticFeedback.mediumImpact();
-    if (widget.cartService == null) return;
-
-    _animateTap();
-
-    final productId = widget.product['id'] as String;
-
-    if (_quantity == 0) {
-      // Add new item to cart — use store-specific data if available
-      final storeProductId = widget.product['store_product_id'] as String?;
-      final storeId = widget.product['store_id'] as String?;
-      final customerPrice = widget.product['price'] as num?;
-      final merchantPrice = widget.product['merchant_price'] as num?;
-
-      final cartItem = CartItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        productId: productId,
-        nameAr: widget.product['name_ar'] as String? ?? '',
-        nameEn: widget.product['name_en'] as String? ?? '',
-        price: customerPrice?.toDouble() ?? 0.0,
-        quantity: 1,
-        imageUrl: widget.product['image_url'] as String?,
-        weightValue: (widget.product['weight_value'] as num?)?.toDouble(),
-        weightUnit: widget.product['weight_unit'] as String?,
-        storeProductId: storeProductId,
-        storeId: storeId,
-        merchantPrice: merchantPrice?.toDouble(),
-        customerPrice: customerPrice?.toDouble(),
-      );
-      await widget.cartService!.addToCart(cartItem);
-    } else {
-      // Increment existing item
-      await widget.cartService!.updateQuantity(productId, _quantity + 1);
-    }
-
-    setState(() => _quantity++);
-    widget.onCartUpdated();
-    // Update cart badge in real-time
-    if (mounted) context.read<CartBadgeNotifier>().refresh();
-  }
-
-  Future<void> _decrementQuantity() async {
-    HapticFeedback.lightImpact();
-    if (widget.cartService == null || _quantity <= 0) return;
-
-    _animateTap();
-
-    final productId = widget.product['id'] as String;
-
-    if (_quantity == 1) {
-      // Remove item from cart
-      await widget.cartService!.removeFromCart(productId);
-      setState(() => _quantity = 0);
-    } else {
-      // Decrement existing item
-      await widget.cartService!.updateQuantity(productId, _quantity - 1);
-      setState(() => _quantity--);
-    }
-
-    widget.onCartUpdated();
-    // Update cart badge in real-time
-    if (mounted) context.read<CartBadgeNotifier>().refresh();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final name = widget.isArabic
-        ? (widget.product['name_ar'] ?? '')
-        : (widget.product['name_en'] ?? '');
-    final price = (widget.product['price'] as num?)?.toDouble() ?? 0.0;
-    final oldPrice = (widget.product['old_price'] as num?)?.toDouble();
-    final imageUrl = widget.product['image_url'] as String? ?? '';
-
-    final hasDiscount = oldPrice != null && oldPrice > price;
-    final discountPercent = hasDiscount
-        ? ((oldPrice - price) / oldPrice * 100).round()
-        : 0;
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final imageHeight = constraints.maxHeight * 0.55;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image Section
-                SizedBox(
-                  height: imageHeight,
-                  child: Stack(
-                    children: [
-                      // Product image
-                      Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: imageUrl.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: imageUrl,
-                                  fit: BoxFit.contain,
-                                  placeholder: (_, __) => _buildPlaceholder(),
-                                  errorWidget: (_, __, ___) =>
-                                      _buildPlaceholder(),
-                                )
-                              : _buildPlaceholder(),
-                        ),
-                      ),
-                      // Discount badge
-                      if (hasDiscount)
-                        Positioned(
-                          top: 6,
-                          left: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.error,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '-$discountPercent%',
-                              style: const TextStyle(
-                                color: AppColors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      // Favorite button
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Material(
-                          color: AppColors.white,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              setState(() => _isFavorite = !_isFavorite);
-                              widget.onFavoriteTap();
-                            },
-                            customBorder: const CircleBorder(),
-                            splashColor: AppColors.error.withValues(alpha: 0.2),
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.border.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                              ),
-                              child: Icon(
-                                _isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: _isFavorite
-                                    ? AppColors.error
-                                    : AppColors.textLight,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Quantity counter or Add button
-                      Positioned(
-                        bottom: 8,
-                        right: 8,
-                        left: _quantity > 0 ? 8 : null,
-                        child: _quantity > 0
-                            ? _buildQuantityCounter()
-                            : _buildAddButton(),
-                      ),
-                    ],
-                  ),
-                ),
-                // Info Section
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            height: 1.2,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (hasDiscount)
-                              Text(
-                                '${oldPrice.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textLight,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                            Row(
-                              children: [
-                                Text(
-                                  price.floor().toString(),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.deepOlive,
-                                  ),
-                                ),
-                                Text(
-                                  '.${((price - price.floor()) * 100).round().toString().padLeft(2, '0')}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.deepOlive,
-                                  ),
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  'common.currency_short'.tr(),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // Quantity counter widget [ - ] 1 [ + ] with animations
-  Widget _buildQuantityCounter() {
-    // If animation not ready, return without animation
-    if (_scaleAnimation == null || !_isInitialized) {
-      return _buildQuantityCounterContent();
-    }
-
-    return AnimatedBuilder(
-      animation: _scaleAnimation!,
-      builder: (context, child) {
-        return Transform.scale(scale: _scaleAnimation!.value, child: child);
-      },
-      child: _buildQuantityCounterContent(),
-    );
-  }
-
-  Widget _buildQuantityCounterContent() {
-    return Container(
-      height: 32,
-      decoration: BoxDecoration(
-        color: AppColors.deepOlive,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Minus button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _decrementQuantity,
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(16),
-              ),
-              child: const SizedBox(
-                width: 32,
-                height: 32,
-                child: Icon(
-                  LucideIcons.minus,
-                  color: AppColors.lightGreen,
-                  size: 18,
-                ),
-              ),
-            ),
-          ),
-          // Animated quantity number
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) {
-              return ScaleTransition(
-                scale: animation,
-                child: FadeTransition(opacity: animation, child: child),
-              );
-            },
-            child: Text(
-              '$_quantity',
-              key: ValueKey<int>(_quantity),
-              style: const TextStyle(
-                color: AppColors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          // Plus button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _incrementQuantity,
-              borderRadius: const BorderRadius.horizontal(
-                right: Radius.circular(16),
-              ),
-              child: const SizedBox(
-                width: 32,
-                height: 32,
-                child: Icon(
-                  LucideIcons.plus,
-                  color: AppColors.lightGreen,
-                  size: 18,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Simple add button
-  Widget _buildAddButton() {
-    return Material(
-      color: AppColors.deepOlive,
-      shape: const CircleBorder(),
-      elevation: 3,
-      shadowColor: AppColors.black.withValues(alpha: 0.3),
-      child: InkWell(
-        onTap: _incrementQuantity,
-        customBorder: const CircleBorder(),
-        splashColor: AppColors.white.withValues(alpha: 0.3),
-        highlightColor: AppColors.white.withValues(alpha: 0.1),
-        child: const SizedBox(
-          width: 32,
-          height: 32,
-          child: Icon(LucideIcons.plus, color: AppColors.white, size: 20),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: AppColors.background,
-      child: const Center(
-        child: Icon(LucideIcons.image, size: 32, color: AppColors.textLight),
       ),
     );
   }

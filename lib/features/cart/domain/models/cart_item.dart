@@ -15,10 +15,10 @@ class CartItem extends Equatable {
   final int stockQuantity;
   final bool isInStock;
 
-  // Store product fields (merchant system)
-  final String? storeProductId;
-  final String? storeId;
-  final double? merchantPrice;
+  // Branch product fields (partner system)
+  final String? branchProductId;
+  final String? branchId;
+  final double? partnerPrice;
   final double? customerPrice;
   final double? avgRating;
   final int? ratingCount;
@@ -36,9 +36,9 @@ class CartItem extends Equatable {
     this.weightUnit,
     this.stockQuantity = 100,
     this.isInStock = true,
-    this.storeProductId,
-    this.storeId,
-    this.merchantPrice,
+    this.branchProductId,
+    this.branchId,
+    this.partnerPrice,
     this.customerPrice,
     this.avgRating,
     this.ratingCount,
@@ -96,9 +96,9 @@ class CartItem extends Equatable {
     String? weightUnit,
     int? stockQuantity,
     bool? isInStock,
-    String? storeProductId,
-    String? storeId,
-    double? merchantPrice,
+    String? branchProductId,
+    String? branchId,
+    double? partnerPrice,
     double? customerPrice,
     double? avgRating,
     int? ratingCount,
@@ -116,9 +116,9 @@ class CartItem extends Equatable {
       weightUnit: weightUnit ?? this.weightUnit,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       isInStock: isInStock ?? this.isInStock,
-      storeProductId: storeProductId ?? this.storeProductId,
-      storeId: storeId ?? this.storeId,
-      merchantPrice: merchantPrice ?? this.merchantPrice,
+      branchProductId: branchProductId ?? this.branchProductId,
+      branchId: branchId ?? this.branchId,
+      partnerPrice: partnerPrice ?? this.partnerPrice,
       customerPrice: customerPrice ?? this.customerPrice,
       avgRating: avgRating ?? this.avgRating,
       ratingCount: ratingCount ?? this.ratingCount,
@@ -144,9 +144,9 @@ class CartItem extends Equatable {
       isInStock:
           (product?['stock_quantity'] as int?) == null ||
           (product?['stock_quantity'] as int?)! > 0,
-      storeProductId: json['store_product_id'] as String?,
-      storeId: json['store_id'] as String?,
-      merchantPrice: (json['merchant_price'] as num?)?.toDouble(),
+      branchProductId: json['branch_product_id'] as String?,
+      branchId: json['branch_id'] as String?,
+      partnerPrice: (json['partner_price'] as num?)?.toDouble(),
       customerPrice: (json['customer_price'] as num?)?.toDouble(),
     );
   }
@@ -168,9 +168,9 @@ class CartItem extends Equatable {
       weightUnit: json['weight_unit'] as String?,
       stockQuantity: json['stock_quantity'] as int? ?? 100,
       isInStock: json['is_in_stock'] as bool? ?? true,
-      storeProductId: json['store_product_id'] as String?,
-      storeId: json['store_id'] as String?,
-      merchantPrice: (json['merchant_price'] as num?)?.toDouble(),
+      branchProductId: json['branch_product_id'] as String?,
+      branchId: json['branch_id'] as String?,
+      partnerPrice: (json['partner_price'] as num?)?.toDouble(),
       customerPrice: (json['customer_price'] as num?)?.toDouble(),
       avgRating: (json['avg_rating'] as num?)?.toDouble(),
       ratingCount: json['rating_count'] as int?,
@@ -191,9 +191,9 @@ class CartItem extends Equatable {
       'weight_unit': weightUnit,
       'stock_quantity': stockQuantity,
       'is_in_stock': isInStock,
-      'store_product_id': storeProductId,
-      'store_id': storeId,
-      'merchant_price': merchantPrice,
+      'branch_product_id': branchProductId,
+      'branch_id': branchId,
+      'partner_price': partnerPrice,
       'customer_price': customerPrice,
       'avg_rating': avgRating,
       'rating_count': ratingCount,
@@ -214,9 +214,9 @@ class CartItem extends Equatable {
     weightUnit,
     stockQuantity,
     isInStock,
-    storeProductId,
-    storeId,
-    merchantPrice,
+    branchProductId,
+    branchId,
+    partnerPrice,
     customerPrice,
     avgRating,
     ratingCount,

@@ -22,6 +22,9 @@ import 'package:bourraq/features/products/data/repositories/product_repository.d
 import 'package:bourraq/features/products/presentation/widgets/expandable_details_section.dart';
 import 'package:bourraq/features/products/presentation/widgets/notify_when_available_button.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
+import 'package:bourraq/features/location/data/address_service.dart';
+import 'package:bourraq/features/location/data/address_model.dart';
+import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
 
 /// Show product details in a draggable bottom sheet
 /// Usage: ProductDetailsSheet.show(context, productId);
@@ -47,8 +50,10 @@ class ProductDetailsSheet extends StatefulWidget {
 
 class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
   final ProductRepository _repository = ProductRepository();
+  final AddressService _addressService = AddressService();
 
   Product? _product;
+  Address? _defaultAddress;
   List<Product> _relatedProducts = [];
   bool _isLoading = true;
   String? _error;
@@ -76,9 +81,11 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
 
     if (mounted) {
       final isFav = await _favoritesRepository.isFavorite(widget.productId);
+      final address = await _addressService.getDefaultAddress();
       setState(() {
         _servicesInitialized = true;
         _isFavorite = isFav;
+        _defaultAddress = address;
         _loadQuantityFromCart();
       });
     }
@@ -118,9 +125,10 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
         return;
       }
 
-      if (product.categoryId != null) {
+      if (product.subCategoryId != null || product.categoryId != null) {
         final related = await _repository.getRelatedProducts(
-          categoryId: product.categoryId!,
+          subCategoryId: product.subCategoryId,
+          categoryId: product.categoryId,
           excludeProductId: widget.productId,
         );
         if (mounted) setState(() => _relatedProducts = related);
@@ -184,6 +192,13 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
 
   Future<void> _addToCart() async {
     if (!_servicesInitialized || _product == null) return;
+
+    // Check if location is required first
+    if (_defaultAddress == null) {
+      _showLocationPrompt();
+      return;
+    }
+
     if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
 
     HapticFeedback.mediumImpact();
@@ -229,6 +244,27 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
       HapticFeedback.selectionClick();
       _cartService.removeFromCart(widget.productId);
     }
+  }
+
+  void _showLocationPrompt() {
+    AddressPickerBottomSheet.show(
+      context: context,
+      currentAddress: _defaultAddress,
+      onAddressSelected: (address) async {
+        final success = await _addressService.setDefaultAddress(address.id);
+        if (success && mounted) {
+          setState(() {
+            _defaultAddress = address;
+          });
+          // Note: Home screen will refresh when this sheet closes if we trigger it
+        }
+      },
+    ).then((_) {
+      // Re-load default address to be sure
+      _addressService.getDefaultAddress().then((address) {
+        if (mounted) setState(() => _defaultAddress = address);
+      });
+    });
   }
 
   @override
@@ -469,45 +505,75 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Price (styled like ProductCard)
-                  Text(
-                    _product!.price.floor().toString(),
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.deepOlive,
-                      height: 1,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final hasDiscount =
+                          _product?.oldPrice != null &&
+                          _product!.oldPrice! > _product!.price;
+                      return Container(
+                        padding: hasDiscount
+                            ? const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              )
+                            : EdgeInsets.zero,
+                        decoration: BoxDecoration(
+                          color: hasDiscount
+                              ? AppColors.bottomNavActive
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              _product!.price.floor().toString(),
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.deepOlive,
+                                height: 1,
+                              ),
+                            ),
+                            Text(
+                              '.${((_product!.price - _product!.price.floor()) * 100).round().toString().padLeft(2, '0')}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.deepOlive,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'common.egp'.tr(),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.deepOlive,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                  Text(
-                    '.${((_product!.price - _product!.price.floor()) * 100).round().toString().padLeft(2, '0')}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.deepOlive,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'common.egp'.tr(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  if (_product!.oldPrice != null) ...[
-                    const SizedBox(width: 10),
+                  if (_product!.oldPrice != null &&
+                      _product!.oldPrice! > _product!.price) ...[
+                    const SizedBox(width: 12),
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         '${_product!.oldPrice!.toStringAsFixed(2)} ${'common.egp'.tr()}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textLight,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textSecondary,
                           decoration: TextDecoration.lineThrough,
+                          decorationColor: AppColors.error,
+                          decorationThickness: 2.0,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -516,25 +582,23 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
                   // Stock status badge
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
+                      horizontal: 6,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
                       color: _product!.isInStock
-                          ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                          : AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
+                          ? AppColors.lightGreen
+                          : AppColors.error,
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       _product!.isInStock
                           ? 'product.in_stock'.tr()
                           : 'product.out_of_stock'.tr(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _product!.isInStock
-                            ? AppColors.primaryGreen
-                            : AppColors.error,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -557,7 +621,6 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
             title: 'product.product_details'.tr(),
           ),
 
-        // Related Products
         if (_relatedProducts.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
@@ -568,32 +631,30 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
               ),
             ),
           ),
-          SizedBox(
-            height: 220,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 0.64, // Exact match with category screen
+              ),
               itemCount: _relatedProducts.length,
               itemBuilder: (context, index) {
                 final product = _relatedProducts[index];
-                return Container(
-                  width: 130,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: ProductCard(
-                    product: ProductItem(
-                      id: product.id,
-                      nameAr: product.nameAr,
-                      nameEn: product.nameEn,
-                      price: product.price,
-                      oldPrice: product.oldPrice,
-                      imageUrl: product.imageUrl ?? '',
-                    ),
-                    cartService: _servicesInitialized ? _cartService : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      ProductDetailsSheet.show(context, product.id);
-                    },
-                  ),
+                return ProductCard(
+                  product: product.toProductItem(),
+                  cartService: _servicesInitialized ? _cartService : null,
+                  hasAddress: _defaultAddress != null,
+                  onLocationRequired: _showLocationPrompt,
+                  onTap: () {
+                    // Refresh current sheet with new product
+                    Navigator.pop(context);
+                    ProductDetailsSheet.show(context, product.id);
+                  },
                 );
               },
             ),
@@ -606,31 +667,81 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
   }
 
   Widget _buildProductImage() {
+    final isArabic = context.locale.languageCode == 'ar';
+    final hasDiscount =
+        _product?.oldPrice != null && _product!.oldPrice! > _product!.price;
+    final discountPercent = hasDiscount
+        ? ((_product!.oldPrice! - _product!.price) / _product!.oldPrice! * 100)
+              .round()
+        : 0;
+
     return Container(
       height: 280,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: _product?.imageUrl != null
-          ? CachedNetworkImage(
-              imageUrl: _product!.imageUrl!,
-              fit: BoxFit.contain,
-              placeholder: (_, __) => const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryGreen),
-              ),
-              errorWidget: (_, __, ___) => const Center(
-                child: Icon(
-                  LucideIcons.image,
-                  size: 48,
-                  color: AppColors.textLight,
+      child: Stack(
+        children: [
+          // Image
+          Positioned.fill(
+            child: _product?.imageUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: _product!.imageUrl!,
+                    fit: BoxFit.contain,
+                    placeholder: (_, _) => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                    errorWidget: (_, _, _) => const Center(
+                      child: Icon(
+                        LucideIcons.image,
+                        size: 48,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                  )
+                : const Center(
+                    child: Icon(
+                      LucideIcons.image,
+                      size: 48,
+                      color: AppColors.textLight,
+                    ),
+                  ),
+          ),
+          // Discount badge
+          if (hasDiscount)
+            Positioned(
+              top: 0,
+              left: isArabic ? null : 0,
+              right: isArabic ? 0 : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B6B),
+                  borderRadius: isArabic
+                      ? const BorderRadius.only(
+                          topRight: Radius.circular(16),
+                          bottomLeft: Radius.circular(20),
+                        )
+                      : const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(20),
+                        ),
+                ),
+                child: Text(
+                  '-$discountPercent%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
-            )
-          : const Center(
-              child: Icon(
-                LucideIcons.image,
-                size: 48,
-                color: AppColors.textLight,
-              ),
             ),
+        ],
+      ),
     );
   }
 

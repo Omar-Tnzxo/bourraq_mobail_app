@@ -22,6 +22,9 @@ import 'package:bourraq/features/products/presentation/widgets/expandable_detail
 import 'package:bourraq/features/products/presentation/widgets/product_bottom_bar.dart';
 import 'package:bourraq/features/products/presentation/widgets/notify_when_available_button.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
+import 'package:bourraq/features/location/data/address_service.dart';
+import 'package:bourraq/features/location/data/address_model.dart';
+import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
 
 /// Product Details Screen - Breadfast Style
 /// Fetches product data dynamically from Supabase
@@ -37,9 +40,12 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final ProductRepository _repository = ProductRepository();
 
+  final AddressService _addressService = AddressService();
+
   Product? _product;
   List<Product> _relatedProducts = [];
   Map<String, String>? _category;
+  Address? _defaultAddress;
   bool _isLoading = true;
   String? _error;
 
@@ -66,11 +72,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _cartService.addListener(_loadQuantityFromCart);
 
     if (mounted) {
-      // Load favorite status from Supabase
+      // Load favorite status and default address
       final isFav = await _favoritesRepository.isFavorite(widget.productId);
+      final address = await _addressService.getDefaultAddress();
       setState(() {
         _servicesInitialized = true;
         _isFavorite = isFav;
+        _defaultAddress = address;
         _loadQuantityFromCart();
       });
     }
@@ -187,6 +195,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _addToCart() async {
     if (!_servicesInitialized || _product == null) return;
+
+    // Check if location is required first
+    if (_defaultAddress == null) {
+      _showLocationPrompt();
+      return;
+    }
+
     if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
 
     HapticFeedback.mediumImpact();
@@ -240,6 +255,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       // Remove from cart when going below 1
       _cartService.removeFromCart(widget.productId);
     }
+  }
+
+  void _showLocationPrompt() {
+    AddressPickerBottomSheet.show(
+      context: context,
+      currentAddress: _defaultAddress,
+      onAddressSelected: (address) async {
+        final success = await _addressService.setDefaultAddress(address.id);
+        if (success && mounted) {
+          setState(() {
+            _defaultAddress = address;
+          });
+        }
+      },
+    ).then((_) {
+      // Re-load default address to be sure
+      _addressService.getDefaultAddress().then((address) {
+        if (mounted) setState(() => _defaultAddress = address);
+      });
+    });
   }
 
   @override
@@ -373,7 +408,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 crossAxisCount: 3,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 0.52,
+                childAspectRatio: 0.64,
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
                 final product = _relatedProducts[index];
@@ -387,10 +422,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     imageUrl: product.imageUrl ?? '',
                   ),
                   cartService: _servicesInitialized ? _cartService : null,
+                  hasAddress: _defaultAddress != null,
+                  onLocationRequired: _showLocationPrompt,
                   onTap: () => context.push('/product/${product.id}'),
                   onFavoriteTap: () async {
-                    if (GuestRestrictionHelper.checkAndPromptLogin(context))
+                    if (GuestRestrictionHelper.checkAndPromptLogin(context)) {
                       return;
+                    }
                     try {
                       final isCurrentlyFavorite = await _favoritesRepository
                           .isFavorite(product.id);

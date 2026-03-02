@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:bourraq/core/services/analytics_service.dart';
 import 'package:bourraq/core/utils/error_handler.dart';
-import '../../data/models/search_history_item.dart';
-import '../../data/models/popular_search_item.dart';
 import '../../data/search_repository.dart';
 import 'search_event.dart';
 import 'search_state.dart';

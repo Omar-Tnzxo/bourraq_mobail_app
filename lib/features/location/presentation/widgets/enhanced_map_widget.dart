@@ -88,8 +88,9 @@ class _EnhancedMapWidgetState extends State<EnhancedMapWidget>
         final place = placemarks.first;
         final parts = <String>[];
         if (place.street?.isNotEmpty ?? false) parts.add(place.street!);
-        if (place.subLocality?.isNotEmpty ?? false)
+        if (place.subLocality?.isNotEmpty ?? false) {
           parts.add(place.subLocality!);
+        }
         if (place.locality?.isNotEmpty ?? false) parts.add(place.locality!);
 
         final separator = context.locale.languageCode == 'ar' ? '، ' : ', ';

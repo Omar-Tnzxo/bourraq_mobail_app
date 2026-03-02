@@ -200,7 +200,7 @@ class _DeliveryTimePickerSheetState extends State<DeliveryTimePickerSheet> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (sectionHeader != null) sectionHeader,
+                      ?sectionHeader,
                       GestureDetector(
                         onTap: () {
                           setState(() => _selectedSlotId = slot.id);
@@ -209,8 +209,9 @@ class _DeliveryTimePickerSheetState extends State<DeliveryTimePickerSheet> {
                             Future.delayed(
                               const Duration(milliseconds: 200),
                               () {
-                                if (mounted)
+                                if (mounted) {
                                   Navigator.pop(context, _selectedSlot);
+                                }
                               },
                             );
                           }

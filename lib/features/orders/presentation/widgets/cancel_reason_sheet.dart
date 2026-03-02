@@ -107,7 +107,7 @@ class _CancelReasonSheetState extends State<CancelReasonSheet> {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: _reasons.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final reason = _reasons[index];
                   final reasonId = reason['id'] as String;

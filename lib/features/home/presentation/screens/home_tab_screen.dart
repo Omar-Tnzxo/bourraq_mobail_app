@@ -11,9 +11,9 @@ import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_state.dart';
 import 'package:bourraq/features/home/presentation/cubit/home_cubit.dart';
-import 'package:bourraq/features/location/data/area_service.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_header.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_banners_carousel.dart';
+import 'package:bourraq/features/home/presentation/widgets/home_banners_spotlight.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_categories_section.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_products_section.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
@@ -25,8 +25,6 @@ import 'package:bourraq/features/favorites/data/repositories/favorites_repositor
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:bourraq/features/products/presentation/widgets/product_details_sheet.dart';
 import 'package:bourraq/core/utils/guest_restriction_helper.dart';
-import 'package:bourraq/core/services/location_service.dart';
-import 'package:geolocator/geolocator.dart';
 
 /// Home Tab Screen - Main scrollable content
 /// Connected to Supabase via HomeCubit
@@ -41,12 +39,9 @@ class _HomeTabScreenState extends State<HomeTabScreen>
     with WidgetsBindingObserver {
   late HomeCubit _homeCubit;
   final AddressService _addressService = AddressService();
-  final AreaService _areaService = AreaService();
   CartService? _cartService;
   late FavoritesRepository _favoritesRepository;
   final Set<String> _favoriteIds = {};
-  final LocationService _locationService = LocationService();
-  bool _locationPromptShown = false;
 
   // Dynamic user data
   Address? _defaultAddress;
@@ -56,14 +51,18 @@ class _HomeTabScreenState extends State<HomeTabScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _homeCubit = HomeCubit();
-    // Load address first, then load home data with areaId
-    _loadDefaultAddressAndHomeData().then((_) {
-      // After initial load, if still no address, prompt for local location detection
-      if (_defaultAddress == null) {
-        _checkLocationOnStartup();
-      }
-    });
+    // Use a unified startup flow to ensure correct sequence
+    _initStartupFlow();
     _initServices();
+  }
+
+  Future<void> _initStartupFlow() async {
+    // 1. Load address first
+    await _loadDefaultAddressAndHomeData();
+
+    // 2. We no longer force location on startup
+    // This allows users to browse products instantly
+    // Location will be prompted when adding to cart
   }
 
   Future<void> _initServices() async {
@@ -194,145 +193,6 @@ class _HomeTabScreenState extends State<HomeTabScreen>
       // Reload address after bottom sheet is closed
       _loadDefaultAddress();
     });
-  }
-
-  /// Automatically check for location on startup if no address is set
-  Future<void> _checkLocationOnStartup() async {
-    if (_locationPromptShown) return;
-
-    final isAvailable = await _locationService.isLocationAvailable();
-    if (isAvailable) {
-      // If already available, just try to get position silently
-      _detectAndUseCurrentLocation(silent: true);
-    } else {
-      // If not available (disabled or no permission), show our prompt
-      if (mounted) {
-        _showLocationPrompt();
-      }
-    }
-  }
-
-  void _showLocationPrompt() {
-    _locationPromptShown = true;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('location.title'.tr(), style: AppTextStyles.headlineMedium),
-        content: Text(
-          'location.message'.tr(),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('location.deny'.tr(), style: AppTextStyles.bodyMedium),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _detectAndUseCurrentLocation();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'location.allow'.tr(),
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _detectAndUseCurrentLocation({bool silent = false}) async {
-    if (!silent && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('location.checking_area'.tr()),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-
-    final Position? position = await _locationService.getCurrentPosition();
-    if (position == null) {
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('location.enable_gps_message'.tr()),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-      return;
-    }
-
-    // Detect area from coordinates
-    final area = await _areaService.detectAreaFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
-
-    if (area != null) {
-      if (mounted) {
-        // Create a temporary address object for the UI
-        final detectedAddress = Address(
-          id: 'detected',
-          addressLabel: 'location.detected_area'.tr(
-            namedArgs: {'area': area.getName(context.locale.languageCode)},
-          ),
-          addressType: 'current',
-          latitude: position.latitude,
-          longitude: position.longitude,
-          areaId: area.id,
-          isDefault: true,
-          userId: '',
-          createdAt: DateTime.now(),
-        );
-
-        setState(() {
-          _defaultAddress = detectedAddress;
-        });
-
-        // Load home data for this area
-        _homeCubit.loadHomeData(areaId: area.id);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'location.area_detected'.tr(
-                namedArgs: {'area': area.getName(context.locale.languageCode)},
-              ),
-            ),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } else {
-      if (!silent && mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('location.not_supported_title'.tr()),
-            content: Text('location.not_supported_message'.tr()),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('common.close'.tr()),
-              ),
-            ],
-          ),
-        );
-      }
-    }
   }
 
   void _onBannerTap(BannerItem banner) {
@@ -523,19 +383,31 @@ class _HomeTabScreenState extends State<HomeTabScreen>
         case 'banners':
           final banners = state.getBanners(section.id);
           if (banners.isNotEmpty) {
-            slivers.add(
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: HomeBannersCarousel(
+            // Determine if it should be carousel or spotlight
+            if (section.config.placement == 'spotlight') {
+              slivers.add(
+                SliverToBoxAdapter(
+                  child: HomeBannersSpotlight(
                     banners: banners,
                     onBannerTap: _onBannerTap,
-                    autoScroll: section.config.autoScroll,
-                    autoScrollIntervalMs: section.config.scrollIntervalMs,
                   ),
                 ),
-              ),
-            );
+              );
+            } else {
+              slivers.add(
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: HomeBannersCarousel(
+                      banners: banners,
+                      onBannerTap: _onBannerTap,
+                      autoScroll: section.config.autoScroll,
+                      autoScrollIntervalMs: section.config.scrollIntervalMs,
+                    ),
+                  ),
+                ),
+              );
+            }
           }
           break;
 
@@ -577,6 +449,8 @@ class _HomeTabScreenState extends State<HomeTabScreen>
                     onFavoriteToggle: _toggleFavorite,
                     onProductTap: (product) =>
                         ProductDetailsSheet.show(context, product.id),
+                    hasAddress: _defaultAddress != null,
+                    onLocationRequired: _onLocationTap,
                   ),
                 ),
               ),

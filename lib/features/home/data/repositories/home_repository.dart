@@ -125,7 +125,10 @@ class HomeRepository {
   }
 
   /// Fetch active banners ordered by display_order
-  Future<List<Map<String, dynamic>>> getBanners({int? limit}) async {
+  Future<List<Map<String, dynamic>>> getBanners({
+    int? limit,
+    String? placement,
+  }) async {
     final now = DateTime.now().toUtc().toIso8601String();
 
     var query = _supabase
@@ -133,14 +136,19 @@ class HomeRepository {
         .select()
         .eq('is_active', true)
         .or('start_date.is.null,start_date.lte.$now')
-        .or('end_date.is.null,end_date.gte.$now')
-        .order('display_order', ascending: true);
+        .or('end_date.is.null,end_date.gte.$now');
 
-    if (limit != null) {
-      query = query.limit(limit);
+    if (placement != null) {
+      query = query.eq('placement', placement);
     }
 
-    final response = await query;
+    dynamic transformQuery = query.order('display_order', ascending: true);
+
+    if (limit != null) {
+      transformQuery = transformQuery.limit(limit);
+    }
+
+    final response = await transformQuery;
     return List<Map<String, dynamic>>.from(response);
   }
 
@@ -150,6 +158,7 @@ class HomeRepository {
         .from('categories')
         .select()
         .eq('is_active', true)
+        .isFilter('parent_id', null)
         .order('display_order', ascending: true);
 
     if (limit != null) {

@@ -457,7 +457,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                             child: Image.network(
                               item.productImage!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Icon(
+                              errorBuilder: (_, _, _) => Icon(
                                 LucideIcons.package,
                                 color: AppColors.textSecondary,
                                 size: 20,

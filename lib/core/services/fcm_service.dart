@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
 import 'package:bourraq/core/services/analytics_service.dart';
+import 'package:bourraq/core/router/app_router.dart';
 
 /// Background message handler (must be top-level function)
 @pragma('vm:entry-point')
@@ -73,7 +75,7 @@ class FcmService {
   /// Initialize local notifications for foreground
   Future<void> _initLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings(
-      '@drawable/ic_notification',
+      '@drawable/ic_stat_white_icon_logo',
     );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -178,7 +180,7 @@ $_fcmToken
       _showLocalNotification(
         title: notification.title ?? 'Bourraq',
         body: notification.body ?? '',
-        payload: message.data.toString(),
+        payload: jsonEncode(message.data),
       );
     }
   }
@@ -195,7 +197,7 @@ $_fcmToken
       channelDescription: 'Notifications for orders, promotions, and updates',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@drawable/ic_notification',
+      icon: '@drawable/ic_stat_white_icon_logo',
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -234,16 +236,37 @@ $_fcmToken
   /// Handle local notification tap
   void _onNotificationTap(NotificationResponse response) {
     debugPrint('🔔 [FCM] Local notification tapped: ${response.payload}');
-    // Parse payload and navigate
+    if (response.payload != null) {
+      try {
+        final Map<String, dynamic> data = jsonDecode(response.payload!);
+        _navigateBasedOnData(data);
+      } catch (e) {
+        debugPrint('🔔 [FCM] Error parsing local notification payload: $e');
+      }
+    }
   }
 
   /// Navigate based on notification data
   void _navigateBasedOnData(Map<String, dynamic> data) {
-    // Example: Navigate to order details if order_id is present
+    debugPrint('🔔 [FCM] Navigating based on data: $data');
     final orderId = data['order_id'];
+    final type = data['type'];
+    final status = data['status'];
+
     if (orderId != null) {
-      // Use AppRouter to navigate
-      // AppRouter.router.push('/orders/$orderId');
+      // If the notification type is rating or status is delivered, go to rating screen
+      if (type == 'rate_order' ||
+          type == 'order_delivered' ||
+          (type == 'order_update' && status == 'delivered')) {
+        AppRouter.router.push('/orders/$orderId/rating');
+      } else {
+        // Otherwise go to order details
+        AppRouter.router.push('/orders/$orderId');
+      }
+    } else if (type == 'wallet' || type == 'transaction') {
+      AppRouter.router.push('/wallet');
+    } else if (type == 'promo') {
+      AppRouter.router.push('/promo-codes');
     }
   }
 

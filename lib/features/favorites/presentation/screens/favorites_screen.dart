@@ -12,6 +12,9 @@ import 'package:bourraq/features/products/data/models/product_model.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
 import 'package:bourraq/features/products/presentation/widgets/product_details_sheet.dart';
+import 'package:bourraq/features/location/data/address_service.dart';
+import 'package:bourraq/features/location/data/address_model.dart';
+import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
 import 'package:shimmer/shimmer.dart';
 
 /// Favorites Screen - Using unified ProductCard widget
@@ -24,12 +27,42 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   CartService? _cartService;
+  final AddressService _addressService = AddressService();
+  Address? _defaultAddress;
 
   @override
   void initState() {
     super.initState();
     context.read<FavoritesCubit>().loadFavorites();
     _initCartService();
+    _loadDefaultAddress();
+  }
+
+  Future<void> _loadDefaultAddress() async {
+    final address = await _addressService.getDefaultAddress();
+    if (mounted) {
+      setState(() {
+        _defaultAddress = address;
+      });
+    }
+  }
+
+  void _showLocationPrompt() {
+    AddressPickerBottomSheet.show(
+      context: context,
+      currentAddress: _defaultAddress,
+      onAddressSelected: (address) async {
+        final success = await _addressService.setDefaultAddress(address.id);
+        if (success && mounted) {
+          setState(() {
+            _defaultAddress = address;
+          });
+        }
+      },
+    ).then((_) {
+      // Re-load default address to be sure
+      _loadDefaultAddress();
+    });
   }
 
   void _initCartService() {
@@ -232,7 +265,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 crossAxisCount: 3,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 0.52,
+                childAspectRatio: 0.64,
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
                 final product = state.favorites[index];
@@ -258,6 +291,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         // Remove from favorites
         context.read<FavoritesCubit>().removeFavorite(product.id);
       },
+      hasAddress: _defaultAddress != null,
+      onLocationRequired: _showLocationPrompt,
       onCartUpdated: () => setState(() {}),
     );
   }
@@ -268,7 +303,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         crossAxisCount: 3,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        childAspectRatio: 0.52,
+        childAspectRatio: 0.64,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         return Shimmer.fromColors(

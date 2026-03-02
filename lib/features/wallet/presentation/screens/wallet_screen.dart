@@ -439,7 +439,7 @@ class _WalletScreenState extends State<WalletScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _transactions.length,
-              separatorBuilder: (_, __) => const Divider(height: 24),
+              separatorBuilder: (_, _) => const Divider(height: 24),
               itemBuilder: (context, index) {
                 return _buildTransactionItem(_transactions[index]);
               },

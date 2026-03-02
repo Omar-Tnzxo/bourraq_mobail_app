@@ -367,8 +367,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ...List.generate(steps.length, (index) {
             final step = steps[index];
             final isCompleted =
-                step.status.stepIndex <= _order!.status.stepIndex;
-            final isCurrent = step.status.stepIndex == _order!.status.stepIndex;
+                step.granularIndex <= _order!.status.granularIndex;
+            final isCurrent =
+                step.granularIndex == _order!.status.granularIndex;
             final isLast = index == steps.length - 1;
 
             return Row(
@@ -517,31 +518,49 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   List<_TrackingStep> _getTrackingSteps() {
     return [
       _TrackingStep(
-        status: OrderStatus.pending,
+        granularIndex: OrderStatus.pending.granularIndex,
         title: 'orders.status.pending'.tr(),
         subtitle: 'orders.status_subtitle.pending'.tr(),
         icon: LucideIcons.hourglass,
       ),
       _TrackingStep(
-        status: OrderStatus.confirmed,
+        granularIndex: OrderStatus.confirmed.granularIndex,
         title: 'orders.status.confirmed'.tr(),
         subtitle: 'orders.status_subtitle.confirmed'.tr(),
         icon: LucideIcons.circleCheck,
       ),
       _TrackingStep(
-        status: OrderStatus.preparing,
+        granularIndex: OrderStatus.preparing.granularIndex,
         title: 'orders.status.preparing'.tr(),
         subtitle: 'orders.status_subtitle.preparing'.tr(),
         icon: LucideIcons.chefHat,
       ),
       _TrackingStep(
-        status: OrderStatus.onTheWay,
+        granularIndex: OrderStatus.ready.granularIndex,
+        title: 'orders.status.ready'.tr(),
+        subtitle: 'orders.status_subtitle.ready'.tr(),
+        icon: LucideIcons.package,
+      ),
+      _TrackingStep(
+        granularIndex: OrderStatus.assigned.granularIndex,
+        title: 'orders.status.assigned'.tr(),
+        subtitle: 'orders.status_subtitle.assigned'.tr(),
+        icon: LucideIcons.userCheck,
+      ),
+      _TrackingStep(
+        granularIndex: OrderStatus.pickedUp.granularIndex,
+        title: 'orders.status.picked_up'.tr(),
+        subtitle: 'orders.status_subtitle.picked_up'.tr(),
+        icon: LucideIcons.box,
+      ),
+      _TrackingStep(
+        granularIndex: OrderStatus.onTheWay.granularIndex,
         title: 'orders.status.on_the_way'.tr(),
         subtitle: 'orders.status_subtitle.on_the_way'.tr(),
         icon: LucideIcons.bike,
       ),
       _TrackingStep(
-        status: OrderStatus.delivered,
+        granularIndex: OrderStatus.delivered.granularIndex,
         title: 'orders.status.delivered'.tr(),
         subtitle: 'orders.status_subtitle.delivered'.tr(),
         icon: LucideIcons.packageCheck,
@@ -607,13 +626,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 }
 
 class _TrackingStep {
-  final OrderStatus status;
+  final int granularIndex;
   final String title;
   final String subtitle;
   final IconData icon;
 
   const _TrackingStep({
-    required this.status,
+    required this.granularIndex,
     required this.title,
     required this.subtitle,
     required this.icon,

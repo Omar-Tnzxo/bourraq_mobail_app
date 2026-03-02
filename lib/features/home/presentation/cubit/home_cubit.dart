@@ -1,32 +1,35 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bourraq/core/services/session_manager.dart';
 import 'package:bourraq/core/utils/error_handler.dart';
 import 'package:bourraq/features/home/data/models/home_section_model.dart';
 import 'package:bourraq/features/home/data/repositories/home_repository.dart';
 import 'package:bourraq/features/home/presentation/widgets/home_banners_carousel.dart';
-import 'package:bourraq/features/home/presentation/widgets/home_categories_section.dart';
+import 'package:bourraq/features/categories/data/models/category_model.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
-import 'package:bourraq/features/products/data/repositories/store_product_repository.dart';
-import 'package:bourraq/features/products/data/models/store_product_model.dart';
+import 'package:bourraq/features/products/data/repositories/branch_product_repository.dart';
+import 'package:bourraq/features/products/data/models/branch_product_model.dart';
 
 part 'home_state.dart';
 
 /// HomeCubit - Manages home screen state with dynamic sections
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository _repository;
-  final StoreProductRepository _storeProductRepo;
+  final BranchProductRepository _branchProductRepo;
   final SessionManager _sessionManager = SessionManager();
 
-  /// Current area ID for store-filtered product fetching
+  /// Current area ID for branch-filtered product fetching
   String? _areaId;
 
   HomeCubit({
     HomeRepository? repository,
-    StoreProductRepository? storeProductRepository,
+    BranchProductRepository? branchProductRepository,
   }) : _repository = repository ?? HomeRepository(),
-       _storeProductRepo = storeProductRepository ?? StoreProductRepository(),
+       _branchProductRepo =
+           branchProductRepository ?? BranchProductRepository(),
        super(HomeInitial());
 
   /// Load all home screen data with cache-first strategy
@@ -73,6 +76,12 @@ class HomeCubit extends Cubit<HomeState> {
       }
 
       if (!isClosed) {
+        debugPrint('❌ [HomeCubit] Error loading fresh data: $e');
+        if (e is PostgrestException) {
+          debugPrint(
+            '❌ [HomeCubit] PG Error: ${e.message} (Code: ${e.code}, Details: ${e.details})',
+          );
+        }
         emit(HomeError(message: ErrorHandler.getErrorKey(e)));
       }
     }
@@ -155,7 +164,7 @@ class HomeCubit extends Cubit<HomeState> {
         id: 'default_banners',
         sectionType: 'banners',
         displayOrder: 1,
-        config: HomeSectionConfig(),
+        config: HomeSectionConfig(placement: 'main_carousel'),
       ),
       HomeSection(
         id: 'default_categories',
@@ -166,11 +175,17 @@ class HomeCubit extends Cubit<HomeState> {
         config: HomeSectionConfig(),
       ),
       HomeSection(
+        id: 'spotlight_banners',
+        sectionType: 'banners',
+        displayOrder: 3,
+        config: HomeSectionConfig(placement: 'spotlight', limit: 1),
+      ),
+      HomeSection(
         id: 'default_products',
         sectionType: 'products',
         titleAr: 'الأكثر مبيعاً',
         titleEn: 'Best Sellers',
-        displayOrder: 3,
+        displayOrder: 4,
         config: HomeSectionConfig(source: 'best_sellers', showSeeAll: false),
       ),
     ];
@@ -183,7 +198,10 @@ class HomeCubit extends Cubit<HomeState> {
 
     switch (section.sectionType) {
       case 'banners':
-        final data = await _repository.getBanners(limit: limit);
+        final data = await _repository.getBanners(
+          limit: limit,
+          placement: config.placement,
+        );
         return _mapBanners(data, config);
 
       case 'categories':
@@ -191,9 +209,9 @@ class HomeCubit extends Cubit<HomeState> {
         return _mapCategories(data);
 
       case 'products':
-        // Use StoreProductRepository when areaId is available
+        // Use BranchProductRepository when areaId is available
         if (_areaId != null) {
-          return _loadStoreProducts(
+          return _loadBranchProducts(
             source: config.source ?? 'best_sellers',
             categoryId: config.categoryId,
             limit: limit ?? 10,
@@ -213,61 +231,63 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  /// Load products from StoreProductRepository (area-filtered)
-  Future<List<ProductItem>> _loadStoreProducts({
+  /// Load products from BranchProductRepository (area-filtered)
+  Future<List<ProductItem>> _loadBranchProducts({
     required String source,
     String? categoryId,
     int limit = 10,
   }) async {
     final areaId = _areaId!;
-    List<StoreProduct> storeProducts;
+    List<BranchProduct> branchProducts;
 
     switch (source) {
       case 'best_sellers':
-        storeProducts = await _storeProductRepo.getBestSellersForArea(
+        branchProducts = await _branchProductRepo.getBestSellersForArea(
           areaId: areaId,
           limit: limit,
         );
         break;
       case 'newest':
-        storeProducts = await _storeProductRepo.getNewestForArea(
+        branchProducts = await _branchProductRepo.getNewestForArea(
           areaId: areaId,
           limit: limit,
         );
         break;
       case 'offers':
-        storeProducts = await _storeProductRepo.getOffersForArea(
+        branchProducts = await _branchProductRepo.getOffersForArea(
           areaId: areaId,
           limit: limit,
         );
         break;
       case 'category':
-        storeProducts = await _storeProductRepo.getStoreProductsByArea(
+        branchProducts = await _branchProductRepo.getBranchProductsByArea(
           areaId: areaId,
           categoryId: categoryId,
           limit: limit,
         );
         break;
       default:
-        storeProducts = await _storeProductRepo.getStoreProductsByArea(
+        branchProducts = await _branchProductRepo.getBranchProductsByArea(
           areaId: areaId,
           limit: limit,
         );
     }
 
-    return storeProducts.map((sp) => ProductItem.fromStoreProduct(sp)).toList();
+    return branchProducts
+        .map((sp) => ProductItem.fromBranchProduct(sp))
+        .toList();
   }
 
   /// Fallback to default sections if home_sections table not configured
   Future<void> _loadDefaultSections() async {
     try {
-      // Fetch banners + categories from HomeRepository
+      // Fetch categories from HomeRepository
       final bannersFuture = _repository.getBanners();
       final categoriesFuture = _repository.getCategories();
 
-      // Fetch products from store-aware repo if areaId available
+      // Fetch products from branch-aware repo if areaId available
       final productsFuture = _areaId != null
-          ? _loadStoreProducts(source: 'best_sellers', limit: 10)
+          ? _loadBranchProducts(source: 'best_sellers', limit: 10)
           : _repository.getBestSellers().then((data) => _mapProducts(data));
 
       final results = await Future.wait([
@@ -323,20 +343,18 @@ class HomeCubit extends Cubit<HomeState> {
         imageUrlEn: json['image_url_en'] as String?,
         actionUrl: json['action_url'] as String?,
         isExternal: json['is_external'] as bool? ?? false,
+        placement: json['placement'] as String? ?? 'main_carousel',
+        isAutoScroll: json['is_auto_scroll'] as bool? ?? true,
+        scrollIntervalSeconds: json['scroll_interval_seconds'] as int? ?? 5,
       );
     }).toList();
   }
 
   /// Map raw category data to CategoryItem
   List<CategoryItem> _mapCategories(List<Map<String, dynamic>> data) {
-    return data.map((json) {
-      return CategoryItem(
-        id: json['id'] as String,
-        nameAr: json['name_ar'] as String? ?? '',
-        nameEn: json['name_en'] as String? ?? '',
-        imageUrl: json['image_url'] as String? ?? '',
-      );
-    }).toList();
+    return data
+        .map<CategoryItem>((json) => CategoryItem.fromJson(json))
+        .toList();
   }
 
   /// Map raw product data to ProductItem

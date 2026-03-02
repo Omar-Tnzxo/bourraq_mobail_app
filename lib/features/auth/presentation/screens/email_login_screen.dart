@@ -481,7 +481,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen>
               Image.asset(
                 'assets/icons/google.png',
                 height: 24,
-                errorBuilder: (_, __, ___) => const Icon(
+                errorBuilder: (_, _, _) => const Icon(
                   LucideIcons.globe,
                   size: 28,
                   color: Color(0xFF4285F4),

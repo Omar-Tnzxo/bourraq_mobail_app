@@ -16,7 +16,7 @@
         android:maxSdkVersion="32"/>
     
     <application
-        android:label="Bourraq"
+        android:label="براق - Bourraq"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -50,7 +50,7 @@
         <!-- FCM Default Notification Icon -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_notification" />
+            android:resource="@drawable/ic_stat_white_icon_logo" />
         
         <!-- FCM Default Notification Color -->
         <meta-data

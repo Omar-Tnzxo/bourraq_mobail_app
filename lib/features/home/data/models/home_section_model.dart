@@ -51,6 +51,7 @@ class HomeSectionConfig {
   // Banners specific
   final bool autoScroll;
   final int scrollIntervalMs;
+  final String? placement; // NEW
 
   // Products specific
   final String? source; // 'best_sellers', 'newest', 'offers', 'category'
@@ -63,6 +64,7 @@ class HomeSectionConfig {
     this.seeAllRoute,
     this.autoScroll = true,
     this.scrollIntervalMs = 4000,
+    this.placement,
     this.source,
     this.categoryId,
   });
@@ -75,6 +77,7 @@ class HomeSectionConfig {
       seeAllRoute: json['see_all_route'] as String?,
       autoScroll: json['auto_scroll'] as bool? ?? true,
       scrollIntervalMs: json['scroll_interval_ms'] as int? ?? 4000,
+      placement: json['placement'] as String?,
       source: json['source'] as String?,
       categoryId: json['category_id'] as String?,
     );

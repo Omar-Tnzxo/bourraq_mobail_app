@@ -17,7 +17,7 @@ class HomeBannersCarousel extends StatefulWidget {
     required this.banners,
     this.onBannerTap,
     this.autoScroll = true,
-    this.autoScrollIntervalMs = 4000,
+    this.autoScrollIntervalMs = 5000,
   });
 
   @override
@@ -31,21 +31,37 @@ class _HomeBannersCarouselState extends State<HomeBannersCarousel> {
   @override
   void initState() {
     super.initState();
-    if (widget.autoScroll && widget.banners.length > 1) {
-      _startAutoScroll();
+    // Default to widget props, but override if banners have specific settings
+    bool finalAutoScroll = widget.autoScroll;
+    int finalInterval = widget.autoScrollIntervalMs;
+
+    if (widget.banners.isNotEmpty) {
+      // Use setting from the first banner in the carousel
+      finalAutoScroll = widget.banners.first.isAutoScroll;
+      finalInterval = widget.banners.first.scrollIntervalSeconds * 1000;
+    }
+
+    if (finalAutoScroll && widget.banners.length > 1) {
+      _startAutoScroll(finalInterval);
     }
   }
 
-  void _startAutoScroll() {
-    Future.delayed(Duration(milliseconds: widget.autoScrollIntervalMs), () {
-      if (mounted && widget.autoScroll) {
-        final nextPage = (_currentPage + 1) % widget.banners.length;
-        _pageController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        );
-        _startAutoScroll();
+  void _startAutoScroll(int interval) {
+    Future.delayed(Duration(milliseconds: interval), () {
+      if (mounted) {
+        // Re-check auto-scroll state from first banner (in case it changes)
+        final autoScrollEnabled = widget.banners.isNotEmpty
+            ? widget.banners.first.isAutoScroll
+            : widget.autoScroll;
+        if (autoScrollEnabled) {
+          final nextPage = (_currentPage + 1) % widget.banners.length;
+          _pageController.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+          _startAutoScroll(interval);
+        }
       }
     });
   }
@@ -174,6 +190,9 @@ class BannerItem {
   final String? imageUrlEn;
   final String? actionUrl;
   final bool isExternal;
+  final String placement;
+  final bool isAutoScroll;
+  final int scrollIntervalSeconds;
 
   const BannerItem({
     required this.id,
@@ -181,5 +200,8 @@ class BannerItem {
     this.imageUrlEn,
     this.actionUrl,
     this.isExternal = false,
+    this.placement = 'main_carousel',
+    this.isAutoScroll = true,
+    this.scrollIntervalSeconds = 5,
   });
 }

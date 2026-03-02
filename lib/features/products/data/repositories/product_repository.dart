@@ -23,24 +23,49 @@ class ProductRepository {
     }
   }
 
-  /// Fetch related products from the same category
-  /// Excludes the current product and limits to 6 items
+  /// Fetch related products from the same category or sub-category
+  /// Excludes the current product
   Future<List<Product>> getRelatedProducts({
-    required String categoryId,
+    String? categoryId,
+    String? subCategoryId,
     required String excludeProductId,
-    int limit = 6,
+    int? limit = 24, // Reasonable default for "all"
   }) async {
     try {
-      final response = await _supabase
-          .from('products')
-          .select()
-          .eq('category_id', categoryId)
-          .eq('is_active', true)
-          .isFilter('deleted_at', null)
-          .neq('id', excludeProductId)
-          .limit(limit);
+      // First attempt: Same sub-category
+      if (subCategoryId != null) {
+        final response = await _supabase
+            .from('products')
+            .select()
+            .eq('sub_category_id', subCategoryId)
+            .eq('is_active', true)
+            .isFilter('deleted_at', null)
+            .neq('id', excludeProductId)
+            .limit(limit ?? 24);
 
-      return (response as List).map((json) => Product.fromJson(json)).toList();
+        final results = (response as List)
+            .map((json) => Product.fromJson(json))
+            .toList();
+        if (results.isNotEmpty) return results;
+      }
+
+      // Second attempt / Fallback: Same category
+      if (categoryId != null) {
+        final response = await _supabase
+            .from('products')
+            .select()
+            .eq('category_id', categoryId)
+            .eq('is_active', true)
+            .isFilter('deleted_at', null)
+            .neq('id', excludeProductId)
+            .limit(limit ?? 24);
+
+        return (response as List)
+            .map((json) => Product.fromJson(json))
+            .toList();
+      }
+
+      return [];
     } catch (e) {
       throw Exception('Failed to fetch related products: $e');
     }

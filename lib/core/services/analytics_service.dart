@@ -265,8 +265,8 @@ class AnalyticsService {
     await _analytics.logEvent(
       name: 'clear_cart',
       parameters: {
-        if (itemCount != null) 'item_count': itemCount,
-        if (cartTotal != null) 'cart_total': cartTotal,
+        'item_count': ?itemCount,
+        'cart_total': ?cartTotal,
       },
     );
     await _logToSupabase('clear_cart', {
@@ -356,8 +356,8 @@ class AnalyticsService {
       name: success ? 'promo_code_success' : 'promo_code_failed',
       parameters: {
         'code': code,
-        if (discount != null) 'discount': discount,
-        if (errorMessage != null) 'error': errorMessage,
+        'discount': ?discount,
+        'error': ?errorMessage,
       },
     );
     await _logToSupabase(success ? 'promo_code_success' : 'promo_code_failed', {
@@ -524,7 +524,7 @@ class AnalyticsService {
           0,
           errorMessage.length.clamp(0, 100),
         ),
-        if (screenName != null) 'screen_name': screenName,
+        'screen_name': ?screenName,
       },
     );
     await _crashlytics.recordError(
@@ -554,7 +554,7 @@ class AnalyticsService {
       parameters: {
         'endpoint': endpoint,
         'status_code': statusCode,
-        if (errorMessage != null) 'error': errorMessage,
+        'error': ?errorMessage,
       },
     );
     await _logToSupabase('api_error', {
@@ -662,14 +662,31 @@ class AnalyticsService {
     try {
       final userId = _supabase.auth.currentUser?.id;
 
-      await _supabase.from('analytics_events').insert({
-        'user_id': userId,
-        'event_name': eventName,
-        'event_params': params,
-        'platform': _getPlatform(),
-        'app_version': '1.0.0', // TODO: Get from package_info
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      try {
+        await _supabase.from('analytics_events').insert({
+          'user_id': userId,
+          'event_name': eventName,
+          'event_params': params,
+          'platform': _getPlatform(),
+          'app_version': '1.0.0', // TODO: Get from package_info
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      } catch (e) {
+        // Fallback: If fk_analytics_events_user fails (user exists in auth but not in public.users), log without user_id
+        if (e.toString().contains('fk_analytics_events_user') &&
+            userId != null) {
+          await _supabase.from('analytics_events').insert({
+            'user_id': null,
+            'event_name': eventName,
+            'event_params': params,
+            'platform': _getPlatform(),
+            'app_version': '1.0.0',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        } else {
+          rethrow;
+        }
+      }
     } catch (e) {
       // Silent fail - don't block app functionality
       if (_isDebugMode) {

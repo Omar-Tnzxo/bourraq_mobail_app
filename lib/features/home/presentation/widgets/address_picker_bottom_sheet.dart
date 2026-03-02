@@ -174,7 +174,7 @@ class _AddressPickerBottomSheetState extends State<AddressPickerBottomSheet> {
       shrinkWrap: true,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _addresses.length,
-      separatorBuilder: (_, __) => const Divider(height: 1, indent: 20),
+      separatorBuilder: (_, _) => const Divider(height: 1, indent: 20),
       itemBuilder: (context, index) {
         final address = _addresses[index];
         final isSelected = widget.currentAddress?.id == address.id;

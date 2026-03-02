@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
@@ -14,6 +13,8 @@ class SearchResultsGrid extends StatelessWidget {
   final String query;
   final CartService? cartService;
   final VoidCallback? onCartUpdated;
+  final bool hasAddress;
+  final VoidCallback? onLocationRequired;
 
   const SearchResultsGrid({
     super.key,
@@ -21,6 +22,8 @@ class SearchResultsGrid extends StatelessWidget {
     required this.query,
     this.cartService,
     this.onCartUpdated,
+    this.hasAddress = true,
+    this.onLocationRequired,
   });
 
   @override
@@ -54,7 +57,7 @@ class SearchResultsGrid extends StatelessWidget {
                     crossAxisCount: 3,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
-                    childAspectRatio: 0.52,
+                    childAspectRatio: 0.64,
                   ),
                   itemCount: results.length,
                   itemBuilder: (context, index) {
@@ -63,6 +66,8 @@ class SearchResultsGrid extends StatelessWidget {
                       product: ProductItem.fromMap(product),
                       cartService: cartService,
                       onCartUpdated: onCartUpdated,
+                      hasAddress: hasAddress,
+                      onLocationRequired: onLocationRequired,
                       onTap: () =>
                           ProductDetailsSheet.show(context, product['id']),
                     );
