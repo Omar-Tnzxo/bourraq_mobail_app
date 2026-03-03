@@ -460,12 +460,36 @@ class _OrdersScreenState extends State<OrdersScreen>
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        '${order.total.toStringAsFixed(2)} ${'common.egp'.tr()}',
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: AppColors.primaryGreen,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            order.total.floor().toString(),
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: AppColors.primaryGreen,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '.${((order.total - order.total.floor()) * 100).round().toString().padLeft(2, '0')}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.6,
+                              ),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'common.egp'.tr(),
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: AppColors.primaryGreen,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bourraq/features/location/data/address_service.dart';
 import 'package:bourraq/features/products/data/repositories/branch_product_repository.dart';
+import 'package:bourraq/features/products/data/models/branch_product_model.dart';
 
 import 'models/search_history_item.dart';
 import 'models/popular_search_item.dart';
@@ -41,9 +42,6 @@ class SearchRepository {
   Future<List<Map<String, dynamic>>> searchProducts(String query) async {
     if (query.trim().isEmpty) return [];
 
-    final normalizedQuery = _normalizeArabic(query.trim());
-    final searchPattern = '%$normalizedQuery%';
-
     // Check for user's selected area
     final addressService = AddressService();
     final defaultAddress = await addressService.getDefaultAddress();
@@ -55,7 +53,7 @@ class SearchRepository {
       // Perform search using branch products in the specific area
       final branchProducts = await branchProductRepo.searchInArea(
         areaId: areaId,
-        query: query.trim(),
+        queryStr: query.trim(),
         limit: 50,
       );
 
@@ -83,20 +81,40 @@ class SearchRepository {
           )
           .toList();
     }
+    final branchProductRepo = BranchProductRepository();
+    final branchProducts = await branchProductRepo.searchInArea(
+      queryStr: query.trim(),
+      limit: 50,
+    );
 
-    // Search in both Arabic and English names
-    final response = await _supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .isFilter('deleted_at', null)
-        .or(
-          'name_ar.ilike.$searchPattern,name_en.ilike.$searchPattern,description_ar.ilike.$searchPattern,description_en.ilike.$searchPattern',
-        )
-        .order('is_best_seller', ascending: false)
-        .limit(50);
+    // De-duplicate by product ID
+    final products = <Map<String, dynamic>>[];
+    final seenIds = <String>{};
 
-    return List<Map<String, dynamic>>.from(response);
+    for (var sp in branchProducts) {
+      if (!seenIds.contains(sp.productId)) {
+        seenIds.add(sp.productId);
+        products.add({
+          'id': sp.productId,
+          'branch_product_id': sp.id,
+          'branch_id': sp.branchId,
+          'name_ar': sp.nameAr,
+          'name_en': sp.nameEn,
+          'price': sp.customerPrice,
+          'partner_price': sp.partnerPrice,
+          'old_price': null,
+          'image_url': sp.imageUrl,
+          'is_active': sp.isActive,
+          'category_id': sp.categoryId,
+          'sub_category_id': sp.subCategoryId,
+          'avg_rating': sp.avgRating,
+          'rating_count': sp.ratingCount,
+          'branch_name_ar': sp.branchNameAr,
+          'branch_name_en': sp.branchNameEn,
+        });
+      }
+    }
+    return products;
   }
 
   /// Search products within a specific category
@@ -105,21 +123,59 @@ class SearchRepository {
     String categoryId,
   ) async {
     if (query.trim().isEmpty) return [];
-
     final normalizedQuery = _normalizeArabic(query.trim());
     final searchPattern = '%$normalizedQuery%';
 
-    final response = await _supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .isFilter('deleted_at', null)
-        .eq('category_id', categoryId)
-        .or('name_ar.ilike.$searchPattern,name_en.ilike.$searchPattern')
-        .order('is_best_seller', ascending: false)
-        .limit(50);
+    var queryRepo = _supabase
+        .from('partner_products')
+        .select(BranchProductRepository.selectQuery)
+        .eq('is_available', true)
+        .eq('approval_status', 'approved')
+        .eq('branches.is_active', true)
+        .eq('products.is_active', true)
+        .eq('products.category_id', categoryId)
+        .or(
+          'products.name_ar.ilike.$searchPattern,products.name_en.ilike.$searchPattern',
+        );
 
-    return List<Map<String, dynamic>>.from(response);
+    final response = await queryRepo
+        .order('avg_rating', ascending: false)
+        .limit(100);
+
+    final branchProducts = (response as List)
+        .where((json) => json['products'] != null && json['branches'] != null)
+        .map((json) => BranchProduct.fromJson(json))
+        .toList();
+
+    // De-duplicate by product ID
+    final products = <Map<String, dynamic>>[];
+    final seenIds = <String>{};
+
+    for (var sp in branchProducts) {
+      if (!seenIds.contains(sp.productId)) {
+        seenIds.add(sp.productId);
+        products.add({
+          'id': sp.productId,
+          'branch_product_id': sp.id,
+          'branch_id': sp.branchId,
+          'name_ar': sp.nameAr,
+          'name_en': sp.nameEn,
+          'price': sp.customerPrice,
+          'partner_price': sp.partnerPrice,
+          'old_price': null,
+          'image_url': sp.imageUrl,
+          'is_active': sp.isActive,
+          'category_id': sp.categoryId,
+          'sub_category_id': sp.subCategoryId,
+          'avg_rating': sp.avgRating,
+          'rating_count': sp.ratingCount,
+          'branch_name_ar': sp.branchNameAr,
+          'branch_name_en': sp.branchNameEn,
+        });
+      }
+    }
+
+    return products;
   }
 
   // ==========================================
@@ -287,16 +343,38 @@ class SearchRepository {
           )
           .toList();
     }
+    // Global browsing for popular products
+    final branchProductRepo = BranchProductRepository();
+    final branchProducts = await branchProductRepo.getBestSellersForArea(
+      limit: limit * 2,
+    );
 
-    final response = await _supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .isFilter('deleted_at', null)
-        .eq('is_best_seller', true)
-        .order('created_at', ascending: false)
-        .limit(limit);
+    final products = <Map<String, dynamic>>[];
+    final seenIds = <String>{};
 
-    return List<Map<String, dynamic>>.from(response);
+    for (var sp in branchProducts) {
+      if (!seenIds.contains(sp.productId) && products.length < limit) {
+        seenIds.add(sp.productId);
+        products.add({
+          'id': sp.productId,
+          'branch_product_id': sp.id,
+          'branch_id': sp.branchId,
+          'name_ar': sp.nameAr,
+          'name_en': sp.nameEn,
+          'price': sp.customerPrice,
+          'partner_price': sp.partnerPrice,
+          'old_price': null,
+          'image_url': sp.imageUrl,
+          'is_active': sp.isActive,
+          'category_id': sp.categoryId,
+          'sub_category_id': sp.subCategoryId,
+          'avg_rating': sp.avgRating,
+          'rating_count': sp.ratingCount,
+          'branch_name_ar': sp.branchNameAr,
+          'branch_name_en': sp.branchNameEn,
+        });
+      }
+    }
+    return products;
   }
 }

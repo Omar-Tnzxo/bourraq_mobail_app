@@ -189,9 +189,18 @@ class _HomeTabScreenState extends State<HomeTabScreen>
           _homeCubit.loadHomeData(areaId: address.areaId);
         }
       },
-    ).then((_) {
-      // Reload address after bottom sheet is closed
-      _loadDefaultAddress();
+    ).then((result) async {
+      if (result == 'add_address') {
+        if (mounted) await context.push('/add-address');
+        _loadDefaultAddressAndHomeData();
+      } else if (result == 'manage_addresses') {
+        if (mounted) await context.push('/addresses');
+        _loadDefaultAddressAndHomeData();
+      } else {
+        // Reload address and home data after bottom sheet is closed
+        // in case a new default address was added or changed
+        _loadDefaultAddressAndHomeData();
+      }
     });
   }
 

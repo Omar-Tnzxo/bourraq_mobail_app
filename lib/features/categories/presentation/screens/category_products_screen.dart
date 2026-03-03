@@ -19,6 +19,7 @@ import 'package:bourraq/features/location/data/address_service.dart';
 import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
 import 'package:bourraq/features/categories/data/models/category_model.dart';
 import 'package:bourraq/features/products/data/models/product_model.dart';
+import 'package:bourraq/features/products/data/models/branch_product_model.dart';
 import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
 import 'package:bourraq/features/categories/presentation/screens/categories_list_screen.dart';
 
@@ -560,57 +561,52 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
       }
 
       // Fetch Products
-      if (_areaId != null) {
-        final branchProducts = await _branchProductRepo
-            .getAllBranchProductsForArea(areaId: _areaId!);
-        _allProducts = branchProducts
-            .where((p) => p.categoryId == widget.mainCategoryId)
-            .map(
-              (sp) => {
-                'id': sp.productId,
-                'branch_product_id': sp.id,
-                'branch_id': sp.branchId,
-                'name_ar': sp.nameAr,
-                'name_en': sp.nameEn,
-                'price': sp.customerPrice,
-                'partner_price': sp.partnerPrice,
-                'old_price': null,
-                'image_url': sp.imageUrl,
-                'is_active': sp.isActive,
-                'category_id': sp.categoryId,
-                'sub_category_id': sp.subCategoryId,
-                'avg_rating': sp.avgRating,
-                'rating_count': sp.ratingCount,
-                'branch_name_ar': sp.branchNameAr,
-                'branch_name_en': sp.branchNameEn,
-                'badge_name_ar': sp.badgeNameAr,
-                'badge_name_en': sp.badgeNameEn,
-                'badge_color': sp.badgeColor,
-                'created_at': DateTime.now().toIso8601String(),
-                'tags': '',
-              },
-            )
-            .toList();
-      } else {
-        final response = await _supabase
-            .from('products')
-            .select()
-            .eq('category_id', widget.mainCategoryId)
-            .eq('is_active', true)
-            .isFilter('deleted_at', null);
+      final branchProducts = await _branchProductRepo
+          .getAllBranchProductsForArea(areaId: _areaId);
 
-        _allProducts = (response as List).map<Map<String, dynamic>>((p) {
-          final productMap = Map<String, dynamic>.from(p as Map);
-          return {
-            ...productMap,
-            'branch_name_ar': 'Bourraq',
-            'branch_name_en': 'Bourraq',
-            'partner_price': productMap['price'],
-            'avg_rating': 0.0,
-            'rating_count': 0,
-          };
-        }).toList();
+      var filteredBranches = branchProducts
+          .where((p) => p.categoryId == widget.mainCategoryId)
+          .toList();
+
+      if (_areaId == null) {
+        final seenIds = <String>{};
+        final uniqueProducts = <BranchProduct>[];
+        for (var sp in filteredBranches) {
+          if (!seenIds.contains(sp.productId)) {
+            seenIds.add(sp.productId);
+            uniqueProducts.add(sp);
+          }
+        }
+        filteredBranches = uniqueProducts;
       }
+
+      _allProducts = filteredBranches
+          .map(
+            (sp) => {
+              'id': sp.productId,
+              'branch_product_id': sp.id,
+              'branch_id': sp.branchId,
+              'name_ar': sp.nameAr,
+              'name_en': sp.nameEn,
+              'price': sp.customerPrice,
+              'partner_price': sp.partnerPrice,
+              'old_price': null,
+              'image_url': sp.imageUrl,
+              'is_active': sp.isActive,
+              'category_id': sp.categoryId,
+              'sub_category_id': sp.subCategoryId,
+              'avg_rating': sp.avgRating,
+              'rating_count': sp.ratingCount,
+              'branch_name_ar': sp.branchNameAr,
+              'branch_name_en': sp.branchNameEn,
+              'badge_name_ar': sp.badgeNameAr,
+              'badge_name_en': sp.badgeNameEn,
+              'badge_color': sp.badgeColor,
+              'created_at': DateTime.now().toIso8601String(),
+              'tags': '',
+            },
+          )
+          .toList();
 
       _applyFiltersAndSort();
 

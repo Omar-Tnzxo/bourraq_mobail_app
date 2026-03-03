@@ -294,13 +294,27 @@ class _AccountScreenState extends State<AccountScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : Text(
-                              _walletBalance.toStringAsFixed(2),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  _walletBalance.floor().toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '.${((_walletBalance - _walletBalance.floor()) * 100).round().toString().padLeft(2, '0')}',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                       const SizedBox(width: 6),
                       Padding(

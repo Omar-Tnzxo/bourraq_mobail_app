@@ -365,12 +365,33 @@ class _CartScreenState extends State<CartScreen> {
               ),
               Row(
                 children: [
-                  Text(
-                    _formatPrice(_cartTotal),
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _cartTotal.floor().toString(),
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '.${((_cartTotal - _cartTotal.floor()) * 100).round().toString().padLeft(2, '0')}',
+                        style: AppTextStyles.titleSmall.copyWith(
+                          color: AppColors.white.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'common.currency_short'.tr(),
+                        style: AppTextStyles.titleSmall.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(width: 8),
                   const Icon(LucideIcons.arrowRight, size: 20),
@@ -381,10 +402,5 @@ class _CartScreenState extends State<CartScreen> {
         ),
       ),
     );
-  }
-
-  String _formatPrice(double price) {
-    final formatted = price.toStringAsFixed(2);
-    return '$formatted ${'common.currency_short'.tr()}';
   }
 }

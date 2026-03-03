@@ -198,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (state is AuthError) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          ).showSnackBar(SnackBar(content: Text(state.message.tr())));
         }
       },
       child: Scaffold(
@@ -511,7 +511,8 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             if (icon != null)
               Icon(icon, size: 22, color: iconColor ?? AppColors.textPrimary)
-            else ?customIcon,
+            else
+              ?customIcon,
             const SizedBox(width: 12),
             Text(
               label,

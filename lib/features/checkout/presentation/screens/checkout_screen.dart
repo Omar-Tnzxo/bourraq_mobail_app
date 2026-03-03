@@ -1047,13 +1047,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Text(
-                            '${(item.price * item.quantity).toStringAsFixed(2)} ج.م',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                (item.price * item.quantity).floor().toString(),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                '.${(((item.price * item.quantity) - (item.price * item.quantity).floor()) * 100).round().toString().padLeft(2, '0')}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.textPrimary.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                context.locale.languageCode == 'ar'
+                                    ? 'ج.م'
+                                    : 'EGP',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -1108,13 +1135,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              Text(
-                '${_total.toStringAsFixed(2)} ج.م',
-                style: const TextStyle(
-                  fontSize: 22,
-                  color: AppColors.primaryGreen,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    _total.floor().toString(),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '.${((_total - _total.floor()) * 100).round().toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.primaryGreen.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    context.locale.languageCode == 'ar' ? 'ج.م' : 'EGP',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

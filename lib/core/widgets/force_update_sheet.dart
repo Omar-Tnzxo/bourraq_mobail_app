@@ -108,8 +108,7 @@ class ForceUpdateSheet extends StatelessWidget {
       if (isMaintenance) {
         debugPrint('🚧 [ForceUpdate] Maintenance mode IS ENABLED');
         if (context.mounted) {
-          final isArabic =
-              Localizations.localeOf(context).languageCode == 'ar';
+          final isArabic = Localizations.localeOf(context).languageCode == 'ar';
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (_) => MaintenanceView(
@@ -126,7 +125,7 @@ class ForceUpdateSheet extends StatelessWidget {
           return; // Stop update check if maintenance is on
         }
       }
-    
+
       // 2. Check for App Updates
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;

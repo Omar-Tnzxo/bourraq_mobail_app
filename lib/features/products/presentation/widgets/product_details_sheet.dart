@@ -540,7 +540,7 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.deepOlive,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -805,7 +805,7 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.deepOlive,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ],

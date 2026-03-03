@@ -379,13 +379,36 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${_order?.total.toStringAsFixed(2)} ${'common.currency'.tr()}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      (_order?.total ?? 0.0).floor().toString(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      '.${(((_order?.total ?? 0.0) - (_order?.total ?? 0.0).floor()) * 100).round().toString().padLeft(2, '0')}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'common.currency'.tr(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -486,13 +509,36 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                   ),
 
                   // Price
-                  Text(
-                    '${item.totalPrice.toStringAsFixed(2)} ${'common.currency'.tr()}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        item.totalPrice.floor().toString(),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        '.${((item.totalPrice - item.totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        'common.currency'.tr(),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -577,13 +623,36 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                   color: AppColors.textPrimary,
                 ),
               ),
-              Text(
-                '${_order?.total.toStringAsFixed(2)} ${'common.currency'.tr()}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    (_order?.total ?? 0.0).floor().toString(),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '.${(((_order?.total ?? 0.0) - (_order?.total ?? 0.0).floor()) * 100).round().toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'common.currency'.tr(),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

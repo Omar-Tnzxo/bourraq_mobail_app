@@ -137,13 +137,36 @@ class ProductBottomBar extends StatelessWidget {
                                 decoration: TextDecoration.lineThrough,
                               ),
                             ),
-                          Text(
-                            '${totalPrice.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                totalPrice.floor().toString(),
+                                style: const TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '.${((totalPrice - totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
+                                style: TextStyle(
+                                  color: AppColors.white.withValues(alpha: 0.6),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                'common.currency_short'.tr(),
+                                style: const TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

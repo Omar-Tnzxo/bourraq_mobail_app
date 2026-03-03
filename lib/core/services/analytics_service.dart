@@ -264,10 +264,7 @@ class AnalyticsService {
   Future<void> trackClearCart({int? itemCount, double? cartTotal}) async {
     await _analytics.logEvent(
       name: 'clear_cart',
-      parameters: {
-        'item_count': ?itemCount,
-        'cart_total': ?cartTotal,
-      },
+      parameters: {'item_count': ?itemCount, 'cart_total': ?cartTotal},
     );
     await _logToSupabase('clear_cart', {
       'item_count': itemCount,
@@ -354,11 +351,7 @@ class AnalyticsService {
   }) async {
     await _analytics.logEvent(
       name: success ? 'promo_code_success' : 'promo_code_failed',
-      parameters: {
-        'code': code,
-        'discount': ?discount,
-        'error': ?errorMessage,
-      },
+      parameters: {'code': code, 'discount': ?discount, 'error': ?errorMessage},
     );
     await _logToSupabase(success ? 'promo_code_success' : 'promo_code_failed', {
       'code': code,

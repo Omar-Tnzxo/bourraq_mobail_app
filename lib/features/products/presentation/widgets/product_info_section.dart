@@ -98,7 +98,7 @@ class ProductInfoSection extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.deepOlive,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 4),

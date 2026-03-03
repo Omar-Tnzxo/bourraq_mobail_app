@@ -174,17 +174,25 @@ class CartItemTile extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
+          item.totalPrice.floor().toString(),
+          style: AppTextStyles.titleLarge.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.deepOlive,
+          ),
+        ),
+        Text(
+          '.${((item.totalPrice - item.totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
+          style: AppTextStyles.titleSmall.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
           locale == 'ar' ? 'ج.م ' : 'EGP ',
           style: AppTextStyles.labelMedium.copyWith(
             color: AppColors.deepOlive,
             fontWeight: FontWeight.w600,
-          ),
-        ),
-        Text(
-          item.totalPrice.toStringAsFixed(2),
-          style: AppTextStyles.titleLarge.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.deepOlive,
           ),
         ),
       ],

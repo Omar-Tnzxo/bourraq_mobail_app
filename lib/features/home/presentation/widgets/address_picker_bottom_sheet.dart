@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
@@ -20,7 +19,7 @@ class AddressPickerBottomSheet extends StatefulWidget {
   });
 
   /// عرض الـ Bottom Sheet
-  static Future<void> show({
+  static Future<dynamic> show({
     required BuildContext context,
     Address? currentAddress,
     required Function(Address) onAddressSelected,
@@ -202,8 +201,7 @@ class _AddressPickerBottomSheetState extends State<AddressPickerBottomSheet> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context);
-                  context.push('/add-address');
+                  Navigator.pop(context, 'add_address');
                 },
                 icon: const Icon(LucideIcons.plus, size: 18),
                 label: Text('addresses.add_address'.tr()),
@@ -222,8 +220,7 @@ class _AddressPickerBottomSheetState extends State<AddressPickerBottomSheet> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context);
-                  context.push('/addresses');
+                  Navigator.pop(context, 'manage_addresses');
                 },
                 icon: const Icon(LucideIcons.settings2, size: 18),
                 label: Text('home.manage_addresses'.tr()),

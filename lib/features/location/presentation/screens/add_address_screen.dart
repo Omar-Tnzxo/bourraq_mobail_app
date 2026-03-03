@@ -251,6 +251,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       return;
     }
 
+    if (_detectedArea == null) {
+      _showError('addresses.out_of_delivery_area'.tr());
+      return;
+    }
+
     // تحديد التسمية والنوع
     final selectedOption = _labelOptions[_selectedLabelIndex];
     String label;

@@ -25,12 +25,12 @@
 
 ## 🎯 Overview
 
-**Bourraq** is a modern grocery and services delivery application built for **6th of October City, Giza, Egypt**. The app connects customers with local merchants and provides fast delivery within 30 minutes.
+**Bourraq** is a modern grocery and services delivery application built for **6th of October City, Giza, Egypt**. The app connects customers with local partners and provides fast delivery within 30 minutes.
 
 ### Business Model
 
-- **Customer App** (Flutter) - Browse and order from local merchants
-- **Merchant Dashboard** (Web) - Manage products and inventory
+- **Customer App** (Flutter) - Browse and order from local partners
+- **Partner Dashboard** (Web) - Manage products and inventory
 - **Pilot System** (Web) - Delivery management
 - **Moderation Panel** (Web) - Order review and approval
 

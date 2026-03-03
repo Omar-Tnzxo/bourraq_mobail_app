@@ -428,7 +428,7 @@ class _ProductCardState extends State<ProductCard>
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.deepOlive,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                   const SizedBox(width: 3),

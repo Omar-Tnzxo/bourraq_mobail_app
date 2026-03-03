@@ -209,68 +209,68 @@ class HomeCubit extends Cubit<HomeState> {
         return _mapCategories(data);
 
       case 'products':
-        // Use BranchProductRepository when areaId is available
-        if (_areaId != null) {
-          return _loadBranchProducts(
-            source: config.source ?? 'best_sellers',
-            categoryId: config.categoryId,
-            limit: limit ?? 10,
-          );
-        }
-        // Fallback to legacy query
-        final source = config.source ?? 'best_sellers';
-        final data = await _repository.getProductsBySource(
-          source: source,
+        return _loadBranchProducts(
+          source: config.source ?? 'best_sellers',
           categoryId: config.categoryId,
           limit: limit ?? 10,
         );
-        return _mapProducts(data);
 
       default:
         return [];
     }
   }
 
-  /// Load products from BranchProductRepository (area-filtered)
   Future<List<ProductItem>> _loadBranchProducts({
     required String source,
     String? categoryId,
     int limit = 10,
   }) async {
-    final areaId = _areaId!;
+    final areaId = _areaId;
     List<BranchProduct> branchProducts;
 
     switch (source) {
       case 'best_sellers':
         branchProducts = await _branchProductRepo.getBestSellersForArea(
           areaId: areaId,
-          limit: limit,
+          limit: areaId == null ? limit * 2 : limit,
         );
         break;
       case 'newest':
         branchProducts = await _branchProductRepo.getNewestForArea(
           areaId: areaId,
-          limit: limit,
+          limit: areaId == null ? limit * 2 : limit,
         );
         break;
       case 'offers':
         branchProducts = await _branchProductRepo.getOffersForArea(
           areaId: areaId,
-          limit: limit,
+          limit: areaId == null ? limit * 2 : limit,
         );
         break;
       case 'category':
         branchProducts = await _branchProductRepo.getBranchProductsByArea(
           areaId: areaId,
           categoryId: categoryId,
-          limit: limit,
+          limit: areaId == null ? limit * 2 : limit,
         );
         break;
       default:
         branchProducts = await _branchProductRepo.getBranchProductsByArea(
           areaId: areaId,
-          limit: limit,
+          limit: areaId == null ? limit * 2 : limit,
         );
+    }
+
+    if (areaId == null) {
+      final seenIds = <String>{};
+      final uniqueProducts = <BranchProduct>[];
+      for (var sp in branchProducts) {
+        if (!seenIds.contains(sp.productId) && uniqueProducts.length < limit) {
+          seenIds.add(sp.productId);
+          uniqueProducts.add(sp);
+        }
+      }
+      branchProducts = uniqueProducts;
     }
 
     return branchProducts
@@ -286,9 +286,10 @@ class HomeCubit extends Cubit<HomeState> {
       final categoriesFuture = _repository.getCategories();
 
       // Fetch products from branch-aware repo if areaId available
-      final productsFuture = _areaId != null
-          ? _loadBranchProducts(source: 'best_sellers', limit: 10)
-          : _repository.getBestSellers().then((data) => _mapProducts(data));
+      final productsFuture = _loadBranchProducts(
+        source: 'best_sellers',
+        limit: 10,
+      );
 
       final results = await Future.wait([
         bannersFuture,

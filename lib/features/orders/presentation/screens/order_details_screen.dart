@@ -588,12 +588,34 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       ],
                     ),
                   ),
-                  Text(
-                    '${item.totalPrice.toStringAsFixed(2)} ${'common.egp'.tr()}',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGreen,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        item.totalPrice.floor().toString(),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                      Text(
+                        '.${((item.totalPrice - item.totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primaryGreen.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        'common.egp'.tr(),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -645,12 +667,34 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                '${_order!.total.toStringAsFixed(2)} ${'common.egp'.tr()}',
-                style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryGreen,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    _order!.total.floor().toString(),
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  Text(
+                    '.${((_order!.total - _order!.total.floor()) * 100).round().toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.primaryGreen.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'common.egp'.tr(),
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -7,17 +7,18 @@ class BranchProductRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Common select query for partner_products with joins
-  static const String _selectQuery = '''
+  static const String selectQuery = '''
     id, branch_id, product_id, partner_price, customer_price,
     avg_rating, rating_count, is_available, approval_status, badge_id,
     products (
       id, name_ar, name_en, description_ar, description_en,
       image_url, category_id, sub_category_id, is_active, is_best_seller
     ),
-    branches (
-      id, name_ar, name_en, latitude, longitude, area_id, is_active
+    branches!inner (
+      id, name_ar, name_en, latitude, longitude, is_active,
+      branch_areas!inner(area_id)
     ),
-    product_badges!partner_products_badge_id_fkey (
+    product_badges!store_products_badge_id_fkey (
       id, badge_type
     )
   ''';
@@ -25,7 +26,7 @@ class BranchProductRepository {
   /// Fetch branch products filtered by area, with smart sorting
   /// Sort priority: price ASC → avg_rating DESC → distance ASC
   Future<List<BranchProduct>> getBranchProductsByArea({
-    required String areaId,
+    String? areaId,
     String? categoryId,
     int limit = 40,
     int offset = 0,
@@ -34,12 +35,15 @@ class BranchProductRepository {
   }) async {
     var query = _supabase
         .from('partner_products')
-        .select(_selectQuery)
+        .select(selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('branches.area_id', areaId)
         .eq('branches.is_active', true)
         .eq('products.is_active', true);
+
+    if (areaId != null) {
+      query = query.eq('branches.branch_areas.area_id', areaId);
+    }
 
     if (categoryId != null) {
       query = query.eq('products.category_id', categoryId);
@@ -77,20 +81,25 @@ class BranchProductRepository {
     return items;
   }
 
-  /// Fetch best seller products for an area
+  /// Fetch best seller products for an area or globally
   Future<List<BranchProduct>> getBestSellersForArea({
-    required String areaId,
+    String? areaId,
     int limit = 10,
   }) async {
-    final response = await _supabase
+    var query = _supabase
         .from('partner_products')
-        .select(_selectQuery)
+        .select(selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('branches.area_id', areaId)
         .eq('branches.is_active', true)
         .eq('products.is_active', true)
-        .eq('products.is_best_seller', true)
+        .eq('products.is_best_seller', true);
+
+    if (areaId != null) {
+      query = query.eq('branches.branch_areas.area_id', areaId);
+    }
+
+    final response = await query
         .order('avg_rating', ascending: false)
         .limit(limit);
 
@@ -100,19 +109,24 @@ class BranchProductRepository {
         .toList();
   }
 
-  /// Fetch newest products for an area
+  /// Fetch newest products for an area or globally
   Future<List<BranchProduct>> getNewestForArea({
-    required String areaId,
+    String? areaId,
     int limit = 10,
   }) async {
-    final response = await _supabase
+    var query = _supabase
         .from('partner_products')
-        .select(_selectQuery)
+        .select(selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('branches.area_id', areaId)
         .eq('branches.is_active', true)
-        .eq('products.is_active', true)
+        .eq('products.is_active', true);
+
+    if (areaId != null) {
+      query = query.eq('branches.branch_areas.area_id', areaId);
+    }
+
+    final response = await query
         .order('created_at', ascending: false)
         .limit(limit);
 
@@ -124,17 +138,22 @@ class BranchProductRepository {
 
   /// Fetch offer products (customer_price < product.old_price)
   Future<List<BranchProduct>> getOffersForArea({
-    required String areaId,
+    String? areaId,
     int limit = 10,
   }) async {
-    final response = await _supabase
+    var query = _supabase
         .from('partner_products')
-        .select(_selectQuery)
+        .select(selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('branches.area_id', areaId)
         .eq('branches.is_active', true)
-        .eq('products.is_active', true)
+        .eq('products.is_active', true);
+
+    if (areaId != null) {
+      query = query.eq('branches.branch_areas.area_id', areaId);
+    }
+
+    final response = await query
         .order('customer_price', ascending: true)
         .limit(limit);
 
@@ -152,21 +171,28 @@ class BranchProductRepository {
         .toList();
   }
 
-  /// Search branch products by name in an area
+  /// Search branch products by name
   Future<List<BranchProduct>> searchInArea({
-    required String areaId,
-    required String query,
+    String? areaId,
+    required String queryStr,
     int limit = 50,
   }) async {
-    final response = await _supabase
+    var query = _supabase
         .from('partner_products')
-        .select(_selectQuery)
+        .select(selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('branches.area_id', areaId)
         .eq('branches.is_active', true)
         .eq('products.is_active', true)
-        .or('products.name_ar.ilike.%$query%,products.name_en.ilike.%$query%')
+        .or(
+          'products.name_ar.ilike.%$queryStr%,products.name_en.ilike.%$queryStr%',
+        );
+
+    if (areaId != null) {
+      query = query.eq('branches.branch_areas.area_id', areaId);
+    }
+
+    final response = await query
         .order('avg_rating', ascending: false)
         .limit(limit);
 
@@ -181,7 +207,7 @@ class BranchProductRepository {
     try {
       final response = await _supabase
           .from('partner_products')
-          .select(_selectQuery)
+          .select(selectQuery)
           .eq('id', branchProductId)
           .maybeSingle();
 
@@ -199,11 +225,11 @@ class BranchProductRepository {
   }) async {
     final response = await _supabase
         .from('partner_products')
-        .select(_selectQuery)
+        .select(selectQuery)
         .eq('product_id', productId)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('branches.area_id', areaId)
+        .eq('branches.branch_areas.area_id', areaId)
         .eq('branches.is_active', true)
         .order('customer_price', ascending: true);
 
@@ -229,19 +255,23 @@ class BranchProductRepository {
 
   double _toRad(double deg) => deg * pi / 180;
 
-  /// Fetch ALL branch products for an area (for Scrollable Tab View)
+  /// Fetch ALL branch products (for Scrollable Tab View)
   Future<List<BranchProduct>> getAllBranchProductsForArea({
-    required String areaId,
+    String? areaId,
   }) async {
-    final response = await _supabase
+    var query = _supabase
         .from('partner_products')
-        .select(_selectQuery)
+        .select(selectQuery)
         .eq('is_available', true)
         .eq('approval_status', 'approved')
-        .eq('branches.area_id', areaId)
         .eq('branches.is_active', true)
-        .eq('products.is_active', true)
-        .order('customer_price', ascending: true);
+        .eq('products.is_active', true);
+
+    if (areaId != null) {
+      query = query.eq('branches.branch_areas.area_id', areaId);
+    }
+
+    final response = await query.order('customer_price', ascending: true);
 
     return (response as List)
         .where((json) => json['products'] != null && json['branches'] != null)
