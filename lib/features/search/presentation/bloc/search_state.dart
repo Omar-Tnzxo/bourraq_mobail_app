@@ -14,6 +14,8 @@ class SearchState extends Equatable {
   final List<PopularSearchItem> popularSearches;
   final List<Map<String, dynamic>> popularProducts;
   final String? errorMessage;
+  final bool hasReachedMax;
+  final int currentPage;
 
   const SearchState({
     this.status = SearchStatus.initial,
@@ -23,6 +25,8 @@ class SearchState extends Equatable {
     this.popularSearches = const [],
     this.popularProducts = const [],
     this.errorMessage,
+    this.hasReachedMax = false,
+    this.currentPage = 0,
   });
 
   /// Check if actively searching
@@ -34,6 +38,12 @@ class SearchState extends Equatable {
   /// Check if showing results
   bool get showResults => isSearching && status == SearchStatus.loaded;
 
+  /// Check if searching more pages
+  bool get isLoadingMore =>
+      isSearching &&
+      status == SearchStatus.searching &&
+      searchResults.isNotEmpty;
+
   SearchState copyWith({
     SearchStatus? status,
     String? query,
@@ -42,6 +52,8 @@ class SearchState extends Equatable {
     List<PopularSearchItem>? popularSearches,
     List<Map<String, dynamic>>? popularProducts,
     String? errorMessage,
+    bool? hasReachedMax,
+    int? currentPage,
   }) {
     return SearchState(
       status: status ?? this.status,
@@ -51,6 +63,8 @@ class SearchState extends Equatable {
       popularSearches: popularSearches ?? this.popularSearches,
       popularProducts: popularProducts ?? this.popularProducts,
       errorMessage: errorMessage,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+      currentPage: currentPage ?? this.currentPage,
     );
   }
 
@@ -63,5 +77,7 @@ class SearchState extends Equatable {
     popularSearches,
     popularProducts,
     errorMessage,
+    hasReachedMax,
+    currentPage,
   ];
 }

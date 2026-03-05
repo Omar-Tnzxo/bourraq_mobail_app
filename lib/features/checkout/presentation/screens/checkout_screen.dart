@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -18,6 +19,8 @@ import 'package:bourraq/features/orders/data/order_model.dart';
 import 'package:bourraq/features/orders/data/orders_service.dart';
 import 'package:bourraq/features/wallet/data/wallet_service.dart';
 import 'package:bourraq/features/wallet/data/wallet_model.dart';
+import 'package:bourraq/features/checkout/presentation/widgets/verification_overlay.dart';
+import 'package:bourraq/features/checkout/presentation/widgets/wallet_payment_option.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -41,6 +44,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   bool _isLoading = true;
   bool _isPlacingOrder = false;
+  String _verificationStatus = '';
 
   // Promo code
   final TextEditingController _promoController = TextEditingController();
@@ -181,12 +185,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double get _total => _totalBeforeWallet - _walletDeduction;
 
   Future<void> _placeOrder() async {
+    // 1. الأساسيات
     if (_selectedAddress == null) {
       _showError('checkout.select_delivery_address'.tr());
       return;
     }
 
-    // التحقق من أن العنوان داخل منطقة مدعومة
     if (_selectedAddress!.areaId == null) {
       _showError('location.area_not_supported'.tr());
       return;
@@ -197,9 +201,80 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    setState(() => _isPlacingOrder = true);
+    // 2. تحقق من وقت الجدولة
+    if (_selectedDeliveryTime != null &&
+        _selectedDeliveryTime!.isBefore(DateTime.now())) {
+      _showError('checkout.invalid_schedule_time'.tr());
+      return;
+    }
+
+    setState(() {
+      _isPlacingOrder = true;
+      _verificationStatus = 'checkout.verifying_order'.tr();
+    });
 
     try {
+      // 3. فحص أدق للمنتجات (التوفر والأسعار)
+      setState(() => _verificationStatus = 'cart.checking_stock'.tr());
+      final validation = await _cartRepository.validateCart();
+      if (!validation['isValid']) {
+        final error =
+            (validation['errors'] as List).firstOrNull ??
+            'checkout.order_error';
+        _showError(error.tr());
+        // إعادة تحميل البيانات لتحديث واجهة المستخدم بالمخزون الجديد
+        await _loadData();
+        return;
+      }
+
+      // تحديث قائمة المنتجات بعد التحقق
+      _cartItems = validation['items'] as List<CartItem>;
+
+      // 4. إعادة التحقق من كود الخصم (إذا وُجد)
+      if (_appliedPromo != null) {
+        setState(() => _verificationStatus = 'checkout.validating_promo'.tr());
+        final promoResult = await _promoCodeService.validatePromoCode(
+          _appliedPromo!.code,
+          _subtotal,
+        );
+        if (!promoResult.isSuccess) {
+          _showError(promoResult.errorMessage ?? 'checkout.promo_invalid'.tr());
+          setState(() {
+            _appliedPromo = null;
+            _promoDiscount = 0;
+          });
+          return;
+        }
+      }
+
+      // 5. التحقق من رصيد المحفظة (إذا كان مستخدماً)
+      if (_useWalletBalance && _walletDeduction > 0) {
+        setState(() => _verificationStatus = 'checkout.checking_wallet'.tr());
+        final currentWallet = await _walletService.getWallet();
+        if (currentWallet == null || currentWallet.balance < _walletDeduction) {
+          _showError('checkout.insufficient_wallet'.tr());
+          await _loadData(); // لتحديث الرصيد في الواجهة
+          return;
+        }
+      }
+
+      // 6. إنشاء الطلب في قاعدة البيانات
+      setState(() => _verificationStatus = 'checkout.placing_order'.tr());
+
+      // Calculation of totals and IDs for branches (from the cart)
+      final branchTotal = _cartItems
+          .where((item) => item.branchId != null)
+          .fold(
+            0.0,
+            (sum, item) =>
+                sum + ((item.partnerPrice ?? item.price) * item.quantity),
+          );
+      final branchIds = _cartItems
+          .where((item) => item.branchId != null)
+          .map((item) => item.branchId!)
+          .toSet()
+          .toList();
+
       final order = await _ordersService.createOrder(
         addressId: _selectedAddress!.id,
         addressLabel: _selectedAddress!.addressLabel,
@@ -210,18 +285,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         serviceFee: _serviceFee,
         discount: _discount,
         total: _total,
+        branchTotal: branchTotal,
+        branchIds: branchIds,
         isScheduled: _selectedDeliveryTime != null,
         scheduledTime: _selectedDeliveryTime,
         notes: _deliveryNoteController.text.trim().isNotEmpty
             ? _deliveryNoteController.text.trim()
             : null,
+        couponCode: _appliedPromo?.code,
         cartItems: _cartItems
             .map(
               (item) => {
                 'id': item.productId,
                 'name': item.getName('ar'),
                 'image': item.imageUrl,
-                'price': item.price,
+                'price': item.effectivePrice,
+                'partner_price': item.partnerPrice ?? item.price,
+                'customer_price': item.customerPrice ?? item.price,
+                'branch_id': item.branchId,
+                'branch_product_id': item.branchProductId,
                 'quantity': item.quantity,
               },
             )
@@ -229,12 +311,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
 
       if (order != null) {
-        // Deduct wallet balance if used
+        // 7. تنفيذ خصم المحفظة النهائي
         if (_useWalletBalance && _walletDeduction > 0) {
           await _walletService.payFromWallet(_walletDeduction, order.id);
         }
 
-        // Track purchase analytics
+        // 8. تسجيل استخدام كود الخصم
+        if (_appliedPromo != null && _promoDiscount > 0) {
+          await _promoCodeService.recordUsage(
+            promoCodeId: _appliedPromo!.id,
+            orderId: order.id,
+            discountAmount: _promoDiscount,
+          );
+        }
+
+        // تتبع عملية الشراء
         AnalyticsService().trackPurchase(
           orderId: order.id,
           total: _total,
@@ -243,6 +334,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           deliveryFee: _deliveryFee,
           paymentMethod: _selectedPayment == PaymentMethod.cash
               ? 'cash'
+              : _selectedPayment == PaymentMethod.wallet
+              ? 'wallet'
               : 'card',
           itemCount: _cartItems.length,
         );
@@ -251,16 +344,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         await _cartService.clearCart();
 
         if (mounted) {
-          // الانتقال لشاشة النجاح
           context.go('/order-success/${order.id}');
         }
       } else {
         _showError('checkout.order_error'.tr());
       }
     } catch (e) {
-      _showError('حدث خطأ غير متوقع');
+      _showError('common.error_occurred'.tr());
     } finally {
-      setState(() => _isPlacingOrder = false);
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+          _verificationStatus = '';
+        });
+      }
     }
   }
 
@@ -304,44 +401,49 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // === عنوان التوصيل ===
-                  _buildAddressSection(),
-                  _buildSectionDivider(),
+          Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // === عنوان التوصيل ===
+                      _buildAddressSection(),
+                      _buildSectionDivider(),
 
-                  // === وقت التوصيل ===
-                  _buildDeliveryTimeSection(),
-                  _buildSectionDivider(),
+                      // === وقت التوصيل ===
+                      _buildDeliveryTimeSection(),
+                      _buildSectionDivider(),
 
-                  // === طريقة الدفع ===
-                  _buildPaymentSection(),
-                  _buildSectionDivider(),
+                      // === طريقة الدفع ===
+                      _buildPaymentSection(),
+                      _buildSectionDivider(),
 
-                  // === كود الخصم ===
-                  _buildPromoCodeSection(),
-                  _buildSectionDivider(),
+                      // === كود الخصم ===
+                      _buildPromoCodeSection(),
+                      _buildSectionDivider(),
 
-                  // === ملاحظة للتوصيل ===
-                  _buildDeliveryNoteSection(),
-                  _buildSectionDivider(),
+                      // === ملاحظة للتوصيل ===
+                      _buildDeliveryNoteSection(),
+                      _buildSectionDivider(),
 
-                  // === ملخص الطلب ===
-                  _buildOrderSummary(),
+                      // === ملخص الطلب ===
+                      _buildOrderSummary(),
 
-                  const SizedBox(height: 24),
-                ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // === زر تأكيد الطلب ===
-          _buildConfirmButton(),
+              // === زر تأكيد الطلب ===
+              _buildConfirmButton(),
+            ],
+          ),
+          if (_isPlacingOrder) VerificationOverlay(status: _verificationStatus),
         ],
       ),
     );
@@ -378,7 +480,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               if (_addresses.isNotEmpty)
                 GestureDetector(
-                  onTap: _showAddressPicker,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _showAddressPicker();
+                  },
                   child: Text(
                     'checkout.change'.tr(),
                     style: TextStyle(
@@ -395,109 +500,120 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
           // Address Content
           if (_selectedAddress != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.background,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _showAddressPicker();
+                },
                 borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  // Address Icon
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      _getAddressIcon(_selectedAddress!.addressLabel),
-                      color: AppColors.primaryGreen,
-                      size: 24,
-                    ),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  const SizedBox(width: 14),
-                  // Address Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _selectedAddress!.addressLabel,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
+                  child: Row(
+                    children: [
+                      // Address Icon
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _selectedAddress!.fullAddress,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        child: Icon(
+                          _getAddressIcon(_selectedAddress!.addressLabel),
+                          color: AppColors.primaryGreen,
+                          size: 24,
                         ),
-                      ],
-                    ),
-                  ),
-                  // ETA Badge if available
-                  if (_selectedAddress?.areaId != null)
-                    FutureBuilder(
-                      future: Supabase.instance.client
-                          .from('areas')
-                          .select('estimated_delivery_time')
-                          .eq('id', _selectedAddress!.areaId!)
-                          .maybeSingle(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData &&
-                            snapshot.data?['estimated_delivery_time'] != null) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGreen.withValues(
-                                alpha: 0.1,
+                      ),
+                      const SizedBox(width: 14),
+                      // Address Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedAddress!.addressLabel,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
-                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  LucideIcons.clock,
-                                  size: 14,
-                                  color: AppColors.primaryGreen,
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedAddress!.fullAddress,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                                height: 1.4,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // ETA Badge if available
+                      if (_selectedAddress?.areaId != null)
+                        FutureBuilder(
+                          future: Supabase.instance.client
+                              .from('areas')
+                              .select('estimated_delivery_time')
+                              .eq('id', _selectedAddress!.areaId!)
+                              .maybeSingle(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData &&
+                                snapshot.data?['estimated_delivery_time'] !=
+                                    null) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${snapshot.data!['estimated_delivery_time']} ${'common.min'.tr()}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryGreen,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.1,
                                   ),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ],
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  // Arrow
-                  const SizedBox(width: 8),
-                  Icon(
-                    LucideIcons.chevronLeft,
-                    color: AppColors.textSecondary,
-                    size: 20,
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      LucideIcons.clock,
+                                      size: 14,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${snapshot.data!['estimated_delivery_time']} ${'common.min'.tr()}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      // Arrow
+                      const SizedBox(width: 8),
+                      Icon(
+                        LucideIcons.chevronLeft,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             )
           else
@@ -592,6 +708,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             isDisabled: true,
           ),
 
+          const SizedBox(height: 12),
+
+          if (_walletEnabled)
+            WalletPaymentOption(
+              wallet: _wallet,
+              totalBeforeWallet: _totalBeforeWallet,
+              selectedPayment: _selectedPayment,
+              onPaymentSelected: (method) =>
+                  setState(() => _selectedPayment = method),
+              onUseWalletBalanceChanged: (val) =>
+                  setState(() => _useWalletBalance = val),
+            ),
+
           // Wallet Balance Toggle
           if (_walletEnabled && _wallet != null) ...[
             const SizedBox(height: 20),
@@ -655,7 +784,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   Switch.adaptive(
                     value: _useWalletBalance,
-                    activeColor: AppColors.primaryGreen,
+                    activeTrackColor: AppColors.primaryGreen,
                     onChanged: _wallet!.balance > 0
                         ? (value) => setState(() => _useWalletBalance = value)
                         : null,
@@ -1033,20 +1162,72 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               children: _cartItems
                   .map(
                     (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: Row(
                         children: [
-                          Expanded(
-                            child: Text(
-                              '${item.getName(context.locale.languageCode)} × ${item.quantity}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textPrimary,
+                          // Product Image
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.border.withValues(alpha: 0.5),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child:
+                                  item.imageUrl != null &&
+                                      item.imageUrl!.isNotEmpty
+                                  ? Image.network(
+                                      item.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(
+                                                LucideIcons.package,
+                                                size: 20,
+                                                color: AppColors.textLight,
+                                              ),
+                                    )
+                                  : const Icon(
+                                      LucideIcons.package,
+                                      size: 20,
+                                      color: AppColors.textLight,
+                                    ),
                             ),
                           ),
+                          const SizedBox(width: 12),
+                          // Name and Quantity
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.getName(context.locale.languageCode),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${item.quantity} × ${item.price.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Total Price for this item
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
@@ -1055,7 +1236,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 (item.price * item.quantity).floor().toString(),
                                 style: const TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -1063,20 +1244,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 '.${(((item.price * item.quantity) - (item.price * item.quantity).floor()) * 100).round().toString().padLeft(2, '0')}',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w400,
+                                  fontWeight: FontWeight.w500,
                                   color: AppColors.textPrimary.withValues(
                                     alpha: 0.6,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 2),
                               Text(
-                                context.locale.languageCode == 'ar'
-                                    ? 'ج.م'
-                                    : 'EGP',
+                                'common.currency_short'.tr(),
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -1157,7 +1336,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    context.locale.languageCode == 'ar' ? 'ج.م' : 'EGP',
+                    'common.currency_short'.tr(),
                     style: const TextStyle(
                       fontSize: 16,
                       color: AppColors.primaryGreen,
@@ -1255,7 +1434,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Row(
               children: [
                 Text(
-                  '${originalDeliveryFee.toStringAsFixed(2)} ج.م',
+                  '${originalDeliveryFee.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                     decoration: TextDecoration.lineThrough,
@@ -1273,7 +1452,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             )
           else
             Text(
-              '${isDiscount ? '-' : ''}${amount.abs().toStringAsFixed(2)} ج.م',
+              '${isDiscount ? '-' : ''}${amount.abs().toStringAsFixed(2)} ${'common.currency_short'.tr()}',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: isDiscount
                     ? AppColors.primaryGreen
@@ -1356,7 +1535,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '${_total.toStringAsFixed(2)} ج.م',
+                          '${_total.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -1497,7 +1676,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
               GestureDetector(
-                onTap: _showDeliveryTimePicker,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _showDeliveryTimePicker();
+                },
                 child: Text(
                   'checkout.change'.tr(),
                   style: TextStyle(
@@ -1513,68 +1695,80 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           const SizedBox(height: 16),
 
           // Delivery Time Content
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.background,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _showDeliveryTimePicker();
+              },
               borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                // Time Icon
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    isScheduled ? LucideIcons.calendarClock : LucideIcons.zap,
-                    color: AppColors.primaryGreen,
-                    size: 24,
-                  ),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                const SizedBox(width: 14),
-                // Time Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isScheduled
-                            ? 'checkout.delivery_schedule'.tr()
-                            : 'checkout.delivery_now'.tr(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
+                child: Row(
+                  children: [
+                    // Time Icon
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
+                      child: Icon(
                         isScheduled
-                            ? DateFormat(
-                                'EEEE, d MMM - h:mm a',
-                                context.locale.languageCode,
-                              ).format(_selectedDeliveryTime!)
-                            : 'checkout.delivery_now'.tr(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          height: 1.4,
-                        ),
+                            ? LucideIcons.calendarClock
+                            : LucideIcons.zap,
+                        color: AppColors.primaryGreen,
+                        size: 24,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 14),
+                    // Time Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isScheduled
+                                ? 'checkout.delivery_schedule'.tr()
+                                : 'checkout.delivery_now'.tr(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isScheduled
+                                ? DateFormat(
+                                    'EEEE, d MMM - h:mm a',
+                                    context.locale.languageCode,
+                                  ).format(_selectedDeliveryTime!)
+                                : 'checkout.delivery_now'.tr(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Arrow
+                    Icon(
+                      LucideIcons.chevronLeft,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                  ],
                 ),
-                // Arrow
-                Icon(
-                  LucideIcons.chevronLeft,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -1632,8 +1826,8 @@ class _DeliveryTimePickerState extends State<_DeliveryTimePicker> {
 
       final startHour = hour > 12 ? hour - 12 : hour;
       final endHour = (hour + 1) > 12 ? (hour + 1) - 12 : (hour + 1);
-      final startPeriod = hour >= 12 ? 'PM' : 'AM';
-      final endPeriod = (hour + 1) >= 12 ? 'PM' : 'AM';
+      final startPeriod = hour >= 12 ? 'date.pm'.tr() : 'date.am'.tr();
+      final endPeriod = (hour + 1) >= 12 ? 'date.pm'.tr() : 'date.am'.tr();
 
       slots.add('$startHour:00 $startPeriod - $endHour:00 $endPeriod');
     }
@@ -1693,7 +1887,7 @@ class _DeliveryTimePickerState extends State<_DeliveryTimePicker> {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        'لا توجد فترات متاحة اليوم',
+                        'checkout.no_slots_today'.tr(),
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -1846,7 +2040,7 @@ class _DeliveryTimePickerState extends State<_DeliveryTimePicker> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'خلال 45-60 دقيقة',
+                    'checkout.within_time'.tr(),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                     ),

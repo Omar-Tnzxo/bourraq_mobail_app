@@ -10,13 +10,14 @@ class BranchProductRepository {
   static const String selectQuery = '''
     id, branch_id, product_id, partner_price, customer_price,
     avg_rating, rating_count, is_available, approval_status, badge_id,
-    products (
+    products!inner (
       id, name_ar, name_en, description_ar, description_en,
-      image_url, category_id, sub_category_id, is_active, is_best_seller
+      image_url, category_id, sub_category_id, is_active, is_best_seller,
+      weight_value, weight_unit_ar, weight_unit_en
     ),
     branches!inner (
       id, name_ar, name_en, latitude, longitude, is_active,
-      branch_areas!inner(area_id)
+      branch_areas(area_id)
     ),
     product_badges!store_products_badge_id_fkey (
       id, badge_type
@@ -176,6 +177,7 @@ class BranchProductRepository {
     String? areaId,
     required String queryStr,
     int limit = 50,
+    int offset = 0,
   }) async {
     var query = _supabase
         .from('partner_products')
@@ -185,7 +187,8 @@ class BranchProductRepository {
         .eq('branches.is_active', true)
         .eq('products.is_active', true)
         .or(
-          'products.name_ar.ilike.%$queryStr%,products.name_en.ilike.%$queryStr%',
+          'name_ar.ilike.%$queryStr%,name_en.ilike.%$queryStr%',
+          referencedTable: 'products',
         );
 
     if (areaId != null) {
@@ -194,7 +197,7 @@ class BranchProductRepository {
 
     final response = await query
         .order('avg_rating', ascending: false)
-        .limit(limit);
+        .range(offset, offset + limit - 1);
 
     return (response as List)
         .where((json) => json['products'] != null && json['branches'] != null)

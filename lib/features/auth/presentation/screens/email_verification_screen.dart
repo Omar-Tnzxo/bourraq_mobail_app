@@ -162,11 +162,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
           ),
         ),
         title: Text(
-          'Updated Successfully', // TODO: Add translation key
+          'profile.email_update_success'.tr(),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'Your email has been updated successfully.', // TODO: Add translation key
+          'profile.email_update_success_message'.tr(),
           textAlign: TextAlign.center,
           style: TextStyle(color: AppColors.textSecondary, height: 1.5),
         ),
@@ -369,8 +369,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
   }
 
   Widget _buildResendRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
           'auth.didnt_receive'.tr(),
@@ -382,7 +383,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
           child: Text(
             _canResend
                 ? 'auth.resend'.tr()
-                : 'auth.resend_after'.tr(args: [_resendCountdown.toString()]),
+                : 'auth.resend_after'.tr(
+                    namedArgs: {'seconds': _resendCountdown.toString()},
+                  ),
             style: TextStyle(
               color: _canResend
                   ? AppColors.primaryGreen

@@ -461,8 +461,9 @@ class _ResetPasswordOTPScreenState extends State<ResetPasswordOTPScreen>
   }
 
   Widget _buildResendRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
           'auth.didnt_receive'.tr(),
@@ -474,7 +475,9 @@ class _ResetPasswordOTPScreenState extends State<ResetPasswordOTPScreen>
           child: Text(
             _canResend
                 ? 'auth.resend'.tr()
-                : 'auth.resend_after'.tr(args: [_resendCountdown.toString()]),
+                : 'auth.resend_after'.tr(
+                    namedArgs: {'seconds': _resendCountdown.toString()},
+                  ),
             style: TextStyle(
               color: _canResend
                   ? AppColors.primaryGreen

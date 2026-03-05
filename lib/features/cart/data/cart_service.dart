@@ -118,8 +118,8 @@ class CartService extends ChangeNotifier {
   }
 
   /// Get cart item count
-  int getCartItemCount() {
-    return _cachedItems.fold(0, (sum, item) => sum + item.quantity);
+  double getCartItemCount() {
+    return _cachedItems.fold(0.0, (sum, item) => sum + item.quantity);
   }
 
   /// Get remaining for free delivery
@@ -154,21 +154,28 @@ class CartService extends ChangeNotifier {
     await _saveLocal(_cachedItems);
 
     // Sync to cloud
-    await _repository.addToCart(item.productId, quantity: item.quantity);
+    await _repository.addToCart(
+      item.productId,
+      quantity: item.quantity,
+      branchId: item.branchId,
+      branchProductId: item.branchProductId,
+      partnerPrice: item.partnerPrice,
+      customerPrice: item.customerPrice,
+    );
 
     // Track analytics
     AnalyticsService().trackAddToCart(
       productId: item.productId,
       productName: item.nameEn,
-      quantity: item.quantity,
+      quantity: item.quantity.toInt(),
       price: item.price,
       cartTotal: getCartTotal(),
-      itemCount: getCartItemCount(),
+      itemCount: getCartItemCount().toInt(),
     );
   }
 
   /// Update item quantity
-  Future<void> updateQuantity(String productId, int quantity) async {
+  Future<void> updateQuantity(String productId, double quantity) async {
     final index = _cachedItems.indexWhere((i) => i.productId == productId);
 
     if (index != -1) {
@@ -209,7 +216,7 @@ class CartService extends ChangeNotifier {
 
     // Track analytics
     AnalyticsService().trackClearCart(
-      itemCount: itemCount,
+      itemCount: itemCount.toInt(),
       cartTotal: cartTotal,
     );
   }

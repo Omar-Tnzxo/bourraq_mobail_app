@@ -10,7 +10,7 @@ import 'package:bourraq/core/constants/app_colors.dart';
 class ProductImageHeader extends StatelessWidget {
   final String? imageUrl;
   final VoidCallback? onCartTap;
-  final int cartCount;
+  final num cartCount;
 
   const ProductImageHeader({
     super.key,
@@ -66,7 +66,7 @@ class ProductImageHeader extends StatelessWidget {
                         minHeight: 18,
                       ),
                       child: Text(
-                        cartCount > 99 ? '99+' : '$cartCount',
+                        cartCount > 99 ? '99+' : '${cartCount.toInt()}',
                         style: const TextStyle(
                           color: AppColors.white,
                           fontSize: 10,

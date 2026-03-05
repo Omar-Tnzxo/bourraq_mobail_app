@@ -4,11 +4,11 @@ import 'package:bourraq/features/cart/data/cart_service.dart';
 /// Cart badge notifier for updating cart count in real-time
 /// Now listens to CartService changes for instant updates
 class CartBadgeNotifier extends ChangeNotifier {
-  int _count = 0;
+  num _count = 0;
   bool _isInitialized = false;
   CartService? _cartService;
 
-  int get count => _count;
+  num get count => _count;
   bool get isInitialized => _isInitialized;
 
   Future<void> init() async {

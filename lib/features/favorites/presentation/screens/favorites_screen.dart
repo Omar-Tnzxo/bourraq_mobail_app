@@ -218,7 +218,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${state.favorites.length} ${'favorites.products_count'.tr()}',
+                          'favorites.products_count'.tr(
+                            namedArgs: {
+                              'count': state.favorites.length.toString(),
+                            },
+                          ),
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13,

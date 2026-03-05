@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCartIcon(int count, {bool isActive = false}) {
+  Widget _buildCartIcon(num count, {bool isActive = false}) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -145,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
               child: Text(
-                count > 99 ? '99+' : '$count',
+                count > 99 ? '99+' : '${count.toInt()}',
                 style: const TextStyle(
                   color: AppColors.white,
                   fontSize: 10,

@@ -43,7 +43,7 @@ class ProductCard extends StatefulWidget {
 
 class _ProductCardState extends State<ProductCard>
     with SingleTickerProviderStateMixin {
-  int _quantity = 0;
+  num _quantity = 0;
   late bool _isFavorite;
   AnimationController? _scaleController;
   Animation<double>? _scaleAnimation;
@@ -112,14 +112,14 @@ class _ProductCardState extends State<ProductCard>
   }
 
   void _incrementQuantity() {
-    // 1. Check if location is required first
+    // 1. Check if guest - block action and show login prompt
+    if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
+
+    // 2. Check if location is required
     if (!widget.hasAddress) {
       widget.onLocationRequired?.call();
       return;
     }
-
-    // 2. Check if guest - block action and show login prompt
-    if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
 
     HapticFeedback.mediumImpact();
     if (widget.cartService == null) return;
@@ -138,14 +138,21 @@ class _ProductCardState extends State<ProductCard>
         nameAr: widget.product.nameAr,
         nameEn: widget.product.nameEn,
         price: widget.product.price,
-        quantity: 1,
+        quantity: 1.0,
         imageUrl: widget.product.imageUrl,
+        branchId: widget.product.branchId,
+        branchProductId: widget.product.branchProductId,
+        partnerPrice: widget.product.partnerPrice,
+        customerPrice: widget.product.customerPrice,
+        weightValue: widget.product.weightValue,
+        weightUnitAr: widget.product.weightUnitAr,
+        weightUnitEn: widget.product.weightUnitEn,
       );
       widget.cartService!.addToCart(cartItem); // Fire and forget
     } else {
       widget.cartService!.updateQuantity(
         widget.product.id,
-        newQuantity,
+        newQuantity.toDouble(),
       ); // Fire and forget
     }
 
@@ -169,7 +176,7 @@ class _ProductCardState extends State<ProductCard>
     } else {
       widget.cartService!.updateQuantity(
         widget.product.id,
-        newQuantity,
+        newQuantity.toDouble(),
       ); // Fire and forget
     }
 
@@ -325,139 +332,163 @@ class _ProductCardState extends State<ProductCard>
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          productName,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            height: 1.2,
-                            color: AppColors.textPrimary,
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            productName,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              height: 1.2,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        // Rating stars row
-                        if (widget.product.ratingCount > 0)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Row(
-                              children: [
-                                ...List.generate(
-                                  5,
-                                  (i) => Icon(
-                                    i < widget.product.avgRating.round()
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: const Color(0xFFFFB800),
-                                    size: 12,
-                                  ),
+                          if (widget.product
+                              .getWeightDisplay(isArabic)
+                              .isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                widget.product.getWeightDisplay(isArabic),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary,
                                 ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  '(${widget.product.ratingCount})',
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    color: AppColors.textLight,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        // Badge
-                        if (widget.product.badgeName != null)
-                          Container(
-                            margin: const EdgeInsets.only(top: 2),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _parseBadgeColor(
-                                widget.product.badgeColor,
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              widget.product.badgeName!,
-                              style: const TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.white,
                               ),
                             ),
-                          ),
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            Container(
-                              padding: hasDiscount
-                                  ? const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 0,
-                                    )
-                                  : EdgeInsets.zero,
-                              decoration: BoxDecoration(
-                                color: hasDiscount
-                                    ? AppColors.bottomNavActive
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                          // Rating stars row
+                          if (widget.product.ratingCount > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
                                 children: [
-                                  Text(
-                                    widget.product.displayPrice
-                                        .floor()
-                                        .toString(),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w900,
-                                      color: AppColors.deepOlive,
-                                    ),
-                                  ),
-                                  Text(
-                                    '.${((widget.product.displayPrice - widget.product.displayPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textSecondary,
+                                  ...List.generate(
+                                    5,
+                                    (i) => Icon(
+                                      i < widget.product.avgRating.round()
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      color: const Color(0xFFFFB800),
+                                      size: 12,
                                     ),
                                   ),
                                   const SizedBox(width: 3),
                                   Text(
-                                    'common.currency_short'.tr(),
+                                    '(${widget.product.ratingCount})',
                                     style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.deepOlive,
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 9,
+                                      color: AppColors.textLight,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            if (hasDiscount)
-                              Text(
-                                widget.product.oldPrice!.toStringAsFixed(2),
+                          // Badge
+                          if (widget.product.badgeName != null)
+                            Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _parseBadgeColor(
+                                  widget.product.badgeColor,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                widget.product.badgeName!.startsWith(
+                                      'product.badge_',
+                                    )
+                                    ? widget.product.badgeName!.tr()
+                                    : (isArabic
+                                          ? widget.product.badgeName!
+                                          : (widget.product.badgeNameEn ??
+                                                widget.product.badgeName!)),
                                 style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                  decoration: TextDecoration.lineThrough,
-                                  decorationColor: AppColors.error,
-                                  decorationThickness: 2.0,
+                                  fontSize: 8,
                                   fontWeight: FontWeight.w600,
+                                  color: AppColors.white,
                                 ),
                               ),
-                          ],
-                        ),
-                      ],
+                            ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              Container(
+                                padding: hasDiscount
+                                    ? const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 0,
+                                      )
+                                    : EdgeInsets.zero,
+                                decoration: BoxDecoration(
+                                  color: hasDiscount
+                                      ? AppColors.bottomNavActive
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: [
+                                    Text(
+                                      widget.product.displayPrice
+                                          .floor()
+                                          .toString(),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.deepOlive,
+                                      ),
+                                    ),
+                                    Text(
+                                      '.${((widget.product.displayPrice - widget.product.displayPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      'common.currency_short'.tr(),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.deepOlive,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (hasDiscount)
+                                Text(
+                                  '${widget.product.oldPrice!.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: AppColors.error,
+                                    decorationThickness: 2.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -531,7 +562,7 @@ class _ProductCardState extends State<ProductCard>
             },
             child: Text(
               '$_quantity',
-              key: ValueKey<int>(_quantity),
+              key: ValueKey<num>(_quantity),
               style: const TextStyle(
                 color: AppColors.white,
                 fontSize: 14,
@@ -614,6 +645,9 @@ class ProductItem {
   final double? oldPrice;
   final String imageUrl;
   final bool isAvailable;
+  final double? weightValue;
+  final String? weightUnitAr;
+  final String? weightUnitEn;
 
   // Branch product fields (partner system)
   final String? branchProductId;
@@ -623,6 +657,7 @@ class ProductItem {
   final double avgRating;
   final int ratingCount;
   final String? badgeName;
+  final String? badgeNameEn;
   final String? badgeColor;
 
   const ProductItem({
@@ -640,11 +675,25 @@ class ProductItem {
     this.avgRating = 0,
     this.ratingCount = 0,
     this.badgeName,
+    this.badgeNameEn,
     this.badgeColor,
+    this.weightValue,
+    this.weightUnitAr,
+    this.weightUnitEn,
   });
 
   /// Effective price displayed to user (customerPrice if available, else price)
   double get displayPrice => customerPrice ?? price;
+
+  /// Get localized weight display string
+  String getWeightDisplay(bool isArabic) {
+    if (weightValue == null) return '';
+    final String valueStr = weightValue! == weightValue!.toInt()
+        ? weightValue!.toInt().toString()
+        : weightValue!.toString();
+    final unit = isArabic ? weightUnitAr : weightUnitEn;
+    return '$valueStr ${unit ?? ""}';
+  }
 
   /// Create from base Product model
   factory ProductItem.fromProduct(Product p) {
@@ -657,6 +706,9 @@ class ProductItem {
       imageUrl: p.imageUrl ?? '',
       isAvailable: p.isActive,
       customerPrice: p.price,
+      weightValue: p.weightValue,
+      weightUnitAr: p.weightUnitAr,
+      weightUnitEn: p.weightUnitEn,
     );
   }
 
@@ -673,6 +725,9 @@ class ProductItem {
       oldPrice: (map['old_price'] as num?)?.toDouble(),
       imageUrl: map['image_url'] as String? ?? '',
       isAvailable: map['in_stock'] as bool? ?? true,
+      weightValue: (map['weight_value'] as num?)?.toDouble(),
+      weightUnitAr: map['weight_unit_ar'] as String?,
+      weightUnitEn: map['weight_unit_en'] as String?,
     );
   }
 
@@ -692,7 +747,11 @@ class ProductItem {
       avgRating: (branchProduct.avgRating as num).toDouble(),
       ratingCount: branchProduct.ratingCount as int,
       badgeName: branchProduct.badgeNameAr as String?,
+      badgeNameEn: branchProduct.badgeNameEn as String?,
       badgeColor: branchProduct.badgeColor as String?,
+      weightValue: branchProduct.weightValue as double?,
+      weightUnitAr: branchProduct.weightUnitAr as String?,
+      weightUnitEn: branchProduct.weightUnitEn as String?,
     );
   }
 }

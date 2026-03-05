@@ -179,15 +179,24 @@ class _HomeTabScreenState extends State<HomeTabScreen>
       context: context,
       currentAddress: _defaultAddress,
       onAddressSelected: (address) async {
-        // Save the selected address as default in database
-        final success = await _addressService.setDefaultAddress(address.id);
-        if (success && mounted) {
-          setState(() {
-            _defaultAddress = address;
-          });
-          // Reload home data with new area
-          _homeCubit.loadHomeData(areaId: address.areaId);
+        // Update local state
+        setState(() {
+          _defaultAddress = address;
+        });
+
+        // Persist area ID for search filtering
+        if (address.areaId != null) {
+          await _addressService.setActiveAreaId(address.areaId!);
         }
+
+        // If logged in, set as default in DB
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId != null) {
+          await _addressService.setDefaultAddress(address.id);
+        }
+
+        // Reload home data with new area
+        _homeCubit.loadHomeData(areaId: address.areaId);
       },
     ).then((result) async {
       if (result == 'add_address') {
@@ -426,7 +435,7 @@ class _HomeTabScreenState extends State<HomeTabScreen>
             slivers.add(
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 24),
+                  padding: const EdgeInsets.only(top: 16),
                   child: HomeCategoriesSection(
                     categories: categories,
                     title: section.config.showTitle
@@ -442,16 +451,25 @@ class _HomeTabScreenState extends State<HomeTabScreen>
         case 'products':
           final products = state.getProducts(section.id);
           if (products.isNotEmpty) {
+            // T013: Generate seeAllRoute if not provided but source is category
+            String? seeAllRoute = section.config.seeAllRoute;
+            if (seeAllRoute == null &&
+                section.config.showSeeAll &&
+                section.config.source == 'category' &&
+                section.config.categoryId != null) {
+              final sectionTitle = section.getTitle(isArabic ? 'ar' : 'en');
+              seeAllRoute =
+                  '/category/${section.config.categoryId}?name=${Uri.encodeComponent(sectionTitle)}';
+            }
+
             slivers.add(
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 24),
+                  padding: const EdgeInsets.only(top: 32),
                   child: HomeProductsSection(
                     title: section.getTitle(isArabic ? 'ar' : 'en'),
                     products: products,
-                    seeAllRoute: section.config.showSeeAll
-                        ? section.config.seeAllRoute
-                        : null,
+                    seeAllRoute: section.config.showSeeAll ? seeAllRoute : null,
                     favoriteIds: _favoriteIds,
                     cartService: _cartService,
                     onCartUpdated: _updateCartCount,

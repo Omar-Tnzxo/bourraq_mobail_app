@@ -48,9 +48,9 @@ class DateFormatter {
     final timePart = _format12HourTime(date, isArabic);
 
     if (dateDay == today) {
-      return isArabic ? 'اليوم $timePart' : 'Today $timePart';
+      return '${'date.today'.tr()} $timePart';
     } else if (dateDay == yesterday) {
-      return isArabic ? 'أمس $timePart' : 'Yesterday $timePart';
+      return '${'date.yesterday'.tr()} $timePart';
     }
 
     // For older dates, show date + time
@@ -67,9 +67,9 @@ class DateFormatter {
     final dateDay = DateTime(date.year, date.month, date.day);
 
     if (dateDay == today) {
-      return isArabic ? 'اليوم' : 'Today';
+      return 'date.today'.tr();
     } else if (dateDay == tomorrow) {
-      return isArabic ? 'غداً' : 'Tomorrow';
+      return 'date.tomorrow'.tr();
     } else {
       // Return day name
       return _getDayName(date.weekday, isArabic);
@@ -82,9 +82,7 @@ class DateFormatter {
     final minute = date.minute;
 
     final hour12 = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-    final period = hour >= 12
-        ? (isArabic ? 'م' : 'PM')
-        : (isArabic ? 'ص' : 'AM');
+    final period = hour >= 12 ? 'date.pm'.tr() : 'date.am'.tr();
 
     return '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
   }
@@ -99,65 +97,11 @@ class DateFormatter {
 
   /// Get day name from weekday number
   static String _getDayName(int weekday, bool isArabic) {
-    if (isArabic) {
-      const days = [
-        'الإثنين',
-        'الثلاثاء',
-        'الأربعاء',
-        'الخميس',
-        'الجمعة',
-        'السبت',
-        'الأحد',
-      ];
-      return days[weekday - 1];
-    } else {
-      const days = [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-        'Sunday',
-      ];
-      return days[weekday - 1];
-    }
+    return 'date.days.$weekday'.tr();
   }
 
   /// Get month name from month number
   static String _getMonthName(int month, bool isArabic) {
-    if (isArabic) {
-      const months = [
-        'يناير',
-        'فبراير',
-        'مارس',
-        'أبريل',
-        'مايو',
-        'يونيو',
-        'يوليو',
-        'أغسطس',
-        'سبتمبر',
-        'أكتوبر',
-        'نوفمبر',
-        'ديسمبر',
-      ];
-      return months[month - 1];
-    } else {
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return months[month - 1];
-    }
+    return 'date.months.$month'.tr();
   }
 }

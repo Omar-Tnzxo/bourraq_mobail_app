@@ -228,52 +228,54 @@ class HomeCubit extends Cubit<HomeState> {
     final areaId = _areaId;
     List<BranchProduct> branchProducts;
 
+    // Always fetch extra rows to account for duplicate products across branches
+    final fetchLimit = limit * 3;
+
     switch (source) {
       case 'best_sellers':
         branchProducts = await _branchProductRepo.getBestSellersForArea(
           areaId: areaId,
-          limit: areaId == null ? limit * 2 : limit,
+          limit: fetchLimit,
         );
         break;
       case 'newest':
         branchProducts = await _branchProductRepo.getNewestForArea(
           areaId: areaId,
-          limit: areaId == null ? limit * 2 : limit,
+          limit: fetchLimit,
         );
         break;
       case 'offers':
         branchProducts = await _branchProductRepo.getOffersForArea(
           areaId: areaId,
-          limit: areaId == null ? limit * 2 : limit,
+          limit: fetchLimit,
         );
         break;
       case 'category':
         branchProducts = await _branchProductRepo.getBranchProductsByArea(
           areaId: areaId,
           categoryId: categoryId,
-          limit: areaId == null ? limit * 2 : limit,
+          limit: fetchLimit,
         );
         break;
       default:
         branchProducts = await _branchProductRepo.getBranchProductsByArea(
           areaId: areaId,
-          limit: areaId == null ? limit * 2 : limit,
+          limit: fetchLimit,
         );
     }
 
-    if (areaId == null) {
-      final seenIds = <String>{};
-      final uniqueProducts = <BranchProduct>[];
-      for (var sp in branchProducts) {
-        if (!seenIds.contains(sp.productId) && uniqueProducts.length < limit) {
-          seenIds.add(sp.productId);
-          uniqueProducts.add(sp);
-        }
+    // Always deduplicate by productId — same product from multiple branches
+    // should only appear once, keeping the one with the best price
+    final seenIds = <String>{};
+    final uniqueProducts = <BranchProduct>[];
+    for (var sp in branchProducts) {
+      if (!seenIds.contains(sp.productId) && uniqueProducts.length < limit) {
+        seenIds.add(sp.productId);
+        uniqueProducts.add(sp);
       }
-      branchProducts = uniqueProducts;
     }
 
-    return branchProducts
+    return uniqueProducts
         .map((sp) => ProductItem.fromBranchProduct(sp))
         .toList();
   }

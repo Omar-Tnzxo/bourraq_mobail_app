@@ -89,7 +89,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   double get _cartTotal => _cartService?.getCartTotal() ?? 0;
-  int get _itemCount => _cartService?.getCartItemCount() ?? 0;
+  num get _itemCount => _cartService?.getCartItemCount() ?? 0;
 
   double get _remainingForFreeDelivery =>
       _cartService?.getRemainingForFreeDelivery() ?? 0;
@@ -97,7 +97,7 @@ class _CartScreenState extends State<CartScreen> {
   bool get _isFreeDeliveryEnabled =>
       _cartService?.isFreeDeliveryEnabled ?? false;
 
-  Future<void> _updateQuantity(String productId, int newQuantity) async {
+  Future<void> _updateQuantity(String productId, double newQuantity) async {
     HapticFeedback.selectionClick();
 
     await _cartService?.updateQuantity(productId, newQuantity);
@@ -270,7 +270,9 @@ class _CartScreenState extends State<CartScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
-                      '$_itemCount',
+                      _itemCount == _itemCount.toInt()
+                          ? '${_itemCount.toInt()}'
+                          : _itemCount.toStringAsFixed(1),
                       style: AppTextStyles.labelLarge.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.w600,

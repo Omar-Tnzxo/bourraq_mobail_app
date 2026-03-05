@@ -8,10 +8,12 @@ class CartItem extends Equatable {
   final String nameEn;
   final double price;
   final double? oldPrice;
-  final int quantity;
+  final double quantity;
   final String? imageUrl;
   final double? weightValue;
-  final String? weightUnit;
+
+  final String? weightUnitAr;
+  final String? weightUnitEn;
   final int stockQuantity;
   final bool isInStock;
 
@@ -33,7 +35,9 @@ class CartItem extends Equatable {
     required this.quantity,
     this.imageUrl,
     this.weightValue,
-    this.weightUnit,
+
+    this.weightUnitAr,
+    this.weightUnitEn,
     this.stockQuantity = 100,
     this.isInStock = true,
     this.branchProductId,
@@ -47,35 +51,19 @@ class CartItem extends Equatable {
   /// Get localized name
   String getName(String locale) => locale == 'ar' ? nameAr : nameEn;
 
-  /// Get formatted weight display (e.g., "500 g" or "1.5 kg")
-  String? getWeightDisplay(String locale) {
-    if (weightValue == null || weightUnit == null) return null;
+  String getWeightDisplay(String locale) {
+    if (weightValue == null) return '';
 
-    final unitLabels = {
-      'kg': locale == 'ar' ? 'كجم' : 'kg',
-      'g': locale == 'ar' ? 'جم' : 'g',
-      'mg': locale == 'ar' ? 'ملجم' : 'mg',
-      'l': locale == 'ar' ? 'لتر' : 'L',
-      'ml': locale == 'ar' ? 'مل' : 'ml',
-      'piece': locale == 'ar' ? 'حبة' : 'pc',
-      'pack': locale == 'ar' ? 'عبوة' : 'pack',
-      'box': locale == 'ar' ? 'علبة' : 'box',
-      'dozen': locale == 'ar' ? 'درزن' : 'dz',
-      'bundle': locale == 'ar' ? 'ربطة' : 'bundle',
-      'bottle': locale == 'ar' ? 'زجاجة' : 'bottle',
-      'can': locale == 'ar' ? 'علبة' : 'can',
-      'bag': locale == 'ar' ? 'كيس' : 'bag',
-      'carton': locale == 'ar' ? 'كرتونة' : 'carton',
-    };
-
-    final label = unitLabels[weightUnit] ?? weightUnit;
-
-    // Format weight value (remove .0 for whole numbers)
-    final valueStr = weightValue! % 1 == 0
+    // Remove trailing zero if it's a whole number
+    final String valueStr = weightValue! == weightValue!.toInt()
         ? weightValue!.toInt().toString()
-        : weightValue!.toStringAsFixed(1);
+        : weightValue!.toString();
 
-    return '$valueStr $label';
+    if (weightUnitAr != null && weightUnitEn != null) {
+      final unit = locale == 'ar' ? weightUnitAr : weightUnitEn;
+      return '$valueStr $unit';
+    }
+    return valueStr;
   }
 
   /// Effective price: uses customerPrice if available, otherwise price
@@ -90,10 +78,12 @@ class CartItem extends Equatable {
     String? nameEn,
     double? price,
     double? oldPrice,
-    int? quantity,
+    double? quantity,
     String? imageUrl,
     double? weightValue,
-    String? weightUnit,
+
+    String? weightUnitAr,
+    String? weightUnitEn,
     int? stockQuantity,
     bool? isInStock,
     String? branchProductId,
@@ -113,7 +103,9 @@ class CartItem extends Equatable {
       quantity: quantity ?? this.quantity,
       imageUrl: imageUrl ?? this.imageUrl,
       weightValue: weightValue ?? this.weightValue,
-      weightUnit: weightUnit ?? this.weightUnit,
+
+      weightUnitAr: weightUnitAr ?? this.weightUnitAr,
+      weightUnitEn: weightUnitEn ?? this.weightUnitEn,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       isInStock: isInStock ?? this.isInStock,
       branchProductId: branchProductId ?? this.branchProductId,
@@ -136,10 +128,12 @@ class CartItem extends Equatable {
       nameEn: product?['name_en'] as String? ?? '',
       price: (product?['price'] as num?)?.toDouble() ?? 0,
       oldPrice: (product?['old_price'] as num?)?.toDouble(),
-      quantity: json['quantity'] as int? ?? 1,
+      quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
       imageUrl: product?['image_url'] as String?,
       weightValue: (product?['weight_value'] as num?)?.toDouble(),
-      weightUnit: product?['weight_unit'] as String?,
+
+      weightUnitAr: product?['weight_unit_ar'] as String?,
+      weightUnitEn: product?['weight_unit_en'] as String?,
       stockQuantity: product?['stock_quantity'] as int? ?? 100,
       isInStock:
           (product?['stock_quantity'] as int?) == null ||
@@ -162,10 +156,12 @@ class CartItem extends Equatable {
       nameEn: json['name_en'] as String? ?? legacyName,
       price: (json['price'] as num?)?.toDouble() ?? 0,
       oldPrice: (json['old_price'] as num?)?.toDouble(),
-      quantity: json['quantity'] as int? ?? 1,
+      quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
       imageUrl: json['image_url'] ?? json['imageUrl'] as String?,
       weightValue: (json['weight_value'] as num?)?.toDouble(),
-      weightUnit: json['weight_unit'] as String?,
+
+      weightUnitAr: json['weight_unit_ar'] as String?,
+      weightUnitEn: json['weight_unit_en'] as String?,
       stockQuantity: json['stock_quantity'] as int? ?? 100,
       isInStock: json['is_in_stock'] as bool? ?? true,
       branchProductId: json['branch_product_id'] as String?,
@@ -188,7 +184,9 @@ class CartItem extends Equatable {
       'quantity': quantity,
       'image_url': imageUrl,
       'weight_value': weightValue,
-      'weight_unit': weightUnit,
+
+      'weight_unit_ar': weightUnitAr,
+      'weight_unit_en': weightUnitEn,
       'stock_quantity': stockQuantity,
       'is_in_stock': isInStock,
       'branch_product_id': branchProductId,
@@ -211,7 +209,8 @@ class CartItem extends Equatable {
     quantity,
     imageUrl,
     weightValue,
-    weightUnit,
+    weightUnitAr,
+    weightUnitEn,
     stockQuantity,
     isInStock,
     branchProductId,

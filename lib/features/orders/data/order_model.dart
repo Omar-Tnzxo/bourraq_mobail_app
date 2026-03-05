@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 /// نموذج عنصر الطلب (المنتج في الطلب)
 class OrderItem {
   final String id;
@@ -8,9 +11,14 @@ class OrderItem {
   final String productName;
   final String? productImage;
   final double price;
-  final int quantity;
+  final double? partnerPrice;
+  final double? customerPrice;
+  final double quantity;
   final double totalPrice;
   final String? redirectedBranchId;
+  final double? weightValue;
+  final String? weightUnitAr;
+  final String? weightUnitEn;
 
   const OrderItem({
     required this.id,
@@ -21,9 +29,14 @@ class OrderItem {
     required this.productName,
     this.productImage,
     required this.price,
+    this.partnerPrice,
+    this.customerPrice,
     required this.quantity,
     required this.totalPrice,
     this.redirectedBranchId,
+    this.weightValue,
+    this.weightUnitAr,
+    this.weightUnitEn,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
@@ -36,10 +49,37 @@ class OrderItem {
       productName: json['product_name'] as String,
       productImage: json['product_image'] as String?,
       price: (json['price'] as num).toDouble(),
-      quantity: json['quantity'] as int,
+      partnerPrice: (json['partner_price'] as num?)?.toDouble(),
+      customerPrice: (json['customer_price'] as num?)?.toDouble(),
+      quantity: (json['quantity'] as num).toDouble(),
       totalPrice: (json['total_price'] as num).toDouble(),
       redirectedBranchId: json['redirected_branch_id'] as String?,
+      weightValue:
+          (json['partner_products']?['products']?['weight_value'] as num?)
+              ?.toDouble() ??
+          (json['partner_products']?['weight_value'] as num?)?.toDouble() ??
+          (json['products']?['weight_value'] as num?)?.toDouble() ??
+          (json['weight_value'] as num?)?.toDouble(),
+      weightUnitAr:
+          json['partner_products']?['products']?['weight_unit_ar'] as String? ??
+          json['partner_products']?['weight_unit_ar'] as String? ??
+          json['products']?['weight_unit_ar'] as String? ??
+          json['weight_unit_ar'] as String?,
+      weightUnitEn:
+          json['partner_products']?['products']?['weight_unit_en'] as String? ??
+          json['partner_products']?['weight_unit_en'] as String? ??
+          json['products']?['weight_unit_en'] as String? ??
+          json['weight_unit_en'] as String?,
     );
+  }
+
+  String getWeightDisplay(String langCode) {
+    if (weightValue == null) return '';
+    final String valueStr = weightValue! == weightValue!.toInt()
+        ? weightValue!.toInt().toString()
+        : weightValue!.toString();
+    final unit = (langCode == 'ar' ? weightUnitAr : weightUnitEn) ?? '';
+    return '$valueStr $unit';
   }
 
   Map<String, dynamic> toJson() => {
@@ -50,9 +90,14 @@ class OrderItem {
     'product_name': productName,
     'product_image': productImage,
     'price': price,
+    'partner_price': partnerPrice,
+    'customer_price': customerPrice,
     'quantity': quantity,
     'total_price': totalPrice,
     'redirected_branch_id': redirectedBranchId,
+    'weight_value': weightValue,
+    'weight_unit_ar': weightUnitAr,
+    'weight_unit_en': weightUnitEn,
   };
 }
 
@@ -260,6 +305,7 @@ extension OrderStatusExtension on OrderStatus {
 enum PaymentMethod {
   cash, // الدفع عند الاستلام
   card, // بطاقة ائتمان
+  wallet, // الدفع بالمحفظة
 }
 
 extension PaymentMethodExtension on PaymentMethod {
@@ -269,6 +315,19 @@ extension PaymentMethodExtension on PaymentMethod {
         return 'cash';
       case PaymentMethod.card:
         return 'card';
+      case PaymentMethod.wallet:
+        return 'wallet';
+    }
+  }
+
+  String get translationKey {
+    switch (this) {
+      case PaymentMethod.cash:
+        return 'checkout.cash_on_delivery';
+      case PaymentMethod.card:
+        return 'checkout.credit_card';
+      case PaymentMethod.wallet:
+        return 'payment.wallet';
     }
   }
 
@@ -278,6 +337,8 @@ extension PaymentMethodExtension on PaymentMethod {
         return 'الدفع عند الاستلام';
       case PaymentMethod.card:
         return 'بطاقة ائتمان';
+      case PaymentMethod.wallet:
+        return 'المحفظة';
     }
   }
 
@@ -287,6 +348,19 @@ extension PaymentMethodExtension on PaymentMethod {
         return 'Cash on Delivery';
       case PaymentMethod.card:
         return 'Credit Card';
+      case PaymentMethod.wallet:
+        return 'Wallet';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case PaymentMethod.cash:
+        return LucideIcons.banknote;
+      case PaymentMethod.card:
+        return LucideIcons.creditCard;
+      case PaymentMethod.wallet:
+        return LucideIcons.wallet;
     }
   }
 
@@ -294,6 +368,8 @@ extension PaymentMethodExtension on PaymentMethod {
     switch (value) {
       case 'card':
         return PaymentMethod.card;
+      case 'wallet':
+        return PaymentMethod.wallet;
       default:
         return PaymentMethod.cash;
     }
@@ -322,7 +398,7 @@ class Order {
   final List<OrderItem> items;
   final List<String> branchIds;
   final double branchTotal;
-  final int? _itemsCount; // For list view when items aren't loaded
+  final num? _itemsCount; // For list view when items aren't loaded
 
   const Order({
     required this.id,
@@ -345,7 +421,7 @@ class Order {
     this.items = const [],
     this.branchIds = const [],
     this.branchTotal = 0.0,
-    int? itemsCount,
+    num? itemsCount,
   }) : _itemsCount = itemsCount;
 
   factory Order.fromJson(Map<String, dynamic> json, {List<OrderItem>? items}) {
@@ -382,7 +458,7 @@ class Order {
           ? List<String>.from(json['branch_ids'] as List)
           : [],
       branchTotal: (json['branch_total'] as num?)?.toDouble() ?? 0.0,
-      itemsCount: json['items_count'] as int?,
+      itemsCount: json['items_count'] as num?,
     );
   }
 
@@ -406,8 +482,8 @@ class Order {
   };
 
   /// عدد المنتجات في الطلب
-  int get itemCount =>
-      _itemsCount ?? items.fold(0, (sum, item) => sum + item.quantity);
+  num get itemCount =>
+      _itemsCount ?? items.fold(0.0, (sum, item) => sum + item.quantity);
 
   /// هل الطلب نشط (غير مكتمل وغير ملغي)
   bool get isActive =>

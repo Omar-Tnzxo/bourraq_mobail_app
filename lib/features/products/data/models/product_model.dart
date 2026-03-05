@@ -16,6 +16,9 @@ class Product {
   final bool isActive;
   final bool isBestSeller;
   final int stockQuantity;
+  final double? weightValue;
+  final String? weightUnitAr;
+  final String? weightUnitEn;
 
   const Product({
     required this.id,
@@ -31,6 +34,9 @@ class Product {
     this.isActive = true,
     this.isBestSeller = false,
     this.stockQuantity = 100,
+    this.weightValue,
+    this.weightUnitAr,
+    this.weightUnitEn,
   });
 
   /// Product is in stock if active AND has stock quantity > 0
@@ -53,6 +59,9 @@ class Product {
       isActive: json['is_active'] as bool? ?? true,
       isBestSeller: json['is_best_seller'] as bool? ?? false,
       stockQuantity: json['stock_quantity'] as int? ?? 100,
+      weightValue: (json['weight_value'] as num?)?.toDouble(),
+      weightUnitAr: json['weight_unit_ar'] as String?,
+      weightUnitEn: json['weight_unit_en'] as String?,
     );
   }
 
@@ -71,6 +80,9 @@ class Product {
       'is_active': isActive,
       'is_best_seller': isBestSeller,
       'stock_quantity': stockQuantity,
+      'weight_value': weightValue,
+      'weight_unit_ar': weightUnitAr,
+      'weight_unit_en': weightUnitEn,
     };
   }
 
@@ -84,6 +96,19 @@ class Product {
     return context.locale.languageCode == 'ar' ? descriptionAr : descriptionEn;
   }
 
+  String? getWeightUnit(String langCode) {
+    return langCode == 'ar' ? weightUnitAr : weightUnitEn;
+  }
+
+  String getLocalizedWeight(String langCode) {
+    if (weightValue == null) return '';
+    final String valueStr = weightValue! == weightValue!.toInt()
+        ? weightValue!.toInt().toString()
+        : weightValue!.toString();
+    final unit = getWeightUnit(langCode) ?? '';
+    return '$valueStr $unit';
+  }
+
   /// Convert to ProductItem for use with ProductCard widget
   ProductItem toProductItem() {
     return ProductItem(
@@ -94,6 +119,9 @@ class Product {
       oldPrice: oldPrice,
       imageUrl: imageUrl ?? '',
       isAvailable: isInStock,
+      weightValue: weightValue,
+      weightUnitAr: weightUnitAr,
+      weightUnitEn: weightUnitEn,
     );
   }
 }

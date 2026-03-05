@@ -1,6 +1,8 @@
 {
     "maintenance": {
-        "status": "قيد التنفيذ"
+        "status": "قيد التنفيذ",
+        "title": "نحن نطور بوراق",
+        "message": "نحن نقوم ببعض التحسينات، سنعود قريبا."
     },
     "app_name": "بُـــــراق",
     "tagline": "طلباتك، بين إيديك",
@@ -38,6 +40,7 @@
         "error": "خطأ",
         "retry": "إعادة المحاولة",
         "loading": "جارٍ التحميل...",
+        "ok": "حسناً",
         "cancel": "إلغاء",
         "confirm": "تأكيد",
         "save": "حفظ",
@@ -79,7 +82,9 @@
         "enable_location_message": "نحتاج للوصول لموقعك لتحديد عنوان التوصيل بدقة"
     },
     "splash": {
-        "loading": "جارٍ التحميل..."
+        "loading": "جارٍ التحميل...",
+        "greeting": "رمضانك أسهل مع بُراق",
+        "tagline": "طلباتك، بين إيديك"
     },
     "error": {
         "page_not_found": "الصفحة غير موجودة",
@@ -188,7 +193,8 @@
         "password_requirements_hint": "• 8 أحرف على الأقل • حرف كبير • رقم واحد",
         "registering": "جارٍ إنشاء الحساب...",
         "create_new_account": "إنشاء حساب جديد",
-        "fill_details": "املأ البيانات التالية للتسجيل"
+        "fill_details": "املأ البيانات التالية للتسجيل",
+        "otp_resent_success": "تم إرسال رمز التحقق مرة أخرى"
     },
     "home": {
         "greeting": "مرحباً",
@@ -202,7 +208,7 @@
         "home_tab": "الرئيسية",
         "cart_tab": "السلة",
         "search_tab": "البحث",
-        "account_tab": "Account",
+        "account_tab": "حسابي",
         "products": "المنتجات"
     },
     "cart": {
@@ -227,7 +233,10 @@
         "add": "أضف",
         "free_delivery": "للحصول على توصيل مجاني!",
         "free_delivery_achieved": "مبروك! حصلت على توصيل مجاني!",
-        "free_delivery_subtitle": "استمتع بتوصيل مجاني لطلبك"
+        "free_delivery_subtitle": "استمتع بتوصيل مجاني لطلبك",
+        "item_out_of_stock": "عذراً، أحد المنتجات في سلتك أصبح غير متوفر",
+        "insufficient_stock": "عذراً، الكمية المطلوبة لبعض المنتجات غير متوفرة حالياً",
+        "checking_stock": "جاري التأكد من توفر المنتجات..."
     },
     "product": {
         "product_details": "تفاصيل المنتج",
@@ -241,7 +250,11 @@
         "notify_subscribed": "سنعلمك عند توفر المنتج",
         "notify_unsubscribed": "تم إلغاء التنبيه",
         "price": "السعر",
-        "total": "الإجمالي"
+        "total": "الإجمالي",
+        "badge_featured": "مميز",
+        "badge_best_seller": "الأكثر مبيعاً",
+        "badge_new": "جديد",
+        "badge_top_rated": "الأعلى تقييماً"
     },
     "orders": {
         "title": "طلباتي",
@@ -336,6 +349,8 @@
         "rate_experience": "كيف كانت تجربتك؟",
         "rate_description": "تقييمك يساعدنا على تحسين خدماتنا",
         "rate_comment_hint": "شاركنا تجربتك (اختياري)...",
+        "rate_product_title": "قيّم المنتج",
+        "add_comment_hint": "أضف تعليق (اختياري)",
         "submit_rating": "إرسال التقييم",
         "rating_submitted": "شكراً على تقييمك!",
         "already_rated": "لقد قمت بتقييم هذا الطلب مسبقاً",
@@ -373,6 +388,10 @@
         "tomorrow": "غداً",
         "confirm_time": "تأكيد الوقت",
         "promo_invalid": "كود الخصم غير صحيح",
+        "promo_expired": "كود الخصم منتهي الصلاحية",
+        "promo_min_order": "الحد الأدنى للطلب {} ج.م",
+        "promo_already_used": "لقد استخدمت هذا الكود من قبل",
+        "promo_error": "حدث خطأ في التحقق من الكود",
         "delivery_already_free": "التوصيل مجاني بالفعل! لقد وصلت للحد المطلوب",
         "order_summary": "ملخص الطلب",
         "subtotal": "المجموع الفرعي",
@@ -396,7 +415,16 @@
         "track_order": "تتبع الطلب",
         "back_to_home": "العودة للرئيسية",
         "free": "مجاني",
-        "free_shipping_applied": "توصيل مجاني!"
+        "free_shipping_applied": "توصيل مجاني!",
+        "no_slots_today": "لا توجد فترات متاحة اليوم",
+        "within_time": "خلال 45-60 دقيقة",
+        "invalid_schedule_time": "وقت الجدولة غير متاح، يرجى اختيار وقت آخر",
+        "insufficient_wallet": "رصيد المحفظة غير كافٍ لإتمام العملية",
+        "verifying_order": "جاري التحقق من طلبك...",
+        "please_wait": "يرجى الانتظار، لا تغلق التطبيق",
+        "validating_promo": "جاري التأكد من كود الخصم...",
+        "checking_wallet": "جاري التأكد من رصيد المحفظة...",
+        "placing_order": "جاري إرسال طلبك..."
     },
     "favorites": {
         "title": "المفضلة",
@@ -509,7 +537,9 @@
         "danger_zone": "منطقة الخطر",
         "change_email": "تغيير البريد الإلكتروني",
         "change_email_desc": "أدخل بريدك الإلكتروني الجديد. سنرسل لك رمز تحقق لتأكيد التغيير.",
-        "new_email": "البريد الإلكتروني الجديد"
+        "new_email": "البريد الإلكتروني الجديد",
+        "email_update_success": "تم التحديث بنجاح",
+        "email_update_success_message": "تم تحديث بريدك الإلكتروني بنجاح."
     },
     "promo": {
         "header_title": "كوبونات الخصم",
@@ -593,7 +623,10 @@
         "work": "العمل",
         "other": "آخر",
         "enter_building_name": "أدخل اسم المبنى",
-        "enter_phone": "أدخل رقم الهاتف"
+        "enter_phone": "أدخل رقم الهاتف",
+        "location_required": "تحديد الموقع مطلوب",
+        "location_required_message": "يجب تحديد موقعك على الخريطة لحفظ العنوان. يرجى تفعيل خدمة الموقع.",
+        "getting_location": "جاري تحديد موقعك..."
     },
     "delivery_location": "موقع التوصيل",
     "address_details_hint": "تفاصيل العنوان (الشارع، المنطقة...)",
@@ -626,7 +659,8 @@
         "payment_method": "طريقة الدفع",
         "new_card": "بطاقة ائتمان/خصم جديدة",
         "add": "إضافة",
-        "balance_added": "تم إضافة الرصيد بنجاح",
+        "add_balance_success": "تمت إضافة الرصيد بنجاح",
+        "add_balance_desc": "إضافة رصيد عبر البطاقة",
         "add_balance_error": "حدث خطأ أثناء إضافة الرصيد",
         "no_saved_cards": "لا توجد بطاقات محفوظة",
         "no_saved_cards_desc": "يمكنك حفظ بطاقة ائتمان أو خصم للدفع السريع",
@@ -687,9 +721,45 @@
         "cancel_and_refund": "إلغاء واسترداد",
         "why_cancel_title": "ساعدنا نفهم سبب الإلغاء"
     },
-    "delivery_time": {
-        "title": "اختر وقت التوصيل",
-        "instant": "فوري",
-        "schedule_another": "أو حدد وقت آخر"
+    "update": {
+        "title": "تحديث متاح",
+        "message": "يتوفر تحديث جديد للتطبيق",
+        "whats_new": "ما الجديد:",
+        "update_now": "تحديث الآن",
+        "later": "لاحقاً",
+        "force_update_warning": "هذا التحديث مطلوب لاستخدام التطبيق"
+    },
+    "date": {
+        "today": "اليوم",
+        "tomorrow": "غداً",
+        "yesterday": "أمس",
+        "am": "ص",
+        "pm": "م",
+        "ends_today": "ينتهي اليوم",
+        "ends_tomorrow": "ينتهي غداً",
+        "ends_in": "ينتهي خلال {} أيام",
+        "days": {
+            "1": "الإثنين",
+            "2": "الثلاثاء",
+            "3": "الأربعاء",
+            "4": "الخميس",
+            "5": "الجمعة",
+            "6": "السبت",
+            "7": "الأحد"
+        },
+        "months": {
+            "1": "يناير",
+            "2": "فبراير",
+            "3": "مارس",
+            "4": "أبريل",
+            "5": "مايو",
+            "6": "يونيو",
+            "7": "يوليو",
+            "8": "أغسطس",
+            "9": "سبتمبر",
+            "10": "أكتوبر",
+            "11": "نوفمبر",
+            "12": "ديسمبر"
+        }
     }
 }

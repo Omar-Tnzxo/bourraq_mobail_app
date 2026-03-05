@@ -22,6 +22,10 @@ class CartRepository {
             id,
             product_id,
             quantity,
+            branch_id,
+            branch_product_id,
+            partner_price,
+            customer_price,
             products (
               name_ar,
               name_en,
@@ -29,7 +33,8 @@ class CartRepository {
               old_price,
               image_url,
               weight_value,
-              weight_unit,
+              weight_unit_ar,
+              weight_unit_en,
               stock_quantity,
               is_active
             )
@@ -50,21 +55,35 @@ class CartRepository {
   }
 
   /// Add item to cart (upsert - increases quantity if exists)
-  Future<void> addToCart(String productId, {int quantity = 1}) async {
+  Future<void> addToCart(
+    String productId, {
+    double quantity = 1,
+    String? branchId,
+    String? branchProductId,
+    double? partnerPrice,
+    double? customerPrice,
+  }) async {
     if (_userId == null) return;
 
     try {
       // Check if item already exists
-      final existing = await _supabase
+      var query = _supabase
           .from('cart_items')
           .select('id, quantity')
           .eq('user_id', _userId!)
-          .eq('product_id', productId)
-          .maybeSingle();
+          .eq('product_id', productId);
+
+      if (branchId != null && branchId.isNotEmpty) {
+        query = query.eq('branch_id', branchId);
+      } else {
+        query = query.isFilter('branch_id', null);
+      }
+
+      final existing = await query.maybeSingle();
 
       if (existing != null) {
         // Update quantity - use RPC or direct update
-        final newQty = (existing['quantity'] as int) + quantity;
+        final newQty = (existing['quantity'] as num).toDouble() + quantity;
         await _supabase
             .from('cart_items')
             .update({
@@ -81,8 +100,12 @@ class CartRepository {
                 'user_id': _userId,
                 'product_id': productId,
                 'quantity': quantity,
+                'branch_id': branchId,
+                'branch_product_id': branchProductId,
+                'partner_price': partnerPrice,
+                'customer_price': customerPrice,
               },
-              onConflict: 'user_id,product_id',
+              onConflict: 'user_id,product_id,branch_id',
               ignoreDuplicates: false,
             );
       }
@@ -90,15 +113,22 @@ class CartRepository {
       // Handle duplicate key error gracefully - item was added by concurrent request
       if (e.code == '23505') {
         // Duplicate key - fetch and update instead
-        final existing = await _supabase
+        var retryQuery = _supabase
             .from('cart_items')
             .select('id, quantity')
             .eq('user_id', _userId!)
-            .eq('product_id', productId)
-            .maybeSingle();
+            .eq('product_id', productId);
+
+        if (branchId != null && branchId.isNotEmpty) {
+          retryQuery = retryQuery.eq('branch_id', branchId);
+        } else {
+          retryQuery = retryQuery.isFilter('branch_id', null);
+        }
+
+        final existing = await retryQuery.maybeSingle();
 
         if (existing != null) {
-          final newQty = (existing['quantity'] as int) + quantity;
+          final newQty = (existing['quantity'] as num).toDouble() + quantity;
           await _supabase
               .from('cart_items')
               .update({
@@ -116,7 +146,7 @@ class CartRepository {
   }
 
   /// Update item quantity
-  Future<void> updateQuantity(String productId, int quantity) async {
+  Future<void> updateQuantity(String productId, double quantity) async {
     if (_userId == null) return;
 
     try {
@@ -236,7 +266,14 @@ class CartRepository {
 
     try {
       for (final item in localItems) {
-        await addToCart(item.productId, quantity: item.quantity);
+        await addToCart(
+          item.productId,
+          quantity: item.quantity,
+          branchId: item.branchId,
+          branchProductId: item.branchProductId,
+          partnerPrice: item.partnerPrice,
+          customerPrice: item.customerPrice,
+        );
       }
     } catch (e) {
       // Silently fail sync
@@ -258,6 +295,51 @@ class CartRepository {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Validate all items in the cart
+  /// Returns a Map with validation results:
+  /// - 'isValid': bool
+  /// - 'items': List<CartItem> (the updated items)
+  /// - 'errors': List<String> (localized keys for errors)
+  Future<Map<String, dynamic>> validateCart() async {
+    if (_userId == null)
+      return {
+        'isValid': false,
+        'errors': ['auth.login_required'],
+      };
+
+    try {
+      final items = await getCartItems();
+      final errors = <String>[];
+      bool isValid = true;
+
+      for (final item in items) {
+        // 1. Stock check
+        if (item.stockQuantity <= 0) {
+          isValid = false;
+          errors.add('cart.item_out_of_stock');
+          break; // Stop at first major error or continue for all
+        }
+
+        if (item.quantity > item.stockQuantity) {
+          isValid = false;
+          errors.add('cart.insufficient_stock');
+          break;
+        }
+
+        // 2. Price check could be done here if we stored price_at_addition
+        // but since we always fetch latest price in getCartItems,
+        // the subtotal we have in UI should ideally be refreshed before placement.
+      }
+
+      return {'isValid': isValid, 'items': items, 'errors': errors};
+    } catch (e) {
+      return {
+        'isValid': false,
+        'errors': ['common.error_occurred'],
+      };
     }
   }
 }

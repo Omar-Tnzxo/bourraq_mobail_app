@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -153,9 +154,9 @@ class _SplashScreenState extends State<SplashScreen>
                           const SizedBox(height: 24),
 
                           // Ramadan Greeting Arabic
-                          const Text(
-                            'رمضانك أسهل مع بُراق',
-                            style: TextStyle(
+                          Text(
+                            'splash.greeting'.tr(),
+                            style: const TextStyle(
                               fontFamily: 'PingAR',
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
@@ -173,9 +174,9 @@ class _SplashScreenState extends State<SplashScreen>
 
                           const SizedBox(height: 4), // Reduced spacing
                           // Original Tagline
-                          const Text(
-                            'طلباتك، بين إيديك',
-                            style: TextStyle(
+                          Text(
+                            'splash.tagline'.tr(),
+                            style: const TextStyle(
                               fontFamily: 'PingAR',
                               fontSize: 16,
                               fontWeight: FontWeight.w400,

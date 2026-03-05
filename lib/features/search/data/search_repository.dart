@@ -39,63 +39,43 @@ class SearchRepository {
 
   /// Search products with Arabic normalization and bilingual support
   /// Searches in both name_ar and name_en
-  Future<List<Map<String, dynamic>>> searchProducts(String query) async {
+  Future<List<Map<String, dynamic>>> searchProducts(
+    String query, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
     if (query.trim().isEmpty) return [];
 
-    // Check for user's selected area
+    // Check for user's selected area (including guest sessions)
     final addressService = AddressService();
-    final defaultAddress = await addressService.getDefaultAddress();
+    final areaId = await addressService.getActiveAreaId();
 
-    if (defaultAddress?.areaId != null) {
-      final areaId = defaultAddress!.areaId!;
-      final branchProductRepo = BranchProductRepository();
-
-      // Perform search using branch products in the specific area
-      final branchProducts = await branchProductRepo.searchInArea(
-        areaId: areaId,
-        queryStr: query.trim(),
-        limit: 50,
-      );
-
-      return branchProducts
-          .map(
-            (sp) => {
-              'id': sp
-                  .productId, // ID must map to product ID for details to fetch properly
-              'branch_product_id': sp.id,
-              'branch_id': sp.branchId,
-              'name_ar': sp.nameAr,
-              'name_en': sp.nameEn,
-              'price': sp.customerPrice,
-              'partner_price': sp.partnerPrice,
-              'old_price': null,
-              'image_url': sp.imageUrl,
-              'is_active': sp.isActive,
-              'category_id': sp.categoryId,
-              'sub_category_id': sp.subCategoryId,
-              'avg_rating': sp.avgRating,
-              'rating_count': sp.ratingCount,
-              'branch_name_ar': sp.branchNameAr,
-              'branch_name_en': sp.branchNameEn,
-            },
-          )
-          .toList();
-    }
     final branchProductRepo = BranchProductRepository();
+
+    // Normalize Arabic characters for better search
+    final normalized = _normalizeArabic(query.trim());
+
+    // Perform search using branch products
     final branchProducts = await branchProductRepo.searchInArea(
-      queryStr: query.trim(),
-      limit: 50,
+      areaId: areaId,
+      queryStr: normalized,
+      limit: limit * 4, // Fetch more for de-duplication
+      offset: offset * 4, // Adjust offset as well to scan further
     );
 
-    // De-duplicate by product ID
+    // De-duplicate by product ID to show unique products from multiple branches
     final products = <Map<String, dynamic>>[];
     final seenIds = <String>{};
 
     for (var sp in branchProducts) {
+      // Break early if we have enough items
+      if (products.length >= limit) break;
+
       if (!seenIds.contains(sp.productId)) {
         seenIds.add(sp.productId);
         products.add({
-          'id': sp.productId,
+          'id': sp
+              .productId, // ID must map to product ID for details to fetch properly
           'branch_product_id': sp.id,
           'branch_id': sp.branchId,
           'name_ar': sp.nameAr,
@@ -111,6 +91,9 @@ class SearchRepository {
           'rating_count': sp.ratingCount,
           'branch_name_ar': sp.branchNameAr,
           'branch_name_en': sp.branchNameEn,
+          'weight_value': sp.weightValue,
+          'weight_unit_ar': sp.weightUnitAr,
+          'weight_unit_en': sp.weightUnitEn,
         });
       }
     }
@@ -120,11 +103,18 @@ class SearchRepository {
   /// Search products within a specific category
   Future<List<Map<String, dynamic>>> searchProductsInCategory(
     String query,
-    String categoryId,
-  ) async {
+    String categoryId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
     if (query.trim().isEmpty) return [];
-    final normalizedQuery = _normalizeArabic(query.trim());
-    final searchPattern = '%$normalizedQuery%';
+
+    // Check for user's selected area
+    final addressService = AddressService();
+    final areaId = await addressService.getActiveAreaId();
+
+    // Normalize Arabic characters for better search
+    final normalized = _normalizeArabic(query.trim());
 
     var queryRepo = _supabase
         .from('partner_products')
@@ -135,12 +125,20 @@ class SearchRepository {
         .eq('products.is_active', true)
         .eq('products.category_id', categoryId)
         .or(
-          'products.name_ar.ilike.$searchPattern,products.name_en.ilike.$searchPattern',
+          'name_ar.ilike.%$normalized%,name_en.ilike.%$normalized%',
+          referencedTable: 'products',
         );
+
+    if (areaId != null) {
+      queryRepo = queryRepo.eq('branches.branch_areas.area_id', areaId);
+    }
+
+    final queryLimit = limit * 4;
+    final queryOffset = offset * 4;
 
     final response = await queryRepo
         .order('avg_rating', ascending: false)
-        .limit(100);
+        .range(queryOffset, queryOffset + queryLimit - 1);
 
     final branchProducts = (response as List)
         .where((json) => json['products'] != null && json['branches'] != null)
@@ -152,6 +150,8 @@ class SearchRepository {
     final seenIds = <String>{};
 
     for (var sp in branchProducts) {
+      if (products.length >= limit) break;
+
       if (!seenIds.contains(sp.productId)) {
         seenIds.add(sp.productId);
         products.add({
@@ -171,6 +171,9 @@ class SearchRepository {
           'rating_count': sp.ratingCount,
           'branch_name_ar': sp.branchNameAr,
           'branch_name_en': sp.branchNameEn,
+          'weight_value': sp.weightValue,
+          'weight_unit_ar': sp.weightUnitAr,
+          'weight_unit_en': sp.weightUnitEn,
         });
       }
     }
@@ -309,10 +312,9 @@ class SearchRepository {
     int limit = 10,
   }) async {
     final addressService = AddressService();
-    final defaultAddress = await addressService.getDefaultAddress();
+    final areaId = await addressService.getActiveAreaId();
 
-    if (defaultAddress?.areaId != null) {
-      final areaId = defaultAddress!.areaId!;
+    if (areaId != null) {
       final branchProductRepo = BranchProductRepository();
 
       final branchProducts = await branchProductRepo.getBestSellersForArea(
@@ -339,6 +341,9 @@ class SearchRepository {
               'rating_count': sp.ratingCount,
               'branch_name_ar': sp.branchNameAr,
               'branch_name_en': sp.branchNameEn,
+              'weight_value': sp.weightValue,
+              'weight_unit_ar': sp.weightUnitAr,
+              'weight_unit_en': sp.weightUnitEn,
             },
           )
           .toList();
@@ -372,6 +377,9 @@ class SearchRepository {
           'rating_count': sp.ratingCount,
           'branch_name_ar': sp.branchNameAr,
           'branch_name_en': sp.branchNameEn,
+          'weight_value': sp.weightValue,
+          'weight_unit_ar': sp.weightUnitAr,
+          'weight_unit_en': sp.weightUnitEn,
         });
       }
     }

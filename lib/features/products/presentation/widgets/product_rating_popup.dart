@@ -119,8 +119,6 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = context.locale.languageCode == 'ar';
-
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -139,7 +137,7 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    isArabic ? 'قيّم المنتج' : 'Rate Product',
+                    'orders.rate_product_title'.tr(),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -205,9 +203,7 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
               controller: _commentController,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: isArabic
-                    ? 'أضف تعليق (اختياري)'
-                    : 'Add comment (optional)',
+                hintText: 'orders.add_comment_hint'.tr(),
                 hintStyle: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textLight,
@@ -247,7 +243,7 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      isArabic ? 'تخطي' : 'Skip',
+                      'common.skip'.tr(),
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
@@ -279,7 +275,7 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
                             ),
                           )
                         : Text(
-                            isArabic ? 'إرسال التقييم' : 'Submit Rating',
+                            'orders.submit_rating'.tr(),
                             style: const TextStyle(
                               color: AppColors.white,
                               fontWeight: FontWeight.w600,

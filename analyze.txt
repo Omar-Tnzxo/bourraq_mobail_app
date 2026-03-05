@@ -1,188 +1,191 @@
-Analyzing bourraq_mobail_app...                                 
+Analyzing bourraq_mobail_app...
 
-   info - Don't invoke 'print' in production code - lib\core\notifiers\cart_badge_notifier.dart:17:5 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\notifiers\cart_badge_notifier.dart:30:5 - avoid_print
-   info - 'userDeleted' is deprecated and shouldn't be used. Was never in use and might be removed in the future - lib\core\services\session_manager.dart:32:36 - deprecated_member_use
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:14:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:18:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:29:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:40:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:68:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:71:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:85:11 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:94:11 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:98:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:113:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\services\user_sync_service.dart:116:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\core\utils\error_handler.dart:173:7 - avoid_print
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\bourraq_header.dart:52:39 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\web_view_screen.dart:110:40 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\screens\account_screen.dart:130:39 - deprecated_member_use
-   info - Don't use 'BuildContext's across async gaps - lib\features\account\presentation\screens\profile_settings_screen.dart:116:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps - lib\features\account\presentation\screens\profile_settings_screen.dart:121:28 - use_build_context_synchronously
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:25:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:43:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:47:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:48:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:50:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:61:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:65:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:67:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:78:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:92:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:93:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:94:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:111:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:113:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:124:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:133:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:174:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:188:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:192:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:203:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:214:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:228:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:231:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:243:5 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:255:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:258:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:271:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:283:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:287:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:292:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:302:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:305:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:306:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:334:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:346:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:354:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:355:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:357:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:365:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:376:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:389:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:391:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:400:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:412:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:417:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:419:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:427:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:439:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:444:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:456:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:458:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:467:11 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:475:13 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:479:11 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:484:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:495:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:508:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:511:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:517:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:519:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:525:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:537:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:548:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:550:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:561:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:565:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:573:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\data\auth_repository.dart:578:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\presentation\cubit\auth_cubit.dart:45:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\presentation\cubit\auth_cubit.dart:57:5 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\presentation\cubit\auth_cubit.dart:61:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\presentation\cubit\auth_cubit.dart:69:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\auth\presentation\cubit\auth_cubit.dart:72:7 - avoid_print
-   info - Use of 'return' in a 'finally' clause - lib\features\auth\presentation\screens\login_screen.dart:39:21 - control_flow_in_finally
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\presentation\screens\login_screen.dart:83:50 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\presentation\screens\login_screen.dart:137:50 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\presentation\screens\login_screen.dart:245:46 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\presentation\screens\login_screen.dart:246:46 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\presentation\screens\login_screen.dart:266:51 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\presentation\screens\login_screen.dart:269:53 - deprecated_member_use
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:67:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:71:5 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:76:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:78:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:84:5 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:88:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:90:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:96:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:100:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:104:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\cart\data\cart_service.dart:109:5 - avoid_print
-warning - The value of the field '_isLoading' isn't used - lib\features\categories\presentation\screens\category_products_screen.dart:43:8 - unused_field
-warning - The value of the field '_resolvedCategoryId' isn't used - lib\features\categories\presentation\screens\category_products_screen.dart:46:11 - unused_field
-warning - The declaration '_scrollToTab' isn't referenced - lib\features\categories\presentation\screens\category_products_screen.dart:491:8 - unused_element
-   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\features\checkout\presentation\screens\checkout_screen.dart:658:21 - deprecated_member_use
-   info - Don't use 'BuildContext's across async gaps - lib\features\checkout\presentation\widgets\delivery_time_picker_sheet.dart:213:49 - use_build_context_synchronously
-   info - Don't invoke 'print' in production code - lib\features\favorites\data\repositories\favorites_repository.dart:35:7 - avoid_print
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:92:46 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:150:44 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:280:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:304:44 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\home_categories_section.dart:116:46 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\home_categories_section.dart:167:39 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\home_header.dart:55:50 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\home\presentation\widgets\home_header.dart:65:50 - deprecated_member_use
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:40:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:64:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:67:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:101:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:134:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:162:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:170:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:202:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:205:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:231:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:234:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:258:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:261:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:297:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\address_service.dart:300:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\area_service.dart:45:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\data\area_service.dart:98:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\location\presentation\screens\add_address_screen.dart:104:7 - avoid_print
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:307:37 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:427:39 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:463:47 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:485:33 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:578:31 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:581:43 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:762:47 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:782:33 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:877:45 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\location\presentation\widgets\enhanced_map_widget.dart:931:47 - deprecated_member_use
-   info - Don't invoke 'print' in production code - lib\features\onboarding\data\onboarding_repository.dart:22:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:30:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:54:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:101:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:104:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:144:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:177:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:203:9 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:225:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:228:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:255:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:273:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\orders\data\orders_service.dart:276:7 - avoid_print
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\orders\presentation\screens\orders_screen.dart:141:53 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\orders\presentation\screens\orders_screen.dart:148:55 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\orders\presentation\screens\orders_screen.dart:187:37 - deprecated_member_use
-warning - The value of the local variable 'categoryName' isn't used - lib\features\products\presentation\screens\product_details_screen.dart:346:11 - unused_local_variable
-warning - The declaration '_buildFormattedPrice' isn't referenced - lib\features\products\presentation\widgets\product_details_sheet.dart:871:10 - unused_element
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\search\presentation\widgets\search_bar_widget.dart:51:41 - deprecated_member_use
-   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\splash\presentation\splash_screen.dart:230:43 - deprecated_member_use
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:36:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:80:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:83:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:109:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:139:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:171:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:202:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:228:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:258:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:269:7 - avoid_print
-   info - Don't invoke 'print' in production code - lib\features\wallet\data\wallet_service.dart:294:7 - avoid_print
-warning - The value of the field '_walletService' isn't used - lib\features\wallet\presentation\screens\add_card_screen.dart:26:23 - unused_field
+warning - lib\features\categories\presentation\screens\category_products_screen.dart:44:8 - The value of the field '_isLoading' isn't used. Try removing the field, or using it. - unused_field
+warning - lib\features\categories\presentation\screens\category_products_screen.dart:47:11 - The value of the field '_resolvedCategoryId' isn't used. Try removing the field, or using it. - unused_field
+warning - lib\features\categories\presentation\screens\category_products_screen.dart:492:8 - The declaration '_scrollToTab' isn't referenced. Try removing the declaration of '_scrollToTab'. - unused_element
+warning - lib\features\products\presentation\screens\product_details_screen.dart:347:11 - The value of the local variable 'categoryName' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - lib\features\products\presentation\widgets\product_details_sheet.dart:889:10 - The declaration '_buildFormattedPrice' isn't referenced. Try removing the declaration of '_buildFormattedPrice'. - unused_element
+warning - lib\features\wallet\presentation\screens\add_card_screen.dart:26:23 - The value of the field '_walletService' isn't used. Try removing the field, or using it. - unused_field
+   info - lib\core\notifiers\cart_badge_notifier.dart:17:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\notifiers\cart_badge_notifier.dart:30:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\session_manager.dart:32:36 - 'userDeleted' is deprecated and shouldn't be used. Was never in use and might be removed in the future. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\core\services\user_sync_service.dart:14:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:18:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:29:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:40:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:68:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:71:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:85:11 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:94:11 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:98:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:113:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\services\user_sync_service.dart:116:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\utils\error_handler.dart:173:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\core\widgets\bourraq_header.dart:52:39 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\core\widgets\web_view_screen.dart:110:40 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\account\presentation\screens\account_screen.dart:130:39 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\account\presentation\screens\profile_settings_screen.dart:115:28 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\features\account\presentation\screens\profile_settings_screen.dart:120:28 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\features\auth\data\auth_repository.dart:25:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:43:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:47:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:48:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:50:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:61:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:65:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:67:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:78:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:92:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:93:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:94:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:111:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:113:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:124:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:133:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:174:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:188:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:192:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:203:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:214:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:228:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:231:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:243:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:255:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:258:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:271:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:283:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:287:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:292:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:302:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:305:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:306:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:334:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:346:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:354:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:355:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:357:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:365:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:376:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:389:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:391:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:400:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:412:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:417:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:419:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:427:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:439:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:444:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:456:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:458:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:467:11 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:475:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:479:11 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:484:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:495:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:508:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:511:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:517:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:519:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:525:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:537:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:548:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:550:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:561:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:565:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:573:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\data\auth_repository.dart:578:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\presentation\cubit\auth_cubit.dart:45:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\presentation\cubit\auth_cubit.dart:57:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\presentation\cubit\auth_cubit.dart:61:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\presentation\cubit\auth_cubit.dart:69:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\presentation\cubit\auth_cubit.dart:72:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\auth\presentation\screens\login_screen.dart:39:21 - Use of 'return' in a 'finally' clause. Try restructuring the code. - control_flow_in_finally
+   info - lib\features\auth\presentation\screens\login_screen.dart:83:50 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\auth\presentation\screens\login_screen.dart:137:50 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\auth\presentation\screens\login_screen.dart:245:46 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\auth\presentation\screens\login_screen.dart:246:46 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\auth\presentation\screens\login_screen.dart:266:51 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\auth\presentation\screens\login_screen.dart:269:53 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\cart\data\cart_repository.dart:292:22 - Angle brackets will be interpreted as HTML. Try using backticks around the content with angle brackets, or try replacing `<` with `&lt;` and `>` with `&gt;`. - unintended_html_in_doc_comment
+   info - lib\features\cart\data\cart_repository.dart:293:23 - Angle brackets will be interpreted as HTML. Try using backticks around the content with angle brackets, or try replacing `<` with `&lt;` and `>` with `&gt;`. - unintended_html_in_doc_comment
+   info - lib\features\cart\data\cart_repository.dart:296:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\features\cart\data\cart_service.dart:67:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:71:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:76:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:78:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:84:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:88:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:90:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:96:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:100:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:104:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\cart\data\cart_service.dart:109:5 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\checkout\presentation\widgets\delivery_time_picker_sheet.dart:213:49 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\features\favorites\data\repositories\favorites_repository.dart:35:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:91:46 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:149:44 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:277:37 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\home\presentation\widgets\address_picker_bottom_sheet.dart:301:44 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\home\presentation\widgets\home_categories_section.dart:117:46 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\home\presentation\widgets\home_categories_section.dart:168:39 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\home\presentation\widgets\home_header.dart:55:50 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\home\presentation\widgets\home_header.dart:65:50 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\data\address_service.dart:41:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:65:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:68:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:102:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:135:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:185:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:193:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:225:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:228:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:254:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:257:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:281:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:284:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:320:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\address_service.dart:323:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\area_service.dart:45:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\data\area_service.dart:98:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\presentation\screens\add_address_screen.dart:104:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:307:37 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:427:39 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:463:47 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:485:33 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:578:31 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:581:43 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:762:47 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:782:33 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:877:45 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\location\presentation\widgets\enhanced_map_widget.dart:931:47 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\onboarding\data\onboarding_repository.dart:22:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:30:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:56:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:109:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:112:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:152:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:187:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:213:9 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:235:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:238:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:265:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:283:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\data\orders_service.dart:286:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\orders\presentation\screens\orders_screen.dart:141:53 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\orders\presentation\screens\orders_screen.dart:148:55 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\orders\presentation\screens\orders_screen.dart:187:37 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\search\presentation\widgets\search_bar_widget.dart:51:41 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\splash\presentation\splash_screen.dart:231:43 - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - lib\features\wallet\data\wallet_service.dart:36:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:80:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:83:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:109:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:139:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:171:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:202:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:228:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:258:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:269:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - lib\features\wallet\data\wallet_service.dart:294:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
 
+187 issues found.

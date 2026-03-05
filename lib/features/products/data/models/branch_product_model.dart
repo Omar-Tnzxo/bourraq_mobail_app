@@ -17,6 +17,9 @@ class BranchProduct {
   final String? categoryId;
   final String? subCategoryId;
   final bool isActive;
+  final double? weightValue;
+  final String? weightUnitAr;
+  final String? weightUnitEn;
 
   // Branch-specific pricing
   final double partnerPrice;
@@ -69,6 +72,9 @@ class BranchProduct {
     this.badgeNameAr,
     this.badgeNameEn,
     this.badgeColor,
+    this.weightValue,
+    this.weightUnitAr,
+    this.weightUnitEn,
   });
 
   /// Get localized name
@@ -86,8 +92,24 @@ class BranchProduct {
   /// Get localized badge name
   String? getBadgeName(BuildContext? context) {
     if (badgeNameAr == null && badgeNameEn == null) return null;
+    if (badgeNameAr != null && badgeNameAr!.startsWith('product.badge_')) {
+      return badgeNameAr!.tr();
+    }
     if (context == null) return badgeNameAr;
     return context.locale.languageCode == 'ar' ? badgeNameAr : badgeNameEn;
+  }
+
+  String? getWeightUnit(String langCode) {
+    return langCode == 'ar' ? weightUnitAr : weightUnitEn;
+  }
+
+  String getLocalizedWeight(String langCode) {
+    if (weightValue == null) return '';
+    final String valueStr = weightValue! == weightValue!.toInt()
+        ? weightValue!.toInt().toString()
+        : weightValue!.toString();
+    final unit = getWeightUnit(langCode) ?? '';
+    return '$valueStr $unit';
   }
 
   /// Create from Supabase JSON (partner_products join products, branches, badges)
@@ -124,37 +146,26 @@ class BranchProduct {
       badgeNameAr: _getBadgeNameAr(badge?['badge_type'] as String?),
       badgeNameEn: _getBadgeNameEn(badge?['badge_type'] as String?),
       badgeColor: _getBadgeColor(badge?['badge_type'] as String?),
+      weightValue:
+          (product?['weight_value'] as num? ?? json['weight_value'] as num?)
+              ?.toDouble(),
+      weightUnitAr:
+          product?['weight_unit_ar'] as String? ??
+          json['weight_unit_ar'] as String?,
+      weightUnitEn:
+          product?['weight_unit_en'] as String? ??
+          json['weight_unit_en'] as String?,
     );
   }
 
   static String? _getBadgeNameAr(String? type) {
-    switch (type) {
-      case 'featured':
-        return 'مميز';
-      case 'best_seller':
-        return 'الأكثر مبيعاً';
-      case 'new':
-        return 'جديد';
-      case 'top_rated':
-        return 'الأعلى تقييماً';
-      default:
-        return null;
-    }
+    if (type == null) return null;
+    return 'product.badge_$type';
   }
 
   static String? _getBadgeNameEn(String? type) {
-    switch (type) {
-      case 'featured':
-        return 'Featured';
-      case 'best_seller':
-        return 'Best Seller';
-      case 'new':
-        return 'New';
-      case 'top_rated':
-        return 'Top Rated';
-      default:
-        return null;
-    }
+    if (type == null) return null;
+    return 'product.badge_$type';
   }
 
   static String? _getBadgeColor(String? type) {

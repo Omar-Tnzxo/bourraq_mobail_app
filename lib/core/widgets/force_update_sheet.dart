@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 
 import 'package:bourraq/core/constants/app_colors.dart';
@@ -108,16 +109,14 @@ class ForceUpdateSheet extends StatelessWidget {
       if (isMaintenance) {
         debugPrint('🚧 [ForceUpdate] Maintenance mode IS ENABLED');
         if (context.mounted) {
-          final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+          final langCode = Localizations.localeOf(context).languageCode;
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (_) => MaintenanceView(
-                title: isArabic ? 'نحن نطور بوراق' : 'Developing Bourraq',
-                message: isArabic
-                    ? (settings['maintenance_message_ar'] ??
-                          'نحن نقوم ببعض التحسينات، سنعود قريبا.')
-                    : (settings['maintenance_message_en'] ??
-                          'We are making some improvements, we will be back soon.'),
+                title: 'maintenance.title'.tr(),
+                message:
+                    settings['maintenance_message_$langCode'] ??
+                    'maintenance.message'.tr(),
               ),
             ),
             (route) => false,
@@ -311,7 +310,7 @@ class ForceUpdateSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isArabic ? 'ما الجديد:' : "What's New:",
+                    'update.whats_new'.tr(),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -350,7 +349,7 @@ class ForceUpdateSheet extends StatelessWidget {
               ),
               icon: const Icon(LucideIcons.externalLink, size: 20),
               label: Text(
-                isArabic ? 'تحديث الآن' : 'Update Now',
+                'update.update_now'.tr(),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -373,7 +372,7 @@ class ForceUpdateSheet extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  isArabic ? 'لاحقاً' : 'Later',
+                  'update.later'.tr(),
                   style: TextStyle(
                     fontSize: 15,
                     color: AppColors.textSecondary,
@@ -400,9 +399,7 @@ class ForceUpdateSheet extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      isArabic
-                          ? 'هذا التحديث مطلوب لاستخدام التطبيق'
-                          : 'This update is required to use the app',
+                      'update.force_update_warning'.tr(),
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.orange,

@@ -140,17 +140,19 @@ $_fcmToken
   Future<void> _saveTokenToDatabase(String token) async {
     try {
       final client = Supabase.instance.client;
-      final userId = client.auth.currentUser?.id;
+      final authUserId = client.auth.currentUser?.id;
 
       // Generate a unique device ID (you can use device_info_plus for a real ID)
-      final deviceId = '${Platform.operatingSystem}_${token.hashCode}';
+      // Combining with userId logic ensures we don't hit RLS violations when different users sign in on same physical device.
+      final rootDeviceId = '${Platform.operatingSystem}_${token.hashCode}';
+      final deviceId = '${authUserId ?? "guest"}_$rootDeviceId';
 
       // App version from pubspec.yaml
       const appVersion = '1.0.0';
 
       await client.from('fcm_tokens').upsert({
         'device_id': deviceId,
-        'user_id': userId, // null for guests
+        'user_id': authUserId, // use auth UUID to pass RLS policy
         'token': token,
         'app_type': 'customer',
         'platform': Platform.isAndroid ? 'android' : 'ios',

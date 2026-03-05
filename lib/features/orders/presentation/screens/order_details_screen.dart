@@ -392,8 +392,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   }
 
   Widget _buildOrderInfo() {
-    final isArabic = context.locale.languageCode == 'ar';
-
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -413,9 +411,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           _infoRow(
             LucideIcons.wallet,
             'orders.payment_method'.tr(),
-            isArabic
-                ? _order!.paymentMethod.labelAr
-                : _order!.paymentMethod.labelEn,
+            _order!.paymentMethod.translationKey.tr(),
           ),
           if (_order!.isScheduled && _order!.scheduledTime != null) ...[
             const Divider(height: 20),
@@ -577,6 +573,16 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (item.weightValue != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.getWeightDisplay(context.locale.languageCode),
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 4),
                         Text(
                           '${item.quantity}x · ${item.price.toStringAsFixed(2)} ${'common.egp'.tr()}',

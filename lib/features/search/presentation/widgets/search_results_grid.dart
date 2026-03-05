@@ -7,14 +7,16 @@ import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/products/presentation/widgets/product_details_sheet.dart';
 
 /// Search Results Grid
-/// Displays search results in a grid layout
-class SearchResultsGrid extends StatelessWidget {
+/// Displays search results in a grid layout with infinite scrolling
+class SearchResultsGrid extends StatefulWidget {
   final List<Map<String, dynamic>> results;
   final String query;
   final CartService? cartService;
   final VoidCallback? onCartUpdated;
   final bool hasAddress;
   final VoidCallback? onLocationRequired;
+  final VoidCallback? onLoadMore;
+  final bool isLoadingMore;
 
   const SearchResultsGrid({
     super.key,
@@ -24,7 +26,38 @@ class SearchResultsGrid extends StatelessWidget {
     this.onCartUpdated,
     this.hasAddress = true,
     this.onLocationRequired,
+    this.onLoadMore,
+    this.isLoadingMore = false,
   });
+
+  @override
+  State<SearchResultsGrid> createState() => _SearchResultsGridState();
+}
+
+class _SearchResultsGridState extends State<SearchResultsGrid> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!widget.isLoadingMore && widget.onLoadMore != null) {
+        widget.onLoadMore!();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +70,9 @@ class SearchResultsGrid extends StatelessWidget {
           color: AppColors.white,
           width: double.infinity,
           child: Text(
-            context.locale.languageCode == 'ar'
-                ? 'نتائج البحث عن "$query" (${results.length})'
-                : 'Results for "$query" (${results.length})',
+            'search.results_for'.tr(
+              args: [widget.query, '${widget.results.length}'],
+            ),
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -49,29 +82,49 @@ class SearchResultsGrid extends StatelessWidget {
         ),
         // Results grid
         Expanded(
-          child: results.isEmpty
+          child: widget.results.isEmpty && !widget.isLoadingMore
               ? _buildEmptyState(context)
-              : GridView.builder(
-                  padding: const EdgeInsets.all(12),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 0.64,
-                  ),
-                  itemCount: results.length,
-                  itemBuilder: (context, index) {
-                    final product = results[index];
-                    return ProductCard(
-                      product: ProductItem.fromMap(product),
-                      cartService: cartService,
-                      onCartUpdated: onCartUpdated,
-                      hasAddress: hasAddress,
-                      onLocationRequired: onLocationRequired,
-                      onTap: () =>
-                          ProductDetailsSheet.show(context, product['id']),
-                    );
-                  },
+              : CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.all(12),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 8,
+                              childAspectRatio: 0.64,
+                            ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final product = widget.results[index];
+                          return ProductCard(
+                            product: ProductItem.fromMap(product),
+                            cartService: widget.cartService,
+                            onCartUpdated: widget.onCartUpdated,
+                            hasAddress: widget.hasAddress,
+                            onLocationRequired: widget.onLocationRequired,
+                            onTap: () => ProductDetailsSheet.show(
+                              context,
+                              product['id'],
+                            ),
+                          );
+                        }, childCount: widget.results.length),
+                      ),
+                    ),
+                    if (widget.isLoadingMore)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.darkGreen,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
         ),
       ],

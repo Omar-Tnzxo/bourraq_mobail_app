@@ -569,8 +569,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Widget _buildOrderInfo() {
-    final isArabic = context.locale.languageCode == 'ar';
-
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -596,9 +594,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           _infoRow(
             LucideIcons.creditCard,
             'checkout.payment_method'.tr(),
-            isArabic
-                ? _order!.paymentMethod.labelAr
-                : _order!.paymentMethod.labelEn,
+            _order!.paymentMethod.translationKey.tr(),
           ),
           const Divider(height: 20),
           _infoRow(

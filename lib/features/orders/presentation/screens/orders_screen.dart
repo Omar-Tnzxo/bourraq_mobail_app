@@ -550,7 +550,7 @@ class _OrdersScreenState extends State<OrdersScreen>
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        isArabic ? status.labelAr : status.labelEn,
+        status.translationKey.tr(),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,

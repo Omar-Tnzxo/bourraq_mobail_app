@@ -1,6 +1,8 @@
 {
     "maintenance": {
-        "status": "In Progress"
+        "status": "In Progress",
+        "title": "Developing Bourraq",
+        "message": "We are making some improvements, we will be back soon."
     },
     "app_name": "Bourraq",
     "tagline": "Your orders, in your hands",
@@ -21,8 +23,11 @@
         "error": "Error",
         "retry": "Retry",
         "loading": "Loading...",
+        "ok": "OK",
         "cancel": "Cancel",
         "confirm": "Confirm",
+        "close": "Close",
+        "skip": "Skip",
         "save": "Save",
         "save_address": "Save Address",
         "delete": "Delete",
@@ -36,7 +41,6 @@
         "help": "Help",
         "not_specified": "Not specified",
         "error_occurred": "An error occurred",
-        "close": "Close",
         "viewing_cached_data": "Viewing cached data",
         "last_updated": "Last updated {minutes} min ago",
         "last_update": "Last update",
@@ -79,7 +83,9 @@
         "enable_location_message": "We need access to your location to accurately determine your delivery address"
     },
     "splash": {
-        "loading": "Loading..."
+        "loading": "Loading...",
+        "greeting": "Ramadan is easier with Bourraq",
+        "tagline": "Your orders, in your hands"
     },
     "error": {
         "page_not_found": "Page not found",
@@ -188,7 +194,8 @@
         "password_requirements_hint": "• 8 characters min • 1 uppercase • 1 number",
         "registering": "Creating account...",
         "create_new_account": "Create new account",
-        "fill_details": "Fill the following details to register"
+        "fill_details": "Fill the following details to register",
+        "otp_resent_success": "Verification code sent again"
     },
     "home": {
         "greeting": "Hello",
@@ -227,7 +234,10 @@
         "add": "Add",
         "free_delivery": "to get free delivery!",
         "free_delivery_achieved": "Congrats! You got free delivery!",
-        "free_delivery_subtitle": "Enjoy free delivery on your order"
+        "free_delivery_subtitle": "Enjoy free delivery on your order",
+        "item_out_of_stock": "Sorry, one of the items in your cart is now out of stock",
+        "insufficient_stock": "Sorry, requested quantity for some items is not currently available",
+        "checking_stock": "Checking items availability..."
     },
     "product": {
         "product_details": "Product Details",
@@ -241,7 +251,11 @@
         "notify_subscribed": "We'll notify you when it's available",
         "notify_unsubscribed": "Notification cancelled",
         "price": "Price",
-        "total": "Total"
+        "total": "Total",
+        "badge_featured": "Featured",
+        "badge_best_seller": "Best Seller",
+        "badge_new": "New",
+        "badge_top_rated": "Top Rated"
     },
     "orders": {
         "title": "My Orders",
@@ -336,6 +350,8 @@
         "rate_experience": "How was your experience?",
         "rate_description": "Your feedback helps us improve",
         "rate_comment_hint": "Share your experience (optional)...",
+        "rate_product_title": "Rate Product",
+        "add_comment_hint": "Add comment (optional)",
         "submit_rating": "Submit Rating",
         "rating_submitted": "Thank you for your feedback!",
         "already_rated": "You've already rated this order",
@@ -373,6 +389,10 @@
         "tomorrow": "Tomorrow",
         "confirm_time": "Confirm Time",
         "promo_invalid": "Invalid promo code",
+        "promo_expired": "Promo code has expired",
+        "promo_min_order": "Minimum order amount is {} EGP",
+        "promo_already_used": "You have already used this code",
+        "promo_error": "Error validating promo code",
         "delivery_already_free": "Delivery is already free! You've reached the threshold",
         "order_summary": "Order Summary",
         "subtotal": "Subtotal",
@@ -396,7 +416,16 @@
         "track_order": "Track Order",
         "back_to_home": "Back to Home",
         "free": "Free",
-        "free_shipping_applied": "Free Shipping!"
+        "free_shipping_applied": "Free Shipping!",
+        "no_slots_today": "No time slots available today",
+        "within_time": "Within 45-60 minutes",
+        "invalid_schedule_time": "Scheduled time is no longer available, please choose another",
+        "insufficient_wallet": "Insufficient wallet balance to complete this transaction",
+        "verifying_order": "Verifying your order...",
+        "please_wait": "Please wait, do not close the app",
+        "validating_promo": "Validating promo code...",
+        "checking_wallet": "Checking wallet balance...",
+        "placing_order": "Placing your order..."
     },
     "favorites": {
         "title": "Favorites",
@@ -509,7 +538,9 @@
         "danger_zone": "Danger Zone",
         "change_email": "Change Email",
         "change_email_desc": "Enter your new email address. We will send a verification code to confirm the change.",
-        "new_email": "New Email"
+        "new_email": "New Email",
+        "email_update_success": "Updated Successfully",
+        "email_update_success_message": "Your email has been updated successfully."
     },
     "promo": {
         "header_title": "Promo Codes",
@@ -593,7 +624,10 @@
         "work": "Work",
         "other": "Other",
         "enter_building_name": "Enter building name",
-        "enter_phone": "Enter phone number"
+        "enter_phone": "Enter phone number",
+        "location_required": "Location Required",
+        "location_required_message": "Please enable location services to save your address.",
+        "getting_location": "Getting your location..."
     },
     "delivery_location": "Delivery location",
     "address_details_hint": "Address details (Street, Area...)",
@@ -626,7 +660,8 @@
         "payment_method": "Payment method",
         "new_card": "New credit/debit card",
         "add": "Add",
-        "balance_added": "Balance added successfully",
+        "add_balance_success": "Balance added successfully",
+        "add_balance_desc": "Add balance via card",
         "add_balance_error": "Error adding balance",
         "no_saved_cards": "No saved cards",
         "no_saved_cards_desc": "You can securely save a debit or credit card for quicker checkout",
@@ -691,5 +726,46 @@
         "title": "Select delivery time",
         "instant": "Instant",
         "schedule_another": "Or schedule another time"
+    },
+    "update": {
+        "title": "Update Available",
+        "message": "A new version is available",
+        "whats_new": "What's New:",
+        "update_now": "Update Now",
+        "later": "Later",
+        "force_update_warning": "This update is required to use the app"
+    },
+    "date": {
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "yesterday": "Yesterday",
+        "am": "AM",
+        "pm": "PM",
+        "ends_today": "Ends today",
+        "ends_tomorrow": "Ends tomorrow",
+        "ends_in": "Ends in {} days",
+        "days": {
+            "1": "Monday",
+            "2": "Tuesday",
+            "3": "Wednesday",
+            "4": "Thursday",
+            "5": "Friday",
+            "6": "Saturday",
+            "7": "Sunday"
+        },
+        "months": {
+            "1": "Jan",
+            "2": "Feb",
+            "3": "Mar",
+            "4": "Apr",
+            "5": "May",
+            "6": "Jun",
+            "7": "Jul",
+            "8": "Aug",
+            "9": "Sep",
+            "10": "Oct",
+            "11": "Nov",
+            "12": "Dec"
+        }
     }
 }

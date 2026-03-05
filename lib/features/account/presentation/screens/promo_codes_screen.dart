@@ -585,45 +585,18 @@ class _PromoCodesView extends StatelessWidget {
     final diff = date.difference(now).inDays;
 
     if (diff == 0) {
-      return isArabic ? 'ينتهي اليوم' : 'Ends today';
+      return 'date.ends_today'.tr();
     } else if (diff == 1) {
-      return isArabic ? 'ينتهي غداً' : 'Ends tomorrow';
+      return 'date.ends_tomorrow'.tr();
     } else if (diff <= 7) {
-      return isArabic ? 'ينتهي خلال $diff أيام' : 'Ends in $diff days';
+      return 'date.ends_in'.tr(args: [diff.toString()]);
     }
 
-    // Format date
+    // Format date using translation keys
     final day = date.day;
-    final months = isArabic
-        ? [
-            'يناير',
-            'فبراير',
-            'مارس',
-            'أبريل',
-            'مايو',
-            'يونيو',
-            'يوليو',
-            'أغسطس',
-            'سبتمبر',
-            'أكتوبر',
-            'نوفمبر',
-            'ديسمبر',
-          ]
-        : [
-            'Jan',
-            'Feb',
-            'Mar',
-            'Apr',
-            'May',
-            'Jun',
-            'Jul',
-            'Aug',
-            'Sep',
-            'Oct',
-            'Nov',
-            'Dec',
-          ];
+    final month = 'date.months.${date.month}'.tr();
+    final year = date.year;
 
-    return '$day ${months[date.month - 1]}';
+    return '$day $month $year';
   }
 }

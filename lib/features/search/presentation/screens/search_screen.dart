@@ -150,7 +150,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Show results if searching
     if (state.isSearching) {
-      if (state.status == SearchStatus.searching) {
+      if (state.status == SearchStatus.searching &&
+          state.searchResults.isEmpty) {
         return const Center(
           child: CircularProgressIndicator(color: AppColors.darkGreen),
         );
@@ -161,6 +162,10 @@ class _SearchScreenState extends State<SearchScreen> {
         cartService: _cartService,
         hasAddress: _defaultAddress != null,
         onLocationRequired: _showLocationPrompt,
+        isLoadingMore: state.isLoadingMore,
+        onLoadMore: () {
+          context.read<SearchBloc>().add(const SearchLoadMore());
+        },
       );
     }
 

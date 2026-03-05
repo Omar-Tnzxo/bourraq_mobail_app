@@ -414,7 +414,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
   final TextEditingController _searchController = TextEditingController();
 
   final Set<String> _favoriteIds = {};
-  int _cartItemCount = 0;
+  num _cartItemCount = 0;
 
   @override
   void initState() {

@@ -62,3 +62,8 @@ class SearchHistoryItemDeleted extends SearchEvent {
 class SearchHistoryCleared extends SearchEvent {
   const SearchHistoryCleared();
 }
+
+/// Load next page of search results
+class SearchLoadMore extends SearchEvent {
+  const SearchLoadMore();
+}

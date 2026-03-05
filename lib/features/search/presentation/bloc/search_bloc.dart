@@ -23,6 +23,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<SearchCleared>(_onCleared);
     on<SearchHistoryItemDeleted>(_onHistoryItemDeleted);
     on<SearchHistoryCleared>(_onHistoryCleared);
+    on<SearchLoadMore>(_onLoadMore);
   }
 
   @override
@@ -96,10 +97,20 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   ) async {
     if (event.query.trim().isEmpty) return;
 
-    emit(state.copyWith(status: SearchStatus.searching));
+    emit(
+      state.copyWith(
+        status: SearchStatus.searching,
+        currentPage: 0,
+        hasReachedMax: false,
+      ),
+    );
 
     try {
-      final results = await _repository.searchProducts(event.query);
+      final results = await _repository.searchProducts(
+        event.query,
+        limit: 20,
+        offset: 0,
+      );
 
       // Add to history (don't await, do it in background)
       _repository.addToSearchHistory(event.query);
@@ -119,6 +130,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           status: SearchStatus.loaded,
           query: event.query,
           searchResults: results,
+          hasReachedMax: results.length < 20,
         ),
       );
     } catch (e) {
@@ -131,20 +143,77 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
+  /// Load more results (pagination)
+  Future<void> _onLoadMore(
+    SearchLoadMore event,
+    Emitter<SearchState> emit,
+  ) async {
+    if (state.hasReachedMax || state.status == SearchStatus.searching) return;
+
+    final nextPage = state.currentPage + 1;
+
+    // We remain in loaded state but mark that we are loading more via status ? Actually no, UI needs a way to show a bottom spinner.
+    // We can use SearchStatus.searching but UI needs to know we have existing results.
+    // State already has isLoadingMore getter if searching and searchResults.isNotEmpty
+    emit(state.copyWith(status: SearchStatus.searching, currentPage: nextPage));
+
+    try {
+      final newResults = await _repository.searchProducts(
+        state.query,
+        limit: 20,
+        offset: nextPage * 20,
+      );
+
+      emit(
+        state.copyWith(
+          status: SearchStatus.loaded,
+          searchResults: [...state.searchResults, ...newResults],
+          hasReachedMax: newResults.length < 20,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: SearchStatus.error,
+          errorMessage: ErrorHandler.getErrorKey(e),
+          // Revert page on error
+          currentPage: state.currentPage,
+        ),
+      );
+    }
+  }
+
   /// Search from suggestion tap
   Future<void> _onFromSuggestion(
     SearchFromSuggestion event,
     Emitter<SearchState> emit,
   ) async {
-    emit(state.copyWith(query: event.query, status: SearchStatus.searching));
+    emit(
+      state.copyWith(
+        query: event.query,
+        status: SearchStatus.searching,
+        currentPage: 0,
+        hasReachedMax: false,
+      ),
+    );
 
     try {
-      final results = await _repository.searchProducts(event.query);
+      final results = await _repository.searchProducts(
+        event.query,
+        limit: 20,
+        offset: 0,
+      );
 
       // Add to history
       _repository.addToSearchHistory(event.query);
 
-      emit(state.copyWith(status: SearchStatus.loaded, searchResults: results));
+      emit(
+        state.copyWith(
+          status: SearchStatus.loaded,
+          searchResults: results,
+          hasReachedMax: results.length < 20,
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(

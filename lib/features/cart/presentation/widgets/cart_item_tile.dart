@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
@@ -11,7 +12,7 @@ import 'package:bourraq/features/cart/domain/models/cart_item.dart';
 class CartItemTile extends StatelessWidget {
   final CartItem item;
   final String locale;
-  final Function(int) onQuantityChanged;
+  final Function(double) onQuantityChanged;
   final VoidCallback onRemove;
 
   const CartItemTile({
@@ -73,9 +74,9 @@ class CartItemTile extends StatelessWidget {
                   const SizedBox(height: 4),
 
                   // Weight/Size
-                  if (item.getWeightDisplay(locale) != null)
+                  if (item.getWeightDisplay(locale).isNotEmpty)
                     Text(
-                      item.getWeightDisplay(locale)!,
+                      item.getWeightDisplay(locale),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -189,7 +190,7 @@ class CartItemTile extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          locale == 'ar' ? 'ج.م ' : 'EGP ',
+          'common.currency_short'.tr(),
           style: AppTextStyles.labelMedium.copyWith(
             color: AppColors.deepOlive,
             fontWeight: FontWeight.w600,
@@ -220,7 +221,9 @@ class CartItemTile extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 32),
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              '${item.quantity}',
+              item.quantity == item.quantity.toInt()
+                  ? '${item.quantity.toInt()}'
+                  : item.quantity.toString(),
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.deepOlive,

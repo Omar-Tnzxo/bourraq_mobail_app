@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 /// Promo Code Model - Full featured
 class PromoCode {
@@ -138,20 +139,22 @@ class PromoCodeService {
           .maybeSingle();
 
       if (response == null) {
-        return PromoCodeResult.error('كود الخصم غير صحيح');
+        return PromoCodeResult.error('checkout.promo_invalid'.tr());
       }
 
       final promoCode = PromoCode.fromJson(response);
 
       // Check validity (dates and usage limit)
       if (!promoCode.isValid) {
-        return PromoCodeResult.error('كود الخصم منتهي الصلاحية');
+        return PromoCodeResult.error('checkout.promo_expired'.tr());
       }
 
       // Check minimum order amount
       if (orderAmount < promoCode.minOrderAmount) {
         return PromoCodeResult.error(
-          'الحد الأدنى للطلب ${promoCode.minOrderAmount.toStringAsFixed(0)} ج.م',
+          'checkout.promo_min_order'.tr(
+            args: [promoCode.minOrderAmount.toStringAsFixed(0)],
+          ),
         );
       }
 
@@ -160,7 +163,7 @@ class PromoCodeService {
       if (userId != null) {
         final usageCount = await _getUserUsageCount(promoCode.id, userId);
         if (usageCount >= promoCode.perUserLimit) {
-          return PromoCodeResult.error('لقد استخدمت هذا الكود من قبل');
+          return PromoCodeResult.error('checkout.promo_already_used'.tr());
         }
       }
 
@@ -169,7 +172,7 @@ class PromoCodeService {
 
       return PromoCodeResult.success(promoCode, discount);
     } catch (e) {
-      return PromoCodeResult.error('حدث خطأ في التحقق من الكود');
+      return PromoCodeResult.error('checkout.promo_error'.tr());
     }
   }
 

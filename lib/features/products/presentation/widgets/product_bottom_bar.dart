@@ -8,7 +8,7 @@ import 'package:bourraq/core/constants/app_colors.dart';
 /// Product bottom bar with quantity selector and add to cart button
 /// Breadfast-style design - fixed at bottom
 class ProductBottomBar extends StatelessWidget {
-  final int quantity;
+  final num quantity;
   final double unitPrice;
   final double? oldPrice;
   final bool isInStock;
@@ -76,8 +76,12 @@ class ProductBottomBar extends StatelessWidget {
                         return ScaleTransition(scale: animation, child: child);
                       },
                       child: Text(
-                        '${quantity > 0 ? quantity : 1}',
-                        key: ValueKey<int>(quantity),
+                        quantity > 0
+                            ? (quantity == quantity.toInt()
+                                  ? '${quantity.toInt()}'
+                                  : quantity.toString())
+                            : '1',
+                        key: ValueKey<num>(quantity),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

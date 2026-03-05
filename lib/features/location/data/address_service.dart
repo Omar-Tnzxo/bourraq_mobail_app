@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bourraq/core/services/cache_service.dart';
 import 'address_model.dart';
 
 /// خدمة إدارة العناوين - متصلة بـ Supabase
@@ -123,7 +124,7 @@ class AddressService {
       // لو مفيش عنوان افتراضي، رجّع أول عنوان
       final firstResponse = await _supabase
           .from(_tableName)
-          .select()
+          .select('*, areas(*)')
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(1)
@@ -134,6 +135,28 @@ class AddressService {
       print('❌ [AddressService] Error getting default address: $e');
       return null;
     }
+  }
+
+  /// الحصول على معرف المنطقة النشط (للمستخدم أو الضيف)
+  Future<String?> getActiveAreaId() async {
+    // 1. محاولة الحصول عليه من العنوان الافتراضي للمستخدم المسجل
+    final defaultAddress = await getDefaultAddress();
+    if (defaultAddress?.areaId != null) {
+      return defaultAddress!.areaId;
+    }
+
+    // 2. محاولة الحصول عليه من الكاش المحلي (للضيف)
+    try {
+      final fromCache = CacheService().get<String>('active_area_id');
+      return fromCache;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// تعيين معرف المنطقة النشط يدوياً (للتخزين المؤقت)
+  Future<void> setActiveAreaId(String areaId) async {
+    await CacheService().set('active_area_id', areaId);
   }
 
   /// نتيجة إضافة عنوان

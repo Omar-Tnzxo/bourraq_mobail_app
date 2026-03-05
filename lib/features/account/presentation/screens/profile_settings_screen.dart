@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_state.dart';
 
@@ -103,8 +104,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthPasswordResetOtpSent) {
@@ -115,7 +114,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               )
               .then((_) => context.read<AuthCubit>().checkAuthStatus());
         } else if (state is AuthEmailUpdateOtpSent) {
-          Navigator.pop(context); // Close dialog if open
+          Navigator.pop(context);
           context
               .push('/email-verification', extra: {'email': state.email})
               .then((_) => context.read<AuthCubit>().checkAuthStatus());
@@ -130,31 +129,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       },
       child: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, state) {
-          // Allow AuthAuthenticated OR AuthPasswordResetOtpSent (to keep showing settings while redirecting)
-          // But effectively we only need data from AuthAuthenticated.
-          // If state changes to AuthLoading/OtpSent, we might lose 'name/phone' from state if we're not careful,
-          // assuming AuthCubit emits distinct states.
-          // Actually AuthCubit emits NEW states, replacing the old one.
-          // If we emit AuthLoading, 'state.name' will be unavailable if we try to access it via 'state as AuthAuthenticated'.
-          // We need to handle the builder carefully.
-
-          if (state is AuthLoading) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          // If we are in OtpSent state, we might still want to show the screen (or loading) until nav happens.
-          // But usually we just want to ensure we have user data.
-          // Let's check repository for current user data if state isn't authenticated?
-          // Or better: The Cubit should probably maintain the user data in a common state or we rely on the cached controller values?
-
-          // PROBLEM: When sendPasswordResetOTP is called, Cubit emits AuthLoading -> AuthPasswordResetOtpSent.
-          // The builder below expects AuthAuthenticated to render the UI.
-          // If it gets AuthPasswordResetOtpSent, it will fall into the "else" block (currently showing Loading).
-          // That is actually acceptable for a momentary transition.
-
-          if (state is! AuthAuthenticated) {
+          if (state is AuthLoading || state is! AuthAuthenticated) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
@@ -164,211 +139,79 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
           return Scaffold(
             backgroundColor: AppColors.background,
-            appBar: AppBar(
-              backgroundColor: AppColors.white,
-              elevation: 0,
-              leading: IconButton(
-                icon: Icon(
-                  isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-                  color: AppColors.textPrimary,
-                  size: 20,
-                ),
-                onPressed: () => context.pop(),
-              ),
-              title: Text(
-                'profile.settings'.tr(),
-                style: AppTextStyles.titleMedium,
-              ),
-              centerTitle: true,
-              actions: [
-                if (_hasChanges)
-                  TextButton(
-                    onPressed: _isLoading ? null : _saveChanges,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            'common.save'.tr(),
-                            style: TextStyle(
-                              color: AppColors.primaryGreen,
-                              fontWeight: FontWeight.w600,
+            body: Column(
+              children: [
+                // Header — same style as AccountScreen
+                _buildHeader(state),
+
+                // Body
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                      children: [
+                        // === Login Method Badge ===
+                        _buildLoginMethodBadge(isGoogleAuth),
+
+                        const SizedBox(height: 24),
+
+                        // === Personal Info Section ===
+                        _buildSectionTitle('profile.personal_info'.tr()),
+                        const SizedBox(height: 12),
+                        _buildPersonalInfoCard(isGoogleAuth),
+
+                        const SizedBox(height: 24),
+
+                        // === Security Section (Email users only) ===
+                        if (!isGoogleAuth) ...[
+                          _buildSectionTitle('profile.security'.tr()),
+                          const SizedBox(height: 12),
+                          _buildSecurityCard(),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // === Google Account Note ===
+                        if (isGoogleAuth) ...[
+                          _buildGoogleAccountNote(),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // === Save Button ===
+                        if (_hasChanges) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _saveChanges,
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text('common.save'.tr()),
                             ),
                           ),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // === Danger Zone ===
+                        _buildSectionTitle(
+                          'profile.danger_zone'.tr(),
+                          color: Colors.red[400],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildDangerZoneCard(),
+
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
-              ],
-            ),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Login Method Indicator
-                    _buildLoginMethodIndicator(isGoogleAuth),
-
-                    const SizedBox(height: 24),
-
-                    // Section Title
-                    Text(
-                      'profile.personal_info'.tr(),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Name Field (Editable for all)
-                    _buildInputField(
-                      controller: _nameController,
-                      label: 'profile.name'.tr(),
-                      icon: LucideIcons.user,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'profile.name_required'.tr();
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Email Field
-                    _buildInputField(
-                      controller: _emailController,
-                      label: 'profile.email'.tr(),
-                      icon: LucideIcons.mail,
-                      readOnly: true, // Always read-only, edit via dialog
-                      suffixIcon: isGoogleAuth
-                          ? Icon(
-                              LucideIcons.lock,
-                              size: 18,
-                              color: AppColors.textSecondary,
-                            )
-                          : IconButton(
-                              icon: const Icon(
-                                LucideIcons.pencil,
-                                size: 18,
-                                color: AppColors.primaryGreen,
-                              ),
-                              onPressed: _showChangeEmailDialog,
-                            ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Phone Field
-                    _buildInputField(
-                      controller: _phoneController,
-                      label: 'profile.phone'.tr(),
-                      icon: LucideIcons.phone,
-                      keyboardType: TextInputType.phone,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Security Section (Only for Email users)
-                    if (!isGoogleAuth) ...[
-                      Text(
-                        'profile.security'.tr(),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Change Password Button
-                      _buildActionTile(
-                        icon: LucideIcons.keyRound,
-                        title: 'profile.change_password'.tr(),
-                        onTap: () {
-                          // Direct Password Reset Flow
-                          // 1. Send OTP to current email
-                          context.read<AuthCubit>().sendPasswordResetOTP(
-                            _emailController.text.trim(),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Info Note
-                    if (isGoogleAuth)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue[200]!),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              LucideIcons.info,
-                              color: Colors.blue[400],
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'profile.google_account_note'.tr(),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.blue[700],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 32),
-
-                    // Danger Zone
-                    Text(
-                      'profile.danger_zone'.tr(),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red[400],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Logout Button
-                    _buildDangerTile(
-                      icon: LucideIcons.logOut,
-                      title: 'account.logout'.tr(),
-                      color: Colors.orange,
-                      onTap: () => _showLogoutConfirmation(),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Delete Account Button
-                    _buildDangerTile(
-                      icon: LucideIcons.trash2,
-                      title: 'account.delete_account'.tr(),
-                      color: Colors.red,
-                      onTap: () => _showDeleteConfirmation(),
-                    ),
-
-                    const SizedBox(height: 40),
-                  ],
                 ),
-              ),
+              ],
             ),
           );
         },
@@ -376,14 +219,94 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildLoginMethodIndicator(bool isGoogleAuth) {
+  // ══════════════════════════════════════════════════════════════
+  // Header — same BourraqHeader used in AccountScreen
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildHeader(AuthAuthenticated state) {
+    final isArabic = context.locale.languageCode == 'ar';
+
+    return BourraqHeader(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 48),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Back button row
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Row(
+              children: [
+                Icon(
+                  isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'profile.settings'.tr(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // User info
+          Text(
+            state.name,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            state.email,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Section Title — same as AccountScreen
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildSectionTitle(String title, {Color? color}) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: color ?? AppColors.textSecondary,
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Login Method Badge
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildLoginMethodBadge(bool isGoogleAuth) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isGoogleAuth ? Colors.blue[50] : Colors.green[50],
-        borderRadius: BorderRadius.circular(12),
+        color: isGoogleAuth
+            ? Colors.blue.shade50
+            : AppColors.primaryGreen.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isGoogleAuth ? Colors.blue[200]! : Colors.green[200]!,
+          color: isGoogleAuth ? Colors.blue.shade200 : AppColors.border,
         ),
       ),
       child: Row(
@@ -391,18 +314,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isGoogleAuth ? Colors.white : Colors.green[100],
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: isGoogleAuth
-                ? Image.asset('assets/icons/google.png', width: 24, height: 24)
-                : Icon(
+                ? Image.asset('assets/icons/google.png', width: 22, height: 22)
+                : const Icon(
                     LucideIcons.mail,
                     color: AppColors.primaryGreen,
-                    size: 24,
+                    size: 22,
                   ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,7 +335,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       ? 'profile.signed_in_google'.tr()
                       : 'profile.signed_in_email'.tr(),
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
@@ -422,8 +345,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   isGoogleAuth
                       ? 'profile.google_account_desc'.tr()
                       : 'profile.email_account_desc'.tr(),
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: const TextStyle(
+                    fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -435,128 +358,317 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool readOnly = false,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
+  // ══════════════════════════════════════════════════════════════
+  // Personal Info Card — white container with border like account
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildPersonalInfoCard(bool isGoogleAuth) {
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: readOnly ? Colors.grey[100] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
-      child: TextFormField(
-        controller: controller,
-        readOnly: readOnly,
-        keyboardType: keyboardType,
-        validator: validator,
-        style: TextStyle(
-          color: readOnly ? AppColors.textSecondary : AppColors.textPrimary,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: AppColors.primaryGreen, size: 22),
-          suffixIcon: suffixIcon,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
+      child: Column(
+        children: [
+          // Name field
+          TextFormField(
+            controller: _nameController,
+            style: AppTextStyles.bodyLarge,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'profile.name_required'.tr();
+              }
+              return null;
+            },
+            decoration: InputDecoration(
+              labelText: 'profile.name'.tr(),
+              prefixIcon: const Icon(
+                LucideIcons.user,
+                color: AppColors.primaryGreen,
+                size: 22,
+              ),
+            ),
           ),
-        ),
+
+          const SizedBox(height: 16),
+
+          // Email field
+          TextFormField(
+            controller: _emailController,
+            readOnly: true,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            decoration: InputDecoration(
+              labelText: 'profile.email'.tr(),
+              prefixIcon: const Icon(
+                LucideIcons.mail,
+                color: AppColors.primaryGreen,
+                size: 22,
+              ),
+              suffixIcon: isGoogleAuth
+                  ? const Icon(
+                      LucideIcons.lock,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    )
+                  : IconButton(
+                      icon: const Icon(
+                        LucideIcons.pencil,
+                        size: 18,
+                        color: AppColors.primaryGreen,
+                      ),
+                      onPressed: _showChangeEmailDialog,
+                    ),
+              fillColor: AppColors.background,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Phone field
+          TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            style: AppTextStyles.bodyLarge,
+            decoration: InputDecoration(
+              labelText: 'profile.phone'.tr(),
+              prefixIcon: const Icon(
+                LucideIcons.phone,
+                color: AppColors.primaryGreen,
+                size: 22,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildActionTile({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+  // ══════════════════════════════════════════════════════════════
+  // Security Card
+  // ══════════════════════════════════════════════════════════════
 
+  Widget _buildSecurityCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              children: [
-                Icon(icon, color: AppColors.primaryGreen, size: 22),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
+      child: _buildMenuItem(
+        icon: LucideIcons.keyRound,
+        title: 'profile.change_password'.tr(),
+        onTap: () {
+          context.read<AuthCubit>().sendPasswordResetOTP(
+            _emailController.text.trim(),
+          );
+        },
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Google Account Note
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildGoogleAccountNote() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(LucideIcons.info, color: Colors.blue[400], size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'profile.google_account_note'.tr(),
+              style: TextStyle(fontSize: 13, color: Colors.blue[700]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // Danger Zone Card
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildDangerZoneCard() {
+    return Column(
+      children: [
+        // Logout tile
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showLogoutConfirmation(),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        LucideIcons.logOut,
+                        color: Colors.orange,
+                        size: 22,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'account.logout'.tr(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      context.locale.languageCode == 'ar'
+                          ? LucideIcons.arrowLeft
+                          : LucideIcons.arrowRight,
+                      size: 16,
+                      color: Colors.orange.withValues(alpha: 0.5),
+                    ),
+                  ],
                 ),
-                Icon(
-                  isArabic ? LucideIcons.arrowLeft : LucideIcons.arrowRight,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+
+        const SizedBox(height: 12),
+
+        // Delete Account tile
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.red.shade50.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showDeleteConfirmation(),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        LucideIcons.trash2,
+                        color: Colors.red.shade400,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'account.delete_account'.tr(),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red.shade400,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      context.locale.languageCode == 'ar'
+                          ? LucideIcons.arrowLeft
+                          : LucideIcons.arrowRight,
+                      size: 16,
+                      color: Colors.red.withValues(alpha: 0.3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildDangerTile({
+  // ══════════════════════════════════════════════════════════════
+  // Shared Widgets  — same pattern as AccountScreen
+  // ══════════════════════════════════════════════════════════════
+
+  Widget _buildMenuItem({
     required IconData icon,
     required String title,
-    required Color color,
     required VoidCallback onTap,
+    Color? iconColor,
+    Color? textColor,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(width: 16),
-                Text(
+    final isArabic = context.locale.languageCode == 'ar';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          child: Row(
+            children: [
+              Icon(icon, color: iconColor ?? AppColors.primaryGreen, size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
                   title,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: color,
+                    color: textColor ?? AppColors.textPrimary,
                   ),
                 ),
-              ],
-            ),
+              ),
+              Icon(
+                isArabic ? LucideIcons.arrowLeft : LucideIcons.arrowRight,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  // ══════════════════════════════════════════════════════════════
+  // Dialogs
+  // ══════════════════════════════════════════════════════════════
 
   void _showLogoutConfirmation() {
     showDialog(
@@ -656,34 +768,50 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('profile.change_email'.tr()),
+        title: Text(
+          'profile.change_email'.tr(),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
         content: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'profile.change_email_desc'.tr(),
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: AppColors.textSecondary,
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
+                style: AppTextStyles.bodyLarge,
                 decoration: InputDecoration(
                   labelText: 'profile.new_email'.tr(),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  prefixIcon: const Icon(
+                    LucideIcons.mail,
+                    color: AppColors.primaryGreen,
+                    size: 22,
                   ),
-                  prefixIcon: const Icon(LucideIcons.mail),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'auth.email_required'.tr();
+                  if (value == null || value.trim().isEmpty) {
+                    return 'auth.error_email_required'.tr();
                   }
                   if (!value.contains('@')) {
-                    return 'auth.email_invalid'.tr();
+                    return 'auth.error_email_invalid'.tr();
                   }
                   return null;
                 },
@@ -691,31 +819,39 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             ],
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('common.cancel'.tr()),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                context.read<AuthCubit>().requestEmailChange(
-                  emailController.text.trim(),
-                );
-                // Don't pop here, wait for listener to pop and push (or handle loading)
-                // Actually listener pops, but we might want to show loading indicator?
-                // The main screen shows loading if state is AuthLoading.
-                // But dialog covers it.
-                // We should probably allow the listener to handle navigation.
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.border),
+                    foregroundColor: AppColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text('common.cancel'.tr()),
+                ),
               ),
-            ),
-            child: Text('common.send_otp'.tr()),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      context.read<AuthCubit>().requestEmailChange(
+                        emailController.text.trim(),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text('common.send'.tr()),
+                ),
+              ),
+            ],
           ),
         ],
       ),

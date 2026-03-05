@@ -76,8 +76,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى إدخال رمز التحقق المكون من 6 أرقام'),
+        SnackBar(
+          content: Text('auth.error_otp_required'.tr()),
           backgroundColor: AppColors.error,
         ),
       );
@@ -120,8 +120,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         } else if (state is AuthOtpSent) {
           // OTP resent successfully
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم إرسال رمز التحقق مرة أخرى'),
+            SnackBar(
+              content: Text('auth.otp_resent_success'.tr()),
               backgroundColor: AppColors.success,
             ),
           );
@@ -169,7 +169,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
                   // Title
                   Text(
-                    'تحقق من بريدك الإلكتروني',
+                    'auth.otp_title'.tr(),
                     style: AppTextStyles.headlineLarge,
                     textAlign: TextAlign.center,
                   ),
@@ -183,7 +183,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         color: AppColors.textSecondary,
                       ),
                       children: [
-                        const TextSpan(text: 'أدخل رمز التحقق المُرسل إلى\n'),
+                        TextSpan(text: '${'auth.otp_subtitle'.tr()} '),
                         TextSpan(
                           text: widget.email,
                           style: const TextStyle(
@@ -251,21 +251,29 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               ),
                             ),
                           )
-                        : const Text('تحقق'),
+                        : Text('auth.verify'.tr()),
                   ),
                   const SizedBox(height: 24),
 
                   // Resend OTP
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text('لم تستلم الرمز؟', style: AppTextStyles.bodyMedium),
+                      Text(
+                        'auth.didnt_receive'.tr(),
+                        style: AppTextStyles.bodyMedium,
+                      ),
                       TextButton(
                         onPressed: _canResend && !isLoading ? _resendOtp : null,
                         child: Text(
                           _canResend
-                              ? 'إعادة الإرسال'
-                              : 'إعادة الإرسال بعد $_resendCountdown ثانية',
+                              ? 'auth.resend'.tr()
+                              : 'auth.resend_after'.tr(
+                                  namedArgs: {
+                                    'seconds': _resendCountdown.toString(),
+                                  },
+                                ),
                           style: AppTextStyles.labelMedium.copyWith(
                             color: _canResend
                                 ? AppColors.primaryGreen

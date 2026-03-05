@@ -326,8 +326,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   /// عرض حوار لطلب تفعيل الموقع
   void _showLocationRequiredDialog() {
-    final isArabic = context.locale.languageCode == 'ar';
-
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -335,14 +333,12 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         icon: Icon(LucideIcons.mapPin, size: 48, color: AppColors.primaryGreen),
         title: Text(
-          isArabic ? 'تحديد الموقع مطلوب' : 'Location Required',
+          'addresses.location_required'.tr(),
           style: AppTextStyles.titleMedium,
           textAlign: TextAlign.center,
         ),
         content: Text(
-          isArabic
-              ? 'يجب تحديد موقعك على الخريطة لحفظ العنوان. يرجى تفعيل خدمة الموقع.'
-              : 'Please enable location services to save your address.',
+          'addresses.location_required_message'.tr(),
           style: AppTextStyles.bodyMedium,
           textAlign: TextAlign.center,
         ),
@@ -351,7 +347,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              isArabic ? 'إلغاء' : 'Cancel',
+              'common.cancel'.tr(),
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
@@ -373,7 +369,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Text(isArabic ? 'فتح الإعدادات' : 'Open Settings'),
+            child: Text('map.open_settings'.tr()),
           ),
         ],
       ),
@@ -531,7 +527,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  isArabic ? 'جاري تحديد موقعك...' : 'Getting your location...',
+                  'addresses.getting_location'.tr(),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: Colors.blue.shade700,
                   ),

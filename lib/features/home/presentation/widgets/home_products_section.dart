@@ -54,35 +54,41 @@ class HomeProductsSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 displayTitle,
                 style: AppTextStyles.titleLarge.copyWith(
                   fontWeight: FontWeight.w700,
+                  height: 1.2,
                 ),
               ),
               if (seeAllRoute != null)
-                TextButton(
-                  onPressed: () => context.push(seeAllRoute!),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  child: Text(
-                    'home.see_all'.tr(),
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.deepOlive,
-                      fontWeight: FontWeight.w600,
+                GestureDetector(
+                  onTap: () => context.push(seeAllRoute!),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 4,
+                      horizontal: 4,
+                    ),
+                    child: Text(
+                      'home.see_all'.tr(),
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.deepOlive,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         // Products Grid (3 columns - matching category screen)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: GridView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

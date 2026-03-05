@@ -43,6 +43,8 @@ class OrdersService {
     required double serviceFee,
     required double discount,
     required double total,
+    required double branchTotal,
+    required List<String> branchIds,
     required List<Map<String, dynamic>> cartItems,
     String? couponCode,
     String? notes,
@@ -71,6 +73,8 @@ class OrdersService {
             'service_fee': serviceFee,
             'discount': discount,
             'total': total,
+            'branch_total': branchTotal,
+            'branch_ids': branchIds,
             'coupon_code': couponCode,
             'notes': notes,
             'is_scheduled': isScheduled,
@@ -90,6 +94,10 @@ class OrdersService {
               'product_name': item['name'],
               'product_image': item['image'],
               'price': item['price'],
+              'partner_price': item['partner_price'],
+              'customer_price': item['customer_price'],
+              'branch_id': item['branch_id'],
+              'branch_product_id': item['branch_product_id'],
               'quantity': item['quantity'],
               'total_price': (item['price'] as num) * (item['quantity'] as num),
             },
@@ -165,7 +173,9 @@ class OrdersService {
       // جلب عناصر الطلب
       final itemsResponse = await _supabase
           .from('order_items')
-          .select()
+          .select(
+            '*, partner_products(products(weight_value, weight_unit_ar, weight_unit_en))',
+          )
           .eq('order_id', orderId);
 
       final items = (itemsResponse as List)

@@ -77,7 +77,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
 
     final success = await _walletService.addBalance(
       _enteredAmount,
-      description: 'إضافة رصيد عبر البطاقة',
+      description: 'wallet.add_balance_desc'.tr(),
     );
 
     setState(() => _isLoading = false);
@@ -85,7 +85,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('wallet.balance_added'.tr()),
+          content: Text('wallet.add_balance_success'.tr()),
           backgroundColor: AppColors.primaryGreen,
         ),
       );
@@ -169,9 +169,9 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
           ),
           child: Row(
             children: [
-              const Text(
-                'ج.م',
-                style: TextStyle(
+              Text(
+                'common.currency_short'.tr(),
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -237,7 +237,7 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      '$amount ج.م',
+                      '$amount ${'common.currency_short'.tr()}',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,

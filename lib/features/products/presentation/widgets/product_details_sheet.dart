@@ -58,7 +58,7 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
   bool _isLoading = true;
   String? _error;
 
-  int _quantity = 0;
+  num _quantity = 0;
   bool _isFavorite = false;
 
   late CartService _cartService;
@@ -193,13 +193,14 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
   Future<void> _addToCart() async {
     if (!_servicesInitialized || _product == null) return;
 
-    // Check if location is required first
+    // 1. Check if guest - block action and show login prompt
+    if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
+
+    // 2. Check if location is required
     if (_defaultAddress == null) {
       _showLocationPrompt();
       return;
     }
-
-    if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
 
     HapticFeedback.mediumImpact();
 
@@ -211,7 +212,7 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
     if (existingItem != null) {
       await _cartService.updateQuantity(
         widget.productId,
-        existingItem.quantity + 1,
+        (existingItem.quantity + 1).toDouble(),
       );
     } else {
       final cartItem = CartItem(
@@ -220,7 +221,7 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
         nameAr: _product!.nameAr,
         nameEn: _product!.nameEn,
         price: _product!.price,
-        quantity: 1,
+        quantity: 1.0,
         imageUrl: _product!.imageUrl,
       );
       await _cartService.addToCart(cartItem);
@@ -478,11 +479,28 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      productName,
-                      style: AppTextStyles.titleLarge.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          productName,
+                          style: AppTextStyles.titleLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (_product!.weightValue != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _product!.getLocalizedWeight(
+                              context.locale.languageCode,
+                            ),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   IconButton(

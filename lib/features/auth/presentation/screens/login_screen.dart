@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
-            isArabic ? 'اختر اللغة' : 'Select Language',
+            'settings.select_language'.tr(),
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,

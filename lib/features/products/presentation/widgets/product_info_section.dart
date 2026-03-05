@@ -13,6 +13,7 @@ class ProductInfoSection extends StatelessWidget {
   final double? oldPrice;
   final bool isInStock;
   final bool isFavorite;
+  final String? weight;
   final VoidCallback? onFavoriteTap;
 
   const ProductInfoSection({
@@ -22,6 +23,7 @@ class ProductInfoSection extends StatelessWidget {
     this.oldPrice,
     this.isInStock = true,
     this.isFavorite = false,
+    this.weight,
     this.onFavoriteTap,
   });
 
@@ -63,6 +65,16 @@ class ProductInfoSection extends StatelessWidget {
               height: 1.3,
             ),
           ),
+          if (weight != null && weight!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              weight!,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
 
           // Price and favorite row

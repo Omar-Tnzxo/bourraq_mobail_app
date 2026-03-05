@@ -49,7 +49,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _isLoading = true;
   String? _error;
 
-  int _quantity = 1;
+  num _quantity = 1;
   bool _isFavorite = false;
 
   late CartService _cartService;
@@ -196,13 +196,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Future<void> _addToCart() async {
     if (!_servicesInitialized || _product == null) return;
 
-    // Check if location is required first
+    // 1. Check if guest - block action and show login prompt
+    if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
+
+    // 2. Check if location is required
     if (_defaultAddress == null) {
       _showLocationPrompt();
       return;
     }
-
-    if (GuestRestrictionHelper.checkAndPromptLogin(context)) return;
 
     HapticFeedback.mediumImpact();
 
@@ -226,7 +227,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         nameAr: _product!.nameAr,
         nameEn: _product!.nameEn,
         price: _product!.price,
-        quantity: 1,
+        quantity: 1.0,
         imageUrl: _product!.imageUrl,
       );
       await _cartService.addToCart(cartItem);
@@ -368,6 +369,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             oldPrice: _product!.oldPrice,
             isInStock: _product!.isInStock,
             isFavorite: _isFavorite,
+            weight: _product!.getLocalizedWeight(context.locale.languageCode),
             onFavoriteTap: _toggleFavorite,
           ),
         ),
