@@ -323,8 +323,10 @@
         "tracking": "تتبع الطلب",
         "order_status": "حالة الطلب",
         "current": "حالياً",
+        "live_tracking": "تتبع مباشر",
         "live_tracking_soon": "تتبع مباشر - قريباً",
         "all_steps_completed": "تم إكمال جميع المراحل بنجاح",
+        "order_summary": "ملخص الطلب",
         "track_order": "تتبع الطلب",
         "cannot_cancel": "لا يمكن إلغاء الطلب",
         "order_date": "تاريخ الطلب",
@@ -555,6 +557,7 @@
         "off": "خصم"
     },
     "faq": {
+        "search_hint": "ابحث في الأسئلة الشائعة...",
         "q1": "كيف يمكنني تتبع طلبي؟",
         "a1": "يمكنك تتبع طلبك من خلال الذهاب إلى قسم 'طلباتي' واختيار الطلب النشط لـعرض تفاصيل التتبع المباشر.",
         "q2": "ما هي طرق الدفع المتاحة؟",
@@ -695,7 +698,8 @@
         "coming_soon": "قريباً",
         "payment_integration_coming": "تكامل الدفع الإلكتروني سيكون متاحاً قريباً. حالياً يمكنك الدفع نقداً عند الاستلام.",
         "transaction_count": "معاملة",
-        "no_transactions_hint": "ستظهر معاملاتك هنا"
+        "no_transactions_hint": "ستظهر معاملاتك هنا",
+        "secure_balance": "رصيدك محمي ومؤمن بالكامل"
     },
     "order_success": {
         "title": "تفاصيل الطلب",
@@ -712,7 +716,13 @@
         "cancel_confirm_title": "تأكيد الإلغاء",
         "cancel_confirm_message": "هل أنت متأكد من إلغاء هذا الطلب؟",
         "cancelled_success": "تم إلغاء الطلب بنجاح",
-        "cancel_error": "حدث خطأ أثناء إلغاء الطلب"
+        "cancel_error": "حدث خطأ أثناء إلغاء الطلب",
+        "paid_total": "المبلغ المدفوع"
+    },
+    "delivery_time": {
+        "title": "اختر وقت التوصيل",
+        "instant": "فوري",
+        "schedule_another": "أو اختر موعداً آخر"
     },
     "cancel_order": {
         "title": "إلغاء الطلب",

@@ -196,7 +196,7 @@ class HomeRepository {
   Future<List<Map<String, dynamic>>> getBestSellers({int limit = 10}) async {
     final response = await _supabase
         .from('products')
-        .select()
+        .select('*, partner_products(customer_price_before_discount)')
         .eq('is_active', true)
         .isFilter('deleted_at', null)
         .eq('is_best_seller', true)
@@ -210,7 +210,7 @@ class HomeRepository {
   Future<List<Map<String, dynamic>>> getNewestProducts({int limit = 10}) async {
     final response = await _supabase
         .from('products')
-        .select()
+        .select('*, partner_products(customer_price_before_discount)')
         .eq('is_active', true)
         .isFilter('deleted_at', null)
         .order('created_at', ascending: false)

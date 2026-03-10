@@ -55,37 +55,27 @@ class HomeHeader extends StatelessWidget {
                           color: AppColors.white.withOpacity(0.8),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                locationName,
-                                style: AppTextStyles.labelLarge.copyWith(
-                                  color: AppColors.white,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              locationName,
+                              style: AppTextStyles.labelLarge.copyWith(
+                                color: AppColors.accentYellow,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              LucideIcons.chevronDown,
-                              color: AppColors.white,
-                              size: 16,
-                            ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            LucideIcons.chevronDown,
+                            color: AppColors.accentYellow,
+                            size: 16,
+                          ),
+                        ],
                       ),
                     ],
                   ),

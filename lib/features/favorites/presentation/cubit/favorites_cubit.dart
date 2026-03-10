@@ -42,10 +42,10 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   FavoritesCubit(this._repository) : super(FavoritesInitial());
 
-  Future<void> loadFavorites() async {
+  Future<void> loadFavorites({String? areaId}) async {
     emit(FavoritesLoading());
     try {
-      final favorites = await _repository.getFavorites();
+      final favorites = await _repository.getFavorites(areaId: areaId);
       emit(FavoritesLoaded(favorites));
     } catch (e) {
       emit(FavoritesError(ErrorHandler.getErrorKey(e)));
@@ -94,9 +94,9 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   }
 
   // Method to refresh silently (e.g. after navigating back)
-  Future<void> refreshFavorites() async {
+  Future<void> refreshFavorites({String? areaId}) async {
     try {
-      final favorites = await _repository.getFavorites();
+      final favorites = await _repository.getFavorites(areaId: areaId);
       emit(FavoritesLoaded(favorites));
     } catch (e) {
       // Silent error or keep previous state

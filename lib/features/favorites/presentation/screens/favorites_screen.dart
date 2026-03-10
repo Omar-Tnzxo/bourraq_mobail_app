@@ -33,9 +33,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<FavoritesCubit>().loadFavorites();
     _initCartService();
-    _loadDefaultAddress();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final address = await _addressService.getDefaultAddress();
+    if (mounted) {
+      setState(() {
+        _defaultAddress = address;
+      });
+      // Load favorites with area context if available
+      context.read<FavoritesCubit>().loadFavorites(areaId: address?.areaId);
+    }
   }
 
   Future<void> _loadDefaultAddress() async {
@@ -132,7 +142,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   child: Badge(
                     isLabelVisible: cartCount > 0,
                     label: Text(
-                      '$cartCount',
+                      '\u200E${cartCount % 1 == 0 ? cartCount.toInt() : cartCount}\u200E',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -168,77 +178,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _buildHeader() {
-    return SliverToBoxAdapter(
-      child: BlocBuilder<FavoritesCubit, FavoritesState>(
-        builder: (context, state) {
-          if (state is FavoritesLoaded && state.favorites.isNotEmpty) {
-            return Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFFE02E4C).withValues(alpha: 0.1),
-                    const Color(0xFFE02E4C).withValues(alpha: 0.02),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFFE02E4C).withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE02E4C).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      LucideIcons.heartHandshake,
-                      color: Color(0xFFE02E4C),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'favorites.saved_products'.tr(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'favorites.products_count'.tr(
-                            namedArgs: {
-                              'count': state.favorites.length.toString(),
-                            },
-                          ),
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
-    );
+    return const SliverToBoxAdapter(child: SizedBox(height: 12));
   }
 
   Widget _buildContent() {
@@ -269,7 +209,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 crossAxisCount: 3,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 0.64,
+                childAspectRatio: 0.60,
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
                 final product = state.favorites[index];
@@ -307,7 +247,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         crossAxisCount: 3,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        childAspectRatio: 0.64,
+        childAspectRatio: 0.60,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         return Shimmer.fromColors(

@@ -23,27 +23,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  late CartBadgeNotifier _cartBadgeNotifier;
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
-    _cartBadgeNotifier = CartBadgeNotifier();
-    _cartBadgeNotifier.init();
+    _pages = [
+      const HomeTabScreen(), // Modular home tab
+      CartScreen(onGoToHome: () => setState(() => _selectedIndex = 0)),
+      const SearchScreen(),
+      const AccountScreen(),
+    ];
   }
 
   @override
   void dispose() {
-    _cartBadgeNotifier.dispose();
     super.dispose();
   }
-
-  List<Widget> get _pages => [
-    const HomeTabScreen(), // Modular home tab
-    CartScreen(onGoToHome: () => setState(() => _selectedIndex = 0)),
-    const SearchScreen(),
-    const AccountScreen(),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -54,71 +50,68 @@ class _HomeScreenState extends State<HomeScreen> {
           ExitConfirmationDialog.handleBackPress(context, didPop);
         }
       },
-      child: ChangeNotifierProvider<CartBadgeNotifier>.value(
-        value: _cartBadgeNotifier,
-        child: Scaffold(
-          body: _pages[_selectedIndex],
-          bottomNavigationBar: Consumer<CartBadgeNotifier>(
-            builder: (context, cartNotifier, child) {
-              return BottomNavigationBar(
-                currentIndex: _selectedIndex,
-                onTap: (index) {
-                  setState(() => _selectedIndex = index);
-                  // Refresh cart count when cart tab is selected
-                  if (index == 1) {
-                    cartNotifier.refresh();
-                  }
-                },
-                type: BottomNavigationBarType.fixed,
-                backgroundColor: AppColors.bottomNavBackground,
-                selectedItemColor: AppColors.bottomNavActive,
-                unselectedItemColor: AppColors.bottomNavInactive,
-                selectedLabelStyle: AppTextStyles.labelSmall,
-                unselectedLabelStyle: AppTextStyles.labelSmall,
-                items: [
-                  // Home
-                  BottomNavigationBarItem(
-                    icon: const Icon(LucideIcons.house, size: 24),
-                    activeIcon: Icon(
-                      LucideIcons.house,
-                      color: AppColors.bottomNavActive,
-                      size: 26,
-                    ),
-                    label: 'home.home_tab'.tr(),
+      child: Scaffold(
+        body: _pages[_selectedIndex],
+        bottomNavigationBar: Consumer<CartBadgeNotifier>(
+          builder: (context, cartNotifier, child) {
+            return BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: (index) {
+                setState(() => _selectedIndex = index);
+                // Refresh cart count when cart tab is selected
+                if (index == 1) {
+                  cartNotifier.refresh();
+                }
+              },
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: AppColors.bottomNavBackground,
+              selectedItemColor: AppColors.bottomNavActive,
+              unselectedItemColor: AppColors.bottomNavInactive,
+              selectedLabelStyle: AppTextStyles.labelSmall,
+              unselectedLabelStyle: AppTextStyles.labelSmall,
+              items: [
+                // Home
+                BottomNavigationBarItem(
+                  icon: const Icon(LucideIcons.house, size: 24),
+                  activeIcon: Icon(
+                    LucideIcons.house,
+                    color: AppColors.bottomNavActive,
+                    size: 26,
                   ),
-                  // Cart - using shoppingBasket
-                  BottomNavigationBarItem(
-                    icon: _buildCartIcon(cartNotifier.count),
-                    activeIcon: _buildCartIcon(
-                      cartNotifier.count,
-                      isActive: true,
-                    ),
-                    label: 'home.cart_tab'.tr(),
+                  label: 'home.home_tab'.tr(),
+                ),
+                // Cart - using shoppingBasket
+                BottomNavigationBarItem(
+                  icon: _buildCartIcon(cartNotifier.count),
+                  activeIcon: _buildCartIcon(
+                    cartNotifier.count,
+                    isActive: true,
                   ),
-                  // Search
-                  BottomNavigationBarItem(
-                    icon: const Icon(LucideIcons.search, size: 24),
-                    activeIcon: Icon(
-                      LucideIcons.search,
-                      color: AppColors.bottomNavActive,
-                      size: 26,
-                    ),
-                    label: 'home.search_tab'.tr(),
+                  label: 'home.cart_tab'.tr(),
+                ),
+                // Search
+                BottomNavigationBarItem(
+                  icon: const Icon(LucideIcons.search, size: 24),
+                  activeIcon: Icon(
+                    LucideIcons.search,
+                    color: AppColors.bottomNavActive,
+                    size: 26,
                   ),
-                  // Account
-                  BottomNavigationBarItem(
-                    icon: const Icon(LucideIcons.user, size: 24),
-                    activeIcon: Icon(
-                      LucideIcons.user,
-                      color: AppColors.bottomNavActive,
-                      size: 26,
-                    ),
-                    label: 'home.account_tab'.tr(),
+                  label: 'home.search_tab'.tr(),
+                ),
+                // Account
+                BottomNavigationBarItem(
+                  icon: const Icon(LucideIcons.user, size: 24),
+                  activeIcon: Icon(
+                    LucideIcons.user,
+                    color: AppColors.bottomNavActive,
+                    size: 26,
                   ),
-                ],
-              );
-            },
-          ),
+                  label: 'home.account_tab'.tr(),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -145,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
               child: Text(
-                count > 99 ? '99+' : '${count.toInt()}',
+                count > 99 ? '99+' : '\u200E${count.toInt()}\u200E',
                 style: const TextStyle(
                   color: AppColors.white,
                   fontSize: 10,

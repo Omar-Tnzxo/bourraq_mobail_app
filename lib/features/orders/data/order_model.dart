@@ -9,6 +9,8 @@ class OrderItem {
   final String? branchProductId;
   final String? branchId;
   final String productName;
+  final String? productNameAr;
+  final String? productNameEn;
   final String? productImage;
   final double price;
   final double? partnerPrice;
@@ -27,6 +29,8 @@ class OrderItem {
     this.branchProductId,
     this.branchId,
     required this.productName,
+    this.productNameAr,
+    this.productNameEn,
     this.productImage,
     required this.price,
     this.partnerPrice,
@@ -39,6 +43,12 @@ class OrderItem {
     this.weightUnitEn,
   });
 
+  /// Get localized name
+  String getName(String locale) {
+    if (locale == 'ar') return productNameAr ?? productName;
+    return productNameEn ?? productName;
+  }
+
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
       id: json['id'] as String,
@@ -47,6 +57,14 @@ class OrderItem {
       branchProductId: json['branch_product_id'] as String?,
       branchId: json['branch_id'] as String?,
       productName: json['product_name'] as String,
+      productNameAr:
+          json['partner_products']?['products']?['name_ar'] as String? ??
+          json['products']?['name_ar'] as String? ??
+          json['name_ar'] as String?,
+      productNameEn:
+          json['partner_products']?['products']?['name_en'] as String? ??
+          json['products']?['name_en'] as String? ??
+          json['name_en'] as String?,
       productImage: json['product_image'] as String?,
       price: (json['price'] as num).toDouble(),
       partnerPrice: (json['partner_price'] as num?)?.toDouble(),
@@ -58,18 +76,26 @@ class OrderItem {
           (json['partner_products']?['products']?['weight_value'] as num?)
               ?.toDouble() ??
           (json['partner_products']?['weight_value'] as num?)?.toDouble() ??
-          (json['products']?['weight_value'] as num?)?.toDouble() ??
-          (json['weight_value'] as num?)?.toDouble(),
+          (json['weight_value'] as num?)?.toDouble() ??
+          (json['partner_products']?['products']?['weight'] as num?)
+              ?.toDouble() ??
+          (json['partner_products']?['products']?['size'] as num?)?.toDouble(),
       weightUnitAr:
           json['partner_products']?['products']?['weight_unit_ar'] as String? ??
           json['partner_products']?['weight_unit_ar'] as String? ??
-          json['products']?['weight_unit_ar'] as String? ??
-          json['weight_unit_ar'] as String?,
+          json['weight_unit_ar'] as String? ??
+          json['partner_products']?['products']?['weight_unit'] as String? ??
+          json['partner_products']?['products']?['unit_ar'] as String? ??
+          json['partner_products']?['products']?['unit'] as String? ??
+          json['weight_unit'] as String?,
       weightUnitEn:
           json['partner_products']?['products']?['weight_unit_en'] as String? ??
           json['partner_products']?['weight_unit_en'] as String? ??
-          json['products']?['weight_unit_en'] as String? ??
-          json['weight_unit_en'] as String?,
+          json['weight_unit_en'] as String? ??
+          json['partner_products']?['products']?['weight_unit'] as String? ??
+          json['partner_products']?['products']?['unit_en'] as String? ??
+          json['partner_products']?['products']?['unit'] as String? ??
+          json['weight_unit'] as String?,
     );
   }
 
@@ -88,6 +114,8 @@ class OrderItem {
     'branch_product_id': branchProductId,
     'branch_id': branchId,
     'product_name': productName,
+    'product_name_ar': productNameAr,
+    'product_name_en': productNameEn,
     'product_image': productImage,
     'price': price,
     'partner_price': partnerPrice,
@@ -387,6 +415,7 @@ class Order {
   final PaymentMethod paymentMethod;
   final double subtotal;
   final double deliveryFee;
+  final double serviceFee;
   final double discount;
   final double total;
   final String? couponCode;
@@ -410,6 +439,7 @@ class Order {
     required this.paymentMethod,
     required this.subtotal,
     required this.deliveryFee,
+    this.serviceFee = 0.0,
     required this.discount,
     required this.total,
     this.couponCode,
@@ -439,6 +469,7 @@ class Order {
       ),
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
       deliveryFee: (json['delivery_fee'] as num?)?.toDouble() ?? 0.0,
+      serviceFee: (json['service_fee'] as num?)?.toDouble() ?? 0.0,
       discount: (json['discount'] as num?)?.toDouble() ?? 0.0,
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
       couponCode: json['coupon_code'] as String?,
@@ -471,6 +502,7 @@ class Order {
     'payment_method': paymentMethod.value,
     'subtotal': subtotal,
     'delivery_fee': deliveryFee,
+    'service_fee': serviceFee,
     'discount': discount,
     'total': total,
     'coupon_code': couponCode,

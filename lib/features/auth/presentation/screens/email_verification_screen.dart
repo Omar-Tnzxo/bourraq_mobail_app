@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_state.dart';
 import 'dart:async';
@@ -101,96 +102,28 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        icon: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            LucideIcons.circleAlert,
-            color: AppColors.error,
-            size: 40,
-          ),
-        ),
-        content: Text(
-          message.tr(),
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textSecondary, height: 1.5),
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: Text('common.close'.tr()),
-            ),
-          ),
-        ],
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      ),
+    BourraqDialog.show(
+      context,
+      title: 'common.error'.tr(),
+      message: message.tr(),
+      confirmLabel: 'common.close'.tr(),
+      icon: LucideIcons.circleAlert,
+      iconColor: AppColors.error,
     );
   }
 
   void _showSuccessDialog() {
-    showDialog(
-      context: context,
+    BourraqDialog.show(
+      context,
+      title: 'profile.email_update_success'.tr(),
+      message: 'profile.email_update_success_message'.tr(),
+      confirmLabel: 'common.continue'.tr(),
+      icon: LucideIcons.circleCheck,
+      iconColor: AppColors.primaryGreen,
+      onConfirm: () {
+        context.pop(); // Go back to settings
+      },
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        icon: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.primaryGreen.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            LucideIcons.circleCheck,
-            color: AppColors.primaryGreen,
-            size: 50,
-          ),
-        ),
-        title: Text(
-          'profile.email_update_success'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'profile.email_update_success_message'.tr(),
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textSecondary, height: 1.5),
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx); // Close dialog
-                context.pop(); // Go back to settings
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: Text('common.continue'.tr()),
-            ),
-          ),
-        ],
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      ),
     );
   }
 

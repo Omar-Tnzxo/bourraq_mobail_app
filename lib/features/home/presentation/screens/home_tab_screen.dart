@@ -78,7 +78,9 @@ class _HomeTabScreenState extends State<HomeTabScreen>
 
   Future<void> _loadFavoriteIds() async {
     try {
-      final favorites = await _favoritesRepository.getFavorites();
+      final favorites = await _favoritesRepository.getFavorites(
+        areaId: _defaultAddress?.areaId,
+      );
       if (mounted) {
         setState(() {
           _favoriteIds.clear();
@@ -117,6 +119,8 @@ class _HomeTabScreenState extends State<HomeTabScreen>
     }
     // Load home data with areaId (or null = legacy fallback)
     _homeCubit.loadHomeData(areaId: _defaultAddress?.areaId);
+    // Reload favorites with area context
+    _loadFavoriteIds();
   }
 
   Future<void> _loadDefaultAddress() async {
@@ -155,7 +159,10 @@ class _HomeTabScreenState extends State<HomeTabScreen>
       if (wasInFavorites) {
         await _favoritesRepository.removeFromFavorites(product.id);
       } else {
-        await _favoritesRepository.addToFavorites(product.id);
+        await _favoritesRepository.addToFavorites(
+          product.id,
+          branchId: product.branchId,
+        );
       }
     } catch (e) {
       // Revert on error

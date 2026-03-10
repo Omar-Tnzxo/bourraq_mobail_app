@@ -8,7 +8,7 @@ class BranchProductRepository {
 
   /// Common select query for partner_products with joins
   static const String selectQuery = '''
-    id, branch_id, product_id, partner_price, customer_price,
+    id, branch_id, product_id, partner_price, customer_price, customer_price_before_discount,
     avg_rating, rating_count, is_available, approval_status, badge_id,
     products!inner (
       id, name_ar, name_en, description_ar, description_en,
@@ -158,14 +158,14 @@ class BranchProductRepository {
         .order('customer_price', ascending: true)
         .limit(limit);
 
-    // Filter client-side for offers (old_price > price)
+    // Filter client-side for offers (customer_price_before_discount > price)
     return (response as List)
         .where((json) => json['products'] != null && json['branches'] != null)
         .where((json) {
-          final productJson = json['products'] as Map?;
           final customerPrice =
               (json['customer_price'] as num?)?.toDouble() ?? 0;
-          final oldPrice = (productJson?['old_price'] as num?)?.toDouble();
+          final oldPrice = (json['customer_price_before_discount'] as num?)
+              ?.toDouble();
           return oldPrice != null && oldPrice > customerPrice;
         })
         .map((json) => BranchProduct.fromJson(json))

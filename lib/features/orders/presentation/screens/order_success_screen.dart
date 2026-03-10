@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,6 +10,9 @@ import 'package:bourraq/features/orders/data/order_model.dart';
 import 'package:bourraq/features/orders/data/orders_service.dart';
 import 'package:bourraq/features/orders/data/cancel_reason_service.dart';
 import 'package:bourraq/features/orders/presentation/widgets/cancel_order_sheets.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
+import 'package:bourraq/core/constants/app_text_styles.dart';
 
 /// Order Success Screen - Breadfast-style design
 /// Displays all order details after successful placement
@@ -168,10 +172,10 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
+            _buildHeader(),
             // Success Header
             _buildSuccessHeader(),
 
@@ -207,38 +211,53 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(LucideIcons.arrowRight, color: AppColors.textPrimary),
-        onPressed: () => context.go('/home'),
-      ),
-      title: Text(
-        'order_success.title'.tr(),
-        style: TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        TextButton(
-          onPressed: () {
-            // Open help/support bottom sheet
-            ContactOptionsSheet.show(context);
-          },
-          child: Text(
-            'order_success.help'.tr(),
-            style: TextStyle(
-              color: AppColors.primaryGreen,
-              fontWeight: FontWeight.w600,
+  Widget _buildHeader() {
+    return BourraqHeader(
+      padding: const EdgeInsets.only(top: 16, bottom: 40, left: 16, right: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Home Button
+          GestureDetector(
+            onTap: () => context.go('/home'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(
+                LucideIcons.house,
+                color: AppColors.accentYellow,
+                size: 28,
+              ),
             ),
           ),
-        ),
-      ],
+
+          const SizedBox(width: 12),
+
+          // Title
+          Text(
+            'order_success.title'.tr(),
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.accentYellow,
+              fontWeight: FontWeight.w800,
+              fontSize: 24,
+            ),
+          ),
+
+          const Spacer(),
+
+          // Help Button
+          GestureDetector(
+            onTap: () => ContactOptionsSheet.show(context),
+            child: Text(
+              'order_success.help'.tr(),
+              style: const TextStyle(
+                color: AppColors.accentYellow,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -379,36 +398,10 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      (_order?.total ?? 0.0).floor().toString(),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '.${(((_order?.total ?? 0.0) - (_order?.total ?? 0.0).floor()) * 100).round().toString().padLeft(2, '0')}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'common.currency'.tr(),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
+                AppPriceDisplay(
+                  price: _order?.total ?? 0.0,
+                  textColor: AppColors.textPrimary,
+                  scale: 0.88,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -448,10 +441,15 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
               ),
               const SizedBox(width: 10),
               Text(
-                'order_success.items_count'.tr(args: [itemCount.toString()]),
+                'order_success.items_count'.tr(
+                  args: [
+                    (itemCount % 1 == 0 ? itemCount.toInt() : itemCount)
+                        .toString(),
+                  ],
+                ),
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
@@ -497,48 +495,64 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
                   // Product Details
                   Expanded(
-                    child: Text(
-                      '${item.quantity}x ${item.productName}',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.getName(context.locale.languageCode),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            if (item.weightValue != null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.background,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  item.getWeightDisplay(
+                                    context.locale.languageCode,
+                                  ),
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            Text(
+                              '\u200E${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity}\u200E \u00D7',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
 
-                  // Price
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        item.totalPrice.floor().toString(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        '.${((item.totalPrice - item.totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        'common.currency'.tr(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
+                  // Total Price
+                  AppPriceDisplay(
+                    price: item.totalPrice,
+                    textColor: AppColors.textPrimary,
+                    scale: 0.85,
                   ),
                 ],
               ),
@@ -577,8 +591,14 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
           // Order Number
           _buildSummaryRow(
             'order_success.order_number'.tr(),
-            _formatOrderNumber(widget.orderId),
-            isOrderNumber: true,
+            Text(
+              _formatOrderNumber(widget.orderId),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
 
           const SizedBox(height: 12),
@@ -586,7 +606,11 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
           // Subtotal
           _buildSummaryRow(
             'checkout.subtotal'.tr(),
-            '${_order?.subtotal.toStringAsFixed(2)} ${'common.currency'.tr()}',
+            AppPriceDisplay(
+              price: _order?.subtotal ?? 0.0,
+              textColor: AppColors.textPrimary,
+              scale: 0.77,
+            ),
           ),
 
           // Savings
@@ -594,8 +618,25 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             const SizedBox(height: 8),
             _buildSummaryRow(
               'order_success.you_saved'.tr(),
-              '-${_order!.discount.toStringAsFixed(2)} ${'common.currency'.tr()}',
-              isDiscount: true,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                textDirection: ui.TextDirection.ltr,
+                children: [
+                  const Text(
+                    '-',
+                    style: TextStyle(
+                      color: AppColors.primaryGreen,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  AppPriceDisplay(
+                    price: _order!.discount,
+                    textColor: AppColors.primaryGreen,
+                    scale: 0.77,
+                  ),
+                ],
+              ),
             ),
           ],
 
@@ -604,7 +645,11 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
           // Delivery Fee
           _buildSummaryRow(
             'checkout.delivery_fee'.tr(),
-            '${_order?.deliveryFee.toStringAsFixed(2)} ${'common.currency'.tr()}',
+            AppPriceDisplay(
+              price: _order?.deliveryFee ?? 0.0,
+              textColor: AppColors.textPrimary,
+              scale: 0.77,
+            ),
           ),
 
           const SizedBox(height: 16),
@@ -623,36 +668,10 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                   color: AppColors.textPrimary,
                 ),
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    (_order?.total ?? 0.0).floor().toString(),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    '.${(((_order?.total ?? 0.0) - (_order?.total ?? 0.0).floor()) * 100).round().toString().padLeft(2, '0')}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'common.currency'.tr(),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
+              AppPriceDisplay(
+                price: _order?.total ?? 0.0,
+                textColor: AppColors.textPrimary,
+                scale: 1.11,
               ),
             ],
           ),
@@ -661,12 +680,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
     );
   }
 
-  Widget _buildSummaryRow(
-    String label,
-    String value, {
-    bool isDiscount = false,
-    bool isOrderNumber = false,
-  }) {
+  Widget _buildSummaryRow(String label, Widget valueWidget) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -674,14 +688,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
           label,
           style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isOrderNumber ? FontWeight.w600 : FontWeight.w400,
-            color: isDiscount ? AppColors.primaryGreen : AppColors.textPrimary,
-          ),
-        ),
+        valueWidget,
       ],
     );
   }

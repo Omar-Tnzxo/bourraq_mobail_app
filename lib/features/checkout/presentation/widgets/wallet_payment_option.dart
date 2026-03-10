@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 import 'package:bourraq/features/wallet/data/wallet_model.dart';
 import 'package:bourraq/features/orders/data/order_model.dart';
 
@@ -120,22 +121,23 @@ class WalletPaymentOption extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        wallet != null
-                            ? '${wallet!.balance.toStringAsFixed(2)} ${'common.currency_short'.tr()}'
-                            : 'checkout.no_balance'.tr(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: !hasBalance
-                              ? Colors.grey
-                              : (isSelected
-                                    ? AppColors.primaryGreen
-                                    : AppColors.textSecondary),
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
+                      wallet != null
+                          ? AppPriceDisplay(
+                              price: wallet!.balance,
+                              textColor: !hasBalance
+                                  ? Colors.grey
+                                  : (isSelected
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textSecondary),
+                              scale: 0.72,
+                            )
+                          : Text(
+                              'checkout.no_balance'.tr(),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                            ),
                     ],
                   ),
                 ),

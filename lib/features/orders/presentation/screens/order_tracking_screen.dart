@@ -6,6 +6,9 @@ import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/features/orders/data/order_model.dart';
 import 'package:bourraq/features/orders/data/orders_service.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
+import 'package:bourraq/core/widgets/contact_options_sheet.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String orderId;
@@ -52,19 +55,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     if (_order == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('orders.tracking'.tr()),
-          backgroundColor: Colors.white,
-        ),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.packageX, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              Text('orders.not_found'.tr(), style: AppTextStyles.titleMedium),
-            ],
-          ),
+        backgroundColor: AppColors.background,
+        body: Column(
+          children: [
+            _buildHeader(isArabic),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      LucideIcons.packageX,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'orders.not_found'.tr(),
+                      style: AppTextStyles.titleMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -87,47 +101,57 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget _buildCancelledState(bool isArabic) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(isArabic),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Cancelled Header
+            _buildHeader(isArabic),
             Container(
               width: double.infinity,
               margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: 72,
+                    height: 72,
                     decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
                       shape: BoxShape.circle,
-                      color: Colors.red.withValues(alpha: 0.2),
                     ),
                     child: const Icon(
                       LucideIcons.circleX,
-                      size: 40,
+                      size: 36,
                       color: Colors.red,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'orders.status_title.cancelled'.tr(),
-                    style: AppTextStyles.titleLarge.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.headlineSmall.copyWith(
+                      fontWeight: FontWeight.w900,
                       color: Colors.red,
+                      fontSize: 22,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'orders.cancelled_message'.tr(),
-                    style: TextStyle(color: Colors.red.shade700),
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -148,49 +172,57 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget _buildDeliveredState(bool isArabic) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(isArabic),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Delivered Header
+            _buildHeader(isArabic),
             Container(
               width: double.infinity,
               margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.success.withValues(alpha: 0.3),
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: 72,
+                    height: 72,
                     decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.1),
                       shape: BoxShape.circle,
-                      color: AppColors.success.withValues(alpha: 0.2),
                     ),
                     child: Icon(
                       LucideIcons.packageCheck,
-                      size: 40,
+                      size: 36,
                       color: AppColors.success,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'orders.status_title.delivered'.tr(),
-                    style: AppTextStyles.titleLarge.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.headlineSmall.copyWith(
+                      fontWeight: FontWeight.w900,
                       color: AppColors.success,
+                      fontSize: 22,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'orders.status_subtitle.delivered'.tr(),
-                    style: TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -262,11 +294,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget _buildTrackingState(bool isArabic) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(isArabic),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Map Placeholder
+            _buildHeader(isArabic),
             _buildMapPlaceholder(),
 
             // Tracking Steps
@@ -282,59 +313,141 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  AppBar _buildAppBar(bool isArabic) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-          color: AppColors.textPrimary,
-          size: 20,
-        ),
-        onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/orders');
-          }
-        },
-      ),
-      title: Text('orders.tracking'.tr(), style: AppTextStyles.titleLarge),
-      centerTitle: true,
-      actions: [
-        TextButton(
-          onPressed: () {
-            // TODO: Open help sheet
-          },
-          child: Text(
-            'common.help'.tr(),
-            style: TextStyle(color: AppColors.primaryGreen),
+  Widget _buildHeader(bool isArabic) {
+    return BourraqHeader(
+      padding: const EdgeInsets.only(top: 16, bottom: 40, left: 16, right: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Back Button
+          GestureDetector(
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/orders');
+              }
+            },
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: isArabic ? 0 : 12,
+                left: isArabic ? 12 : 0,
+              ),
+              child: Icon(
+                isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                color: AppColors.accentYellow,
+                size: 28,
+              ),
+            ),
           ),
-        ),
-      ],
+
+          // Title
+          Text(
+            'orders.tracking'.tr(),
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.accentYellow,
+              fontWeight: FontWeight.w800,
+              fontSize: 24,
+            ),
+          ),
+
+          const Spacer(),
+
+          // Help Button
+          GestureDetector(
+            onTap: () => ContactOptionsSheet.show(context),
+            child: Text(
+              'common.help'.tr(),
+              style: const TextStyle(
+                color: AppColors.accentYellow,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildMapPlaceholder() {
     return Container(
-      height: 200,
+      height: 220,
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
           children: [
-            Icon(LucideIcons.map, size: 60, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            Text(
-              'orders.live_tracking_soon'.tr(),
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
+            // Background Pattern/Image
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.05,
+                child: Image.asset(
+                  'assets/images/map_placeholder.png', // Assuming this might exist or use a pattern
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Container(color: AppColors.deepOlive.withOpacity(0.1)),
+                ),
+              ),
+            ),
+
+            // Content
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      LucideIcons.mapPin,
+                      size: 32,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'orders.live_tracking'.tr(),
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentYellow.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'orders.live_tracking_soon'.tr(),
+                      style: const TextStyle(
+                        color: AppColors.deepOlive,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -351,19 +464,47 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'orders.order_status'.tr(),
-            style: AppTextStyles.titleMedium.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  LucideIcons.listTodo,
+                  size: 18,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'orders.order_status'.tr(),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, thickness: 1, color: AppColors.border),
+          ),
           ...List.generate(steps.length, (index) {
             final step = steps[index];
             final isCompleted =
@@ -372,115 +513,103 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 step.granularIndex == _order!.status.granularIndex;
             final isLast = index == steps.length - 1;
 
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Timeline
-                Column(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCompleted
-                            ? AppColors.primaryGreen
-                            : Colors.grey.shade200,
-                        border: isCurrent
-                            ? Border.all(
-                                color: AppColors.primaryGreen,
-                                width: 3,
-                              )
-                            : null,
-                        boxShadow: isCurrent
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primaryGreen.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Icon(
-                        step.icon,
-                        size: 20,
-                        color: isCompleted ? Colors.white : Colors.grey,
-                      ),
-                    ),
-                    if (!isLast)
+            return IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Timeline
+                  Column(
+                    children: [
                       Container(
-                        width: 3,
-                        height: 50,
-                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
+                          shape: BoxShape.circle,
                           color: isCompleted
                               ? AppColors.primaryGreen
-                              : Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(2),
+                              : Colors.grey.shade100,
+                          border: isCurrent
+                              ? Border.all(
+                                  color: AppColors.primaryGreen,
+                                  width: 2,
+                                )
+                              : null,
+                        ),
+                        child: Icon(
+                          isCompleted ? LucideIcons.check : step.icon,
+                          size: 16,
+                          color: isCompleted ? Colors.white : Colors.grey,
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-
-                // Content
-                Expanded(
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: isLast ? 0 : 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          step.title,
-                          style: TextStyle(
-                            fontWeight: isCurrent
-                                ? FontWeight.bold
-                                : FontWeight.w500,
+                      if (!isLast)
+                        Expanded(
+                          child: Container(
+                            width: 2,
+                            margin: const EdgeInsets.symmetric(vertical: 4),
                             color: isCompleted
-                                ? AppColors.textPrimary
-                                : AppColors.textSecondary,
-                            fontSize: isCurrent ? 16 : 14,
+                                ? AppColors.primaryGreen
+                                : Colors.grey.shade200,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          step.subtitle,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        if (isCurrent &&
-                            _order!.status != OrderStatus.delivered)
-                          Container(
-                            margin: const EdgeInsets.only(top: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGreen.withValues(
-                                alpha: 0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'orders.current'.tr(),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.primaryGreen,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+
+                  // Content
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            step.title,
+                            style: TextStyle(
+                              fontWeight: isCurrent
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                              color: isCompleted
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                              fontSize: isCurrent ? 15 : 14,
                             ),
                           ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            step.subtitle,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textLight,
+                              height: 1.4,
+                            ),
+                          ),
+                          if (isCurrent &&
+                              _order!.status != OrderStatus.delivered)
+                            Container(
+                              margin: const EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'orders.current'.tr(),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           }),
         ],
@@ -490,24 +619,50 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildCompletedSteps() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        color: AppColors.success.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.success.withOpacity(0.1)),
       ),
       child: Row(
         children: [
-          Icon(LucideIcons.checkCheck, color: AppColors.success, size: 24),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              LucideIcons.checkCheck,
+              color: AppColors.success,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              'orders.all_steps_completed'.tr(),
-              style: TextStyle(
-                color: AppColors.success,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'orders.all_steps_completed'.tr(),
+                  style: const TextStyle(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  'orders.delivered_successfully'
+                      .tr(), // Fallback or new key? Assuming fallback
+                  style: TextStyle(
+                    color: AppColors.success.withOpacity(0.7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -570,44 +725,86 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildOrderInfo() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  LucideIcons.shoppingBasket,
+                  size: 18,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'orders.order_summary'.tr(),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, thickness: 1, color: AppColors.border),
+          ),
           _infoRow(
             LucideIcons.receipt,
             'orders.order_number'.tr(),
             '#${_order!.id.substring(0, 8)}',
           ),
-          const Divider(height: 20),
+          const SizedBox(height: 16),
           _infoRow(
             LucideIcons.mapPin,
             'orders.delivery_address'.tr(),
             _order!.addressLabel ?? 'common.not_specified'.tr(),
           ),
-          const Divider(height: 20),
+          const SizedBox(height: 16),
           _infoRow(
             LucideIcons.creditCard,
             'checkout.payment_method'.tr(),
             _order!.paymentMethod.translationKey.tr(),
           ),
-          const Divider(height: 20),
+          const SizedBox(height: 16),
           _infoRow(
             LucideIcons.banknote,
             'orders.total'.tr(),
-            '${_order!.total.toStringAsFixed(0)} ${'common.egp'.tr()}',
+            'total',
+            numericValue: _order!.total,
           ),
         ],
       ),
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _infoRow(
+    IconData icon,
+    String label,
+    String value, {
+    double? numericValue,
+  }) {
     return Row(
       children: [
         Icon(icon, size: 20, color: AppColors.textSecondary),
@@ -615,7 +812,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         Expanded(
           child: Text(label, style: TextStyle(color: AppColors.textSecondary)),
         ),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        if (numericValue != null)
+          AppPriceDisplay(
+            price: numericValue,
+            textColor: AppColors.textPrimary,
+            scale: 0.88,
+          )
+        else
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
       ],
     );
   }

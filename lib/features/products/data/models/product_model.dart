@@ -20,6 +20,11 @@ class Product {
   final String? weightUnitAr;
   final String? weightUnitEn;
 
+  // Branch tracking (for unified pricing)
+  final String? branchId;
+  final String? branchProductId;
+  final double? customerPriceBeforeDiscount;
+
   const Product({
     required this.id,
     required this.nameAr,
@@ -37,6 +42,9 @@ class Product {
     this.weightValue,
     this.weightUnitAr,
     this.weightUnitEn,
+    this.branchId,
+    this.branchProductId,
+    this.customerPriceBeforeDiscount,
   });
 
   /// Product is in stock if active AND has stock quantity > 0
@@ -50,7 +58,9 @@ class Product {
       descriptionAr: json['description_ar'] as String?,
       descriptionEn: json['description_en'] as String?,
       price: (json['price'] as num).toDouble(),
-      oldPrice: json['old_price'] != null
+      oldPrice: (json['customer_price_before_discount'] != null)
+          ? (json['customer_price_before_discount'] as num).toDouble()
+          : (json['old_price'] != null)
           ? (json['old_price'] as num).toDouble()
           : null,
       imageUrl: json['image_url'] as String?,
@@ -62,6 +72,12 @@ class Product {
       weightValue: (json['weight_value'] as num?)?.toDouble(),
       weightUnitAr: json['weight_unit_ar'] as String?,
       weightUnitEn: json['weight_unit_en'] as String?,
+      branchId: json['branch_id'] as String?,
+      branchProductId: json['branch_product_id'] as String?,
+      customerPriceBeforeDiscount:
+          json['customer_price_before_discount'] != null
+          ? (json['customer_price_before_discount'] as num).toDouble()
+          : null,
     );
   }
 
@@ -83,6 +99,9 @@ class Product {
       'weight_value': weightValue,
       'weight_unit_ar': weightUnitAr,
       'weight_unit_en': weightUnitEn,
+      'branch_id': branchId,
+      'branch_product_id': branchProductId,
+      'customer_price_before_discount': customerPriceBeforeDiscount,
     };
   }
 
@@ -109,16 +128,21 @@ class Product {
     return '$valueStr $unit';
   }
 
+  /// Alias for unified pricing logic
+  double get customerPrice => price;
+
   /// Convert to ProductItem for use with ProductCard widget
   ProductItem toProductItem() {
     return ProductItem(
       id: id,
       nameAr: nameAr,
       nameEn: nameEn,
-      price: price,
-      oldPrice: oldPrice,
-      imageUrl: imageUrl ?? '',
+      price: price, // This will be the customer_price from repository
+      customerPrice:
+          price, // Explicitly set customerPrice to avoid fallback logic
       isAvailable: isInStock,
+      imageUrl: imageUrl ?? '',
+      oldPrice: customerPriceBeforeDiscount ?? oldPrice,
       weightValue: weightValue,
       weightUnitAr: weightUnitAr,
       weightUnitEn: weightUnitEn,

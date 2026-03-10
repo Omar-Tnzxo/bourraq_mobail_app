@@ -4,9 +4,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/features/products/data/repositories/product_rating_service.dart';
 
-/// Pop-up dialog for rating partner products after delivery
+/// Pop-up dialog for rating partner products after delivery.
+/// Now uses [BourraqDialog] for premium consistency.
 class ProductRatingPopup extends StatefulWidget {
   final String orderId;
   final String userId;
@@ -81,13 +83,17 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
 
     final branchProductId = _currentItem['branch_product_id'] as String;
 
-    await _ratingService.submitProductRating(
-      branchProductId: branchProductId,
-      orderId: widget.orderId,
-      userId: widget.userId,
-      rating: _selectedRating,
-      comment: _commentController.text,
-    );
+    try {
+      await _ratingService.submitProductRating(
+        branchProductId: branchProductId,
+        orderId: widget.orderId,
+        userId: widget.userId,
+        rating: _selectedRating,
+        comment: _commentController.text,
+      );
+    } catch (e) {
+      // Logic for error handling if needed
+    }
 
     if (!mounted) return;
 
@@ -119,174 +125,118 @@ class _ProductRatingPopupState extends State<ProductRatingPopup> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Row(
-              children: [
-                const Icon(
-                  LucideIcons.star,
-                  color: Color(0xFFFFB800),
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'orders.rate_product_title'.tr(),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                // Progress indicator
-                Text(
-                  '${_currentIndex + 1}/${widget.unratedItems.length}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textLight,
-                  ),
-                ),
-              ],
+    return BourraqDialog(
+      title: 'orders.rate_product_title'.tr(),
+      confirmLabel: 'orders.submit_rating'.tr(),
+      cancelLabel: 'common.skip'.tr(),
+      onConfirm: _selectedRating > 0 ? _submitRating : () {},
+      onCancel: _skip,
+      icon: LucideIcons.star,
+      iconColor: const Color(0xFFFFB800),
+      isLoading: _isSubmitting,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          // Progress indicator in design style
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 16),
-
-            // Product name
-            Text(
-              _productName,
+            child: Text(
+              '${_currentIndex + 1} / ${widget.unratedItems.length}',
               style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-
-            // Stars row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (i) {
-                final starIndex = i + 1;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedRating = starIndex);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: AnimatedScale(
-                      scale: _selectedRating >= starIndex ? 1.2 : 1.0,
-                      duration: const Duration(milliseconds: 150),
-                      child: Icon(
-                        _selectedRating >= starIndex
-                            ? Icons.star
-                            : Icons.star_border,
-                        color: const Color(0xFFFFB800),
-                        size: 36,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 16),
-
-            // Optional comment
-            TextField(
-              controller: _commentController,
-              maxLines: 2,
-              decoration: InputDecoration(
-                hintText: 'orders.add_comment_hint'.tr(),
-                hintStyle: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textLight,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: AppColors.border.withValues(alpha: 0.3),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: AppColors.border.withValues(alpha: 0.3),
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
+          ),
+          const SizedBox(height: 20),
 
-            // Action buttons
-            Row(
-              children: [
-                // Skip
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _skip,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text(
-                      'common.skip'.tr(),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Submit
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: _selectedRating > 0 ? _submitRating : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.deepOlive,
-                      disabledBackgroundColor: AppColors.border,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.white,
-                            ),
-                          )
-                        : Text(
-                            'orders.submit_rating'.tr(),
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
+          // Product name
+          Text(
+            _productName,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+
+          // Stars row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (i) {
+              final starIndex = i + 1;
+              final isLit = _selectedRating >= starIndex;
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedRating = starIndex);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: AnimatedScale(
+                    scale: isLit ? 1.25 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutBack,
+                    child: Icon(
+                      isLit ? LucideIcons.star : LucideIcons.star,
+                      fill: isLit ? 1 : 0,
+                      color: isLit
+                          ? const Color(0xFFFFB800)
+                          : Colors.white.withValues(alpha: 0.2),
+                      size: 40,
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 24),
+
+          // Optional comment
+          TextField(
+            controller: _commentController,
+            maxLines: 2,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'orders.add_comment_hint'.tr(),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: 0.05),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.accentYellow),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

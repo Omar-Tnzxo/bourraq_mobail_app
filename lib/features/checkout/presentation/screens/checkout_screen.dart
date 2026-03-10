@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,10 @@ import 'package:bourraq/features/wallet/data/wallet_service.dart';
 import 'package:bourraq/features/wallet/data/wallet_model.dart';
 import 'package:bourraq/features/checkout/presentation/widgets/verification_overlay.dart';
 import 'package:bourraq/features/checkout/presentation/widgets/wallet_payment_option.dart';
+import 'package:bourraq/features/checkout/presentation/widgets/delivery_time_picker_sheet.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -232,7 +237,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       // 4. إعادة التحقق من كود الخصم (إذا وُجد)
       if (_appliedPromo != null) {
-        setState(() => _verificationStatus = 'checkout.validating_promo'.tr());
+        if (mounted) {
+          setState(
+            () => _verificationStatus = 'checkout.validating_promo'.tr(),
+          );
+        }
         final promoResult = await _promoCodeService.validatePromoCode(
           _appliedPromo!.code,
           _subtotal,
@@ -249,7 +258,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       // 5. التحقق من رصيد المحفظة (إذا كان مستخدماً)
       if (_useWalletBalance && _walletDeduction > 0) {
-        setState(() => _verificationStatus = 'checkout.checking_wallet'.tr());
+        if (mounted) {
+          setState(() => _verificationStatus = 'checkout.checking_wallet'.tr());
+        }
         final currentWallet = await _walletService.getWallet();
         if (currentWallet == null || currentWallet.balance < _walletDeduction) {
           _showError('checkout.insufficient_wallet'.tr());
@@ -259,7 +270,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       // 6. إنشاء الطلب في قاعدة البيانات
-      setState(() => _verificationStatus = 'checkout.placing_order'.tr());
+      if (mounted) {
+        setState(() => _verificationStatus = 'checkout.placing_order'.tr());
+      }
 
       // Calculation of totals and IDs for branches (from the cart)
       final branchTotal = _cartItems
@@ -369,82 +382,66 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = context.locale.languageCode == 'ar';
-
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.deepOlive,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-            color: Colors.white,
-            size: 20,
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/home');
-            }
-          },
-        ),
-        title: Text(
-          'checkout.title'.tr(),
-          style: AppTextStyles.titleLarge.copyWith(color: Colors.white),
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // === عنوان التوصيل ===
-                      _buildAddressSection(),
-                      _buildSectionDivider(),
+    return PopScope(
+      canPop: !_isPlacingOrder,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isPlacingOrder) {
+          // You can show a toast or message here if you want to tell the user they can't go back
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // === عنوان التوصيل ===
+                        _buildAddressSection(),
+                        _buildSectionDivider(),
 
-                      // === وقت التوصيل ===
-                      _buildDeliveryTimeSection(),
-                      _buildSectionDivider(),
+                        // === وقت التوصيل ===
+                        _buildDeliveryTimeSection(),
+                        _buildSectionDivider(),
 
-                      // === طريقة الدفع ===
-                      _buildPaymentSection(),
-                      _buildSectionDivider(),
+                        // === طريقة الدفع ===
+                        _buildPaymentSection(),
+                        _buildSectionDivider(),
 
-                      // === كود الخصم ===
-                      _buildPromoCodeSection(),
-                      _buildSectionDivider(),
+                        // === كود الخصم ===
+                        _buildPromoCodeSection(),
+                        _buildSectionDivider(),
 
-                      // === ملاحظة للتوصيل ===
-                      _buildDeliveryNoteSection(),
-                      _buildSectionDivider(),
+                        // === ملاحظة للتوصيل ===
+                        _buildDeliveryNoteSection(),
+                        _buildSectionDivider(),
 
-                      // === ملخص الطلب ===
-                      _buildOrderSummary(),
+                        // === ملخص الطلب ===
+                        _buildOrderSummary(),
 
-                      const SizedBox(height: 24),
-                    ],
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              // === زر تأكيد الطلب ===
-              _buildConfirmButton(),
-            ],
-          ),
-          if (_isPlacingOrder) VerificationOverlay(status: _verificationStatus),
-        ],
+                // === زر تأكيد الطلب ===
+                _buildConfirmButton(),
+              ],
+            ),
+            if (_isPlacingOrder)
+              VerificationOverlay(status: _verificationStatus),
+          ],
+        ),
       ),
     );
   }
@@ -607,7 +604,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       // Arrow
                       const SizedBox(width: 8),
                       Icon(
-                        LucideIcons.chevronLeft,
+                        context.locale.languageCode == 'ar'
+                            ? LucideIcons.chevronLeft
+                            : LucideIcons.chevronRight,
                         color: AppColors.textSecondary,
                         size: 20,
                       ),
@@ -767,18 +766,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          _wallet!.balance > 0
-                              ? '${_wallet!.balance.toStringAsFixed(2)} ${'common.currency_short'.tr()}'
-                              : 'checkout.no_balance'.tr(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _wallet!.balance > 0
-                                ? AppColors.primaryGreen
-                                : AppColors.textSecondary,
+                        if (_wallet!.balance > 0)
+                          AppPriceDisplay(
+                            price: _wallet!.balance,
+                            textColor: AppColors.primaryGreen,
+                          )
+                        else
+                          Text(
+                            'checkout.no_balance'.tr(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -972,7 +973,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           _isFreeShipping
                               ? 'checkout.free_shipping_applied'.tr()
                               : 'checkout.promo_applied'.tr(
-                                  args: [_discount.toStringAsFixed(2)],
+                                  args: [
+                                    '\u200E${_discount.toStringAsFixed(2)}\u200E',
+                                  ],
                                 ),
                           style: TextStyle(
                             fontSize: 13,
@@ -1159,48 +1162,55 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
-              children: _cartItems
-                  .map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+              children: [
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _cartItems.length,
+                  separatorBuilder: (_, __) => const Divider(
+                    height: 1,
+                    color: AppColors.border,
+                    indent: 12,
+                    endIndent: 12,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = _cartItems[index];
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 16,
+                      ),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Product Image
                           Container(
-                            width: 48,
-                            height: 48,
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: AppColors.border.withValues(alpha: 0.5),
                               ),
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(11),
                               child:
                                   item.imageUrl != null &&
                                       item.imageUrl!.isNotEmpty
                                   ? Image.network(
                                       item.imageUrl!,
                                       fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              const Icon(
-                                                LucideIcons.package,
-                                                size: 20,
-                                                color: AppColors.textLight,
-                                              ),
+                                      errorBuilder: (_, __, ___) =>
+                                          _imagePlaceholder(),
                                     )
-                                  : const Icon(
-                                      LucideIcons.package,
-                                      size: 20,
-                                      color: AppColors.textLight,
-                                    ),
+                                  : _imagePlaceholder(),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          // Name and Quantity
+                          const SizedBox(width: 15),
+
+                          // Name and Details
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1209,63 +1219,108 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   item.getName(context.locale.languageCode),
                                   style: const TextStyle(
                                     fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                     color: AppColors.textPrimary,
+                                    height: 1.2,
                                   ),
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${item.quantity} × ${item.price.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    if (item.weightValue != null) ...[
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.background,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          item.getWeightDisplay(
+                                            context.locale.languageCode,
+                                          ),
+                                          style: const TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                    if (item.weightValue != null)
+                                      Container(
+                                        width: 3,
+                                        height: 3,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.border,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    if (item.weightValue != null)
+                                      const SizedBox(width: 8),
+
+                                    // Pricing Line
+                                    Row(
+                                      textDirection: ui.TextDirection.ltr,
+                                      children: [
+                                        Text(
+                                          '\u200E${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity}\u200E',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.primaryGreen,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Text(
+                                          '\u00D7',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.textLight,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        AppPriceDisplay(
+                                          price: item.price,
+                                          textColor: AppColors.textSecondary,
+                                          scale: 0.66,
+                                          showCurrency: false,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
+
                           const SizedBox(width: 8),
+
                           // Total Price for this item
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                (item.price * item.quantity).floor().toString(),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                '.${(((item.price * item.quantity) - (item.price * item.quantity).floor()) * 100).round().toString().padLeft(2, '0')}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textPrimary.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                'common.currency_short'.tr(),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
+                              AppPriceDisplay(
+                                price: item.totalPrice,
+                                textColor: AppColors.textPrimary,
+                                scale: 0.83,
                               ),
                             ],
                           ),
                         ],
                       ),
-                    ),
-                  )
-                  .toList(),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
 
@@ -1314,36 +1369,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    _total.floor().toString(),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      color: AppColors.primaryGreen,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '.${((_total - _total.floor()) * 100).round().toString().padLeft(2, '0')}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.primaryGreen.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'common.currency_short'.tr(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.primaryGreen,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              AppPriceDisplay(
+                price: _total,
+                textColor: AppColors.primaryGreen,
+                scale: 1.22,
               ),
             ],
           ),
@@ -1432,9 +1461,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               originalDeliveryFee != null &&
               originalDeliveryFee > 0)
             Row(
+              textDirection: ui.TextDirection.ltr,
               children: [
+                Row(
+                  textDirection: ui.TextDirection.ltr,
+                  children: [
+                    Text(
+                      originalDeliveryFee.floor().toString(),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    const Text(
+                      '.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    Text(
+                      ((originalDeliveryFee - originalDeliveryFee.floor()) *
+                              100)
+                          .round()
+                          .toString()
+                          .padLeft(2, '0'),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 4),
                 Text(
-                  '${originalDeliveryFee.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
+                  'common.currency_short'.tr(),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                     decoration: TextDecoration.lineThrough,
@@ -1451,13 +1513,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ],
             )
           else
-            Text(
-              '${isDiscount ? '-' : ''}${amount.abs().toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDiscount
-                    ? AppColors.primaryGreen
-                    : AppColors.textPrimary,
-              ),
+            Row(
+              textDirection: ui.TextDirection.ltr,
+              children: [
+                if (isDiscount)
+                  Text(
+                    '-',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                AppPriceDisplay(
+                  price: amount.abs(),
+                  textColor: isDiscount
+                      ? AppColors.primaryGreen
+                      : AppColors.textPrimary,
+                  scale: 0.88,
+                ),
+              ],
             ),
         ],
       ),
@@ -1516,34 +1589,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         'checkout.confirm_order'.tr(),
                         style: TextStyle(
                           fontSize: 17,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: canPlaceOrder
                               ? Colors.white
                               : Colors.grey.shade600,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
+                      // Separator line
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: canPlaceOrder
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${_total.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: canPlaceOrder
-                                ? Colors.white
-                                : Colors.grey.shade600,
-                          ),
-                        ),
+                        height: 16,
+                        width: 1.5,
+                        color: canPlaceOrder
+                            ? Colors.white.withValues(alpha: 0.3)
+                            : Colors.grey.shade400,
+                      ),
+                      const SizedBox(width: 12),
+                      AppPriceDisplay(
+                        price: _total,
+                        textColor: canPlaceOrder
+                            ? Colors.white
+                            : Colors.grey.shade600,
+                        scale: 1.1,
                       ),
                     ],
                   ),
@@ -1581,65 +1648,167 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  void _showAddressPicker() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _buildHeader() {
+    final isArabic = context.locale.languageCode == 'ar';
+
+    return BourraqHeader(
+      padding: const EdgeInsets.only(top: 16, bottom: 40, left: 16, right: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Back Button
+          GestureDetector(
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: isArabic ? 0 : 12,
+                left: isArabic ? 12 : 0,
+              ),
+              child: Icon(
+                LucideIcons.arrowLeft,
+                color: AppColors.accentYellow,
+                size: 28,
+              ),
+            ),
+          ),
+
+          // Title
+          Text(
+            'checkout.title'.tr(),
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.accentYellow,
+              fontWeight: FontWeight.w800,
+              fontSize: 28,
+            ),
+          ),
+        ],
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'checkout.select_delivery_address'.tr(),
-              style: AppTextStyles.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            ..._addresses.map(
-              (a) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  _getAddressIcon(a.addressLabel),
-                  color: _selectedAddress?.id == a.id
-                      ? AppColors.primaryGreen
-                      : Colors.grey,
+    );
+  }
+
+  void _showAddressPicker() {
+    BourraqBottomSheet.show(
+      context: context,
+      title: 'checkout.select_delivery_address'.tr(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ..._addresses.map((a) {
+            final isSelected = _selectedAddress?.id == a.id;
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selectedAddress = a);
+                _updateDeliveryFee();
+                Navigator.pop(context);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.accentYellow
+                        : Colors.white.withValues(alpha: 0.08),
+                  ),
                 ),
-                title: Text(a.addressLabel, style: AppTextStyles.bodyLarge),
-                subtitle: Text(
-                  a.fullAddress,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: _selectedAddress?.id == a.id
-                    ? const Icon(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.accentYellow.withValues(alpha: 0.2)
+                            : Colors.white.withValues(alpha: 0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _getAddressIcon(a.addressLabel),
+                        color: isSelected
+                            ? AppColors.accentYellow
+                            : Colors.white70,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            a.addressLabel,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.white70,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            a.fullAddress,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white60
+                                  : Colors.white38,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSelected)
+                      const Icon(
                         LucideIcons.check,
-                        color: AppColors.primaryGreen,
-                      )
-                    : null,
-                onTap: () {
-                  setState(() => _selectedAddress = a);
-                  _updateDeliveryFee();
-                  Navigator.pop(context);
-                },
+                        color: AppColors.accentYellow,
+                        size: 20,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                context.push('/add-address');
+              },
+              icon: const Icon(LucideIcons.plus, color: AppColors.accentYellow),
+              label: Text(
+                'checkout.add_delivery_address'.tr(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  context.push('/add-address');
-                },
-                icon: const Icon(LucideIcons.plus),
-                label: Text('checkout.add_delivery_address'.tr()),
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+        ],
       ),
     );
   }
@@ -1747,8 +1916,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           Text(
                             isScheduled
                                 ? DateFormat(
-                                    'EEEE, d MMM - h:mm a',
-                                    context.locale.languageCode,
+                                    'EEEE, d MMM - hh:mm a',
+                                    context.locale.toString(),
                                   ).format(_selectedDeliveryTime!)
                                 : 'checkout.delivery_now'.tr(),
                             style: TextStyle(
@@ -1762,7 +1931,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     // Arrow
                     Icon(
-                      LucideIcons.chevronLeft,
+                      context.locale.languageCode == 'ar'
+                          ? LucideIcons.chevronLeft
+                          : LucideIcons.chevronRight,
                       color: AppColors.textSecondary,
                       size: 20,
                     ),
@@ -1776,19 +1947,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  void _showDeliveryTimePicker() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => _DeliveryTimePicker(
-        onTimeSelected: (time) {
-          setState(() => _selectedDeliveryTime = time);
-          Navigator.pop(context);
-        },
-      ),
-    );
+  void _showDeliveryTimePicker() async {
+    final slot = await DeliveryTimePickerSheet.show(context);
+    if (slot != null && mounted) {
+      setState(() {
+        _selectedDeliveryTime = slot.isInstant ? null : slot.startTime;
+      });
+    }
   }
 
   IconData _getAddressIcon(String label) {
@@ -1799,309 +1964,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
     return LucideIcons.mapPin;
   }
-}
 
-class _DeliveryTimePicker extends StatefulWidget {
-  final Function(DateTime?) onTimeSelected;
-
-  const _DeliveryTimePicker({required this.onTimeSelected});
-
-  @override
-  State<_DeliveryTimePicker> createState() => _DeliveryTimePickerState();
-}
-
-class _DeliveryTimePickerState extends State<_DeliveryTimePicker> {
-  int _selectedDayIndex = 0; // 0 = Today, 1 = Tomorrow
-  int? _selectedSlotIndex;
-
-  // Generate time slots (1-hour intervals from 9 AM to 11 PM)
-  List<String> _generateTimeSlots() {
-    final slots = <String>[];
-    final now = DateTime.now();
-    final isToday = _selectedDayIndex == 0;
-
-    for (int hour = 9; hour < 23; hour++) {
-      // Skip past slots for today
-      if (isToday && hour <= now.hour) continue;
-
-      final startHour = hour > 12 ? hour - 12 : hour;
-      final endHour = (hour + 1) > 12 ? (hour + 1) - 12 : (hour + 1);
-      final startPeriod = hour >= 12 ? 'date.pm'.tr() : 'date.am'.tr();
-      final endPeriod = (hour + 1) >= 12 ? 'date.pm'.tr() : 'date.am'.tr();
-
-      slots.add('$startHour:00 $startPeriod - $endHour:00 $endPeriod');
-    }
-
-    return slots;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final timeSlots = _generateTimeSlots();
-
+  Widget _imagePlaceholder() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'checkout.select_time'.tr(),
-                style: AppTextStyles.titleLarge.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(LucideIcons.x, size: 22),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Day Selector (Today / Tomorrow)
-          Row(
-            children: [
-              Expanded(child: _buildDayChip(0, 'checkout.today'.tr())),
-              const SizedBox(width: 12),
-              Expanded(child: _buildDayChip(1, 'checkout.tomorrow'.tr())),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Instant Delivery Option
-          _buildInstantOption(),
-          const SizedBox(height: 16),
-
-          // Time Slots Grid
-          Flexible(
-            child: timeSlots.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'checkout.no_slots_today'.tr(),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: timeSlots.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final isSelected = _selectedSlotIndex == index;
-                      return _buildSlotTile(
-                        timeSlots[index],
-                        isSelected,
-                        () => setState(() => _selectedSlotIndex = index),
-                      );
-                    },
-                  ),
-          ),
-          const SizedBox(height: 16),
-
-          // Confirm Button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _selectedSlotIndex != null || _selectedSlotIndex == -1
-                  ? () {
-                      if (_selectedSlotIndex == -1) {
-                        // Instant delivery
-                        widget.onTimeSelected(null);
-                      } else {
-                        // Calculate scheduled time
-                        final baseDate = _selectedDayIndex == 0
-                            ? DateTime.now()
-                            : DateTime.now().add(const Duration(days: 1));
-                        final slots = _generateTimeSlots();
-                        final slotStr = slots[_selectedSlotIndex!];
-                        final hourStr = slotStr.split(':')[0];
-                        final isPM = slotStr.contains('PM');
-                        int hour = int.parse(hourStr);
-                        if (isPM && hour != 12) hour += 12;
-                        if (!isPM && hour == 12) hour = 0;
-
-                        final scheduledTime = DateTime(
-                          baseDate.year,
-                          baseDate.month,
-                          baseDate.day,
-                          hour,
-                          0,
-                        );
-                        widget.onTimeSelected(scheduledTime);
-                      }
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                disabledBackgroundColor: Colors.grey.shade300,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                'checkout.confirm_time'.tr(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDayChip(int index, String label) {
-    final isSelected = _selectedDayIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() {
-        _selectedDayIndex = index;
-        _selectedSlotIndex = null; // Reset slot selection
-      }),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryGreen
-              : AppColors.primaryGreen.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: AppTextStyles.titleSmall.copyWith(
-              color: isSelected ? Colors.white : AppColors.primaryGreen,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInstantOption() {
-    final isSelected = _selectedSlotIndex == -1;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedSlotIndex = -1),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryGreen.withValues(alpha: 0.1)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : AppColors.border,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.primaryGreen : Colors.grey,
-                  width: 2,
-                ),
-                color: isSelected ? AppColors.primaryGreen : Colors.transparent,
-              ),
-              child: isSelected
-                  ? const Icon(LucideIcons.check, size: 12, color: Colors.white)
-                  : null,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'checkout.delivery_now'.tr(),
-                    style: AppTextStyles.titleSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'checkout.within_time'.tr(),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Text('⚡', style: TextStyle(fontSize: 22)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSlotTile(String slot, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryGreen.withValues(alpha: 0.1)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : AppColors.border,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              slot,
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? AppColors.primaryGreen
-                    : AppColors.textPrimary,
-              ),
-            ),
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : Colors.grey.shade400,
-                  width: 2,
-                ),
-                color: isSelected ? AppColors.primaryGreen : Colors.transparent,
-              ),
-              child: isSelected
-                  ? const Icon(LucideIcons.check, size: 12, color: Colors.white)
-                  : null,
-            ),
-          ],
-        ),
-      ),
+      child: Icon(LucideIcons.image, color: Colors.grey.shade400),
     );
   }
 }

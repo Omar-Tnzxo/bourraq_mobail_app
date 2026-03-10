@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:bourraq/core/services/session_manager.dart';
 import 'package:bourraq/core/services/analytics_service.dart';
+import 'package:bourraq/features/cart/data/cart_service.dart';
 
 /// Auth Repository - Supabase Native OTP
 class AuthRepository {
@@ -11,6 +13,11 @@ class AuthRepository {
   // Web Client ID من Google Cloud Console
   static const String _webClientId =
       '2744601197-bcu7kjhv7eb5klo3vb4vlkt9ppq5gbbu.apps.googleusercontent.com';
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: _webClientId,
+    scopes: ['email', 'profile'],
+  );
 
   AuthRepository(this._supabase);
 
@@ -173,16 +180,8 @@ class AuthRepository {
     try {
       print('🔵 [AUTH] Starting Google Sign-In...');
 
-      // 1. إنشاء Google Sign-In instance
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        // على Android: لا نمرر clientId، نستخدم serverClientId فقط
-        // الـ SDK يأخذ client ID من google-services.json تلقائياً
-        serverClientId: _webClientId,
-        scopes: ['email', 'profile'],
-      );
-
-      // 2. تسجيل الدخول مع Google
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      // 1. تسجيل الدخول مع Google
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
         print('⚠️ [AUTH] Google Sign-In cancelled by user');
@@ -310,8 +309,37 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    await AnalyticsService().trackLogout();
-    await _supabase.auth.signOut();
+    try {
+      // 1. Google Sign out safely (avoids PlatformException on Android)
+      try {
+        if (await _googleSignIn.isSignedIn()) {
+          await _googleSignIn.signOut();
+        }
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Google sign out failed: $e');
+      }
+
+      // 2. Analytics Tracking
+      try {
+        await AnalyticsService().trackLogout();
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Track logout failed: $e');
+      }
+
+      // 3. Clear local cart cache completely
+      try {
+        await CartService.instance.clearLocalOnly();
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Clear cart failed: $e');
+      }
+
+      // 4. Supabase Sign out
+      await _supabase.auth.signOut();
+      debugPrint('✅ [AuthRepository] Sign out completed');
+    } catch (e) {
+      debugPrint('❌ [AuthRepository] Sign out error: $e');
+      rethrow;
+    }
   }
 
   User? getCurrentUser() => _supabase.auth.currentUser;

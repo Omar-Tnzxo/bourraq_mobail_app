@@ -17,6 +17,8 @@ class SearchResultsGrid extends StatefulWidget {
   final VoidCallback? onLocationRequired;
   final VoidCallback? onLoadMore;
   final bool isLoadingMore;
+  final Set<String>? favoriteIds;
+  final Function(ProductItem)? onFavoriteToggle;
 
   const SearchResultsGrid({
     super.key,
@@ -28,6 +30,8 @@ class SearchResultsGrid extends StatefulWidget {
     this.onLocationRequired,
     this.onLoadMore,
     this.isLoadingMore = false,
+    this.favoriteIds,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -95,12 +99,18 @@ class _SearchResultsGridState extends State<SearchResultsGrid> {
                               crossAxisCount: 3,
                               mainAxisSpacing: 8,
                               crossAxisSpacing: 8,
-                              childAspectRatio: 0.64,
+                              childAspectRatio: 0.60,
                             ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final product = widget.results[index];
+                          final productItem = ProductItem.fromMap(product);
                           return ProductCard(
-                            product: ProductItem.fromMap(product),
+                            product: productItem,
+                            isFavorite:
+                                widget.favoriteIds?.contains(productItem.id) ??
+                                false,
+                            onFavoriteTap: () =>
+                                widget.onFavoriteToggle?.call(productItem),
                             cartService: widget.cartService,
                             onCartUpdated: widget.onCartUpdated,
                             hasAddress: widget.hasAddress,

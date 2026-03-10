@@ -66,7 +66,9 @@ class ProductImageHeader extends StatelessWidget {
                         minHeight: 18,
                       ),
                       child: Text(
-                        cartCount > 99 ? '99+' : '${cartCount.toInt()}',
+                        cartCount > 99
+                            ? '99+'
+                            : '\u200E${cartCount % 1 == 0 ? cartCount.toInt() : cartCount}\u200E',
                         style: const TextStyle(
                           color: AppColors.white,
                           fontSize: 10,

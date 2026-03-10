@@ -3,10 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
-import 'package:bourraq/core/router/app_router.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/core/utils/date_formatter.dart';
 import 'package:bourraq/core/widgets/shimmer_skeleton.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/features/orders/data/order_model.dart';
 import 'package:bourraq/features/orders/data/orders_service.dart';
 
@@ -63,7 +64,11 @@ class _OrdersScreenState extends State<OrdersScreen>
       backgroundColor: AppColors.background,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          _buildAppBar(isArabic, innerBoxIsScrolled),
+          SliverToBoxAdapter(child: _buildHeader(isArabic)),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SliverAppBarDelegate(child: _buildTabBar()),
+          ),
         ],
         body: _isLoading
             ? const ShimmerList(
@@ -98,132 +103,99 @@ class _OrdersScreenState extends State<OrdersScreen>
     );
   }
 
-  SliverAppBar _buildAppBar(bool isArabic, bool innerBoxIsScrolled) {
-    return SliverAppBar(
-      backgroundColor: AppColors.deepOlive,
-      expandedHeight: 140,
-      pinned: true,
-      floating: false,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(color: AppColors.deepOlive),
-          child: SafeArea(
-            bottom: false,
+  Widget _buildHeader(bool isArabic) {
+    return BourraqHeader(
+      padding: const EdgeInsets.only(top: 16, bottom: 48, left: 16, right: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Back Button
+          GestureDetector(
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 60),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Back + Title
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Back button row
-                        GestureDetector(
-                          onTap: () {
-                            if (context.canPop()) {
-                              context.pop();
-                            } else {
-                              context.go('/home');
-                            }
-                          },
-                          child: Row(
-                            children: [
-                              Icon(
-                                isArabic
-                                    ? LucideIcons.arrowRight
-                                    : LucideIcons.arrowLeft,
-                                color: Colors.white.withOpacity(0.8),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'error.go_back'.tr(),
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.8),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // Title - Large Bold
-                        Text(
-                          'orders.title'.tr(),
-                          style: AppTextStyles.headlineLarge.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Logo
-                  Image.asset(
-                    'assets/icons/white_icon_logo.png',
-                    height: 64,
-                    width: 64,
-                  ),
-                ],
+              padding: EdgeInsets.only(
+                right: isArabic ? 0 : 12,
+                left: isArabic ? 12 : 0,
+              ),
+              child: Icon(
+                isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                color: AppColors.accentYellow,
+                size: 28,
               ),
             ),
           ),
-        ),
+
+          // Title
+          Text(
+            'orders.title'.tr(),
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.accentYellow,
+              fontWeight: FontWeight.w800,
+              fontSize: 24,
+            ),
+          ),
+        ],
       ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primaryGreen,
-            unselectedLabelColor: AppColors.textSecondary,
-            labelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      decoration: const BoxDecoration(color: AppColors.background),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        height: 52,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            unselectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-            ),
-            indicatorColor: AppColors.primaryGreen,
-            indicatorWeight: 3,
-            indicatorSize: TabBarIndicatorSize.label,
-            dividerColor: Colors.transparent,
-            tabs: [
-              _buildTab(
-                'orders.active'.tr(),
-                _activeOrders.length,
-                AppColors.primaryGreen,
-              ),
-              _buildTab(
-                'orders.completed'.tr(),
-                _completedOrders.length,
-                AppColors.success,
-              ),
-              _buildTab(
-                'orders.cancelled'.tr(),
-                _cancelledOrders.length,
-                Colors.red,
-              ),
-            ],
+          ],
+        ),
+        child: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primaryGreen,
+          unselectedLabelColor: AppColors.textSecondary,
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
           ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+          indicatorColor: AppColors.primaryGreen,
+          indicatorWeight: 3,
+          indicatorSize: TabBarIndicatorSize.label,
+          dividerColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          tabs: [
+            _buildTab(
+              'orders.active'.tr(),
+              _activeOrders.length,
+              AppColors.primaryGreen,
+            ),
+            _buildTab(
+              'orders.completed'.tr(),
+              _completedOrders.length,
+              AppColors.success,
+            ),
+            _buildTab(
+              'orders.cancelled'.tr(),
+              _cancelledOrders.length,
+              Colors.red,
+            ),
+          ],
         ),
       ),
     );
@@ -288,20 +260,25 @@ class _OrdersScreenState extends State<OrdersScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 100,
-              height: 100,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppColors.primaryGreen.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 48, color: Colors.grey.shade400),
+              child: Icon(
+                icon,
+                size: 36,
+                color: AppColors.primaryGreen.withValues(alpha: 0.4),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
               title,
-              style: AppTextStyles.titleMedium.copyWith(
+              style: AppTextStyles.headlineSmall.copyWith(
                 color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
               ),
               textAlign: TextAlign.center,
             ),
@@ -313,8 +290,8 @@ class _OrdersScreenState extends State<OrdersScreen>
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => AppRouter.router.go('/home'),
-              icon: const Icon(LucideIcons.shoppingBag),
+              onPressed: () => context.go('/home'),
+              icon: const Icon(LucideIcons.shoppingBasket),
               label: Text('orders.browse_products'.tr()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
@@ -354,34 +331,15 @@ class _OrdersScreenState extends State<OrdersScreen>
         ),
         child: Column(
           children: [
-            // Header
+            // Header (Brand Colors)
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _getStatusColor(order.status).withValues(alpha: 0.05),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryGreen,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: Row(
                 children: [
-                  // Status Icon
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(
-                        order.status,
-                      ).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      _getStatusIcon(order.status),
-                      color: _getStatusColor(order.status),
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   // Order ID + Date
                   Expanded(
                     child: Column(
@@ -389,8 +347,11 @@ class _OrdersScreenState extends State<OrdersScreen>
                       children: [
                         Text(
                           '#${order.id.substring(0, 8).toUpperCase()}',
-                          style: AppTextStyles.titleSmall.copyWith(
-                            fontWeight: FontWeight.bold,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            color: AppColors.accentYellow,
+                            letterSpacing: 0.5,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -400,8 +361,9 @@ class _OrdersScreenState extends State<OrdersScreen>
                             context,
                           ),
                           style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -413,28 +375,40 @@ class _OrdersScreenState extends State<OrdersScreen>
               ),
             ),
 
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(height: 1, thickness: 1, color: AppColors.border),
+            ),
+
             // Body
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
               child: Column(
                 children: [
-                  // Address Row
                   Row(
                     children: [
-                      Icon(
-                        LucideIcons.mapPin,
-                        size: 18,
-                        color: AppColors.textSecondary,
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentYellow.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          LucideIcons.mapPin,
+                          size: 16,
+                          color: AppColors.primaryGreen,
+                        ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Text(
                           order.addressLabel ??
                               order.addressText ??
                               'common.not_specified'.tr(),
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
                             fontSize: 13,
+                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -442,54 +416,44 @@ class _OrdersScreenState extends State<OrdersScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 14),
                   // Items + Total Row
                   Row(
                     children: [
-                      Icon(
-                        LucideIcons.package,
-                        size: 18,
-                        color: AppColors.textSecondary,
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentYellow.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          LucideIcons.shoppingBasket,
+                          size: 16,
+                          color: AppColors.primaryGreen,
+                        ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 14),
                       Text(
-                        '${order.itemCount} ${'orders.items'.tr()}',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
+                        '${order.itemCount % 1 == 0 ? order.itemCount.toInt() : order.itemCount} ${'orders.items'.tr()}',
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
                           fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const Spacer(),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            order.total.floor().toString(),
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: AppColors.primaryGreen,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '.${((order.total - order.total.floor()) * 100).round().toString().padLeft(2, '0')}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.primaryGreen.withValues(
-                                alpha: 0.6,
-                              ),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'common.egp'.tr(),
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: AppColors.primaryGreen,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      AppPriceDisplay(
+                        price: order.total,
+                        textColor: AppColors.primaryGreen,
+                        scale: 1.15,
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(
+                        isArabic
+                            ? LucideIcons.chevronLeft
+                            : LucideIcons.chevronRight,
+                        size: 18,
+                        color: AppColors.textLight,
                       ),
                     ],
                   ),
@@ -501,15 +465,17 @@ class _OrdersScreenState extends State<OrdersScreen>
             if (order.isActive)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: OutlinedButton.icon(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                child: ElevatedButton.icon(
                   onPressed: () => context.push('/orders/${order.id}/tracking'),
                   icon: const Icon(LucideIcons.mapPinned, size: 18),
                   label: Text('orders.track_order'.tr()),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryGreen,
-                    side: BorderSide(color: AppColors.primaryGreen),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shadowColor: AppColors.primaryGreen.withValues(alpha: 0.3),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -521,15 +487,18 @@ class _OrdersScreenState extends State<OrdersScreen>
             if (order.status == OrderStatus.delivered)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                 child: OutlinedButton.icon(
                   onPressed: () => context.push('/orders/${order.id}'),
                   icon: const Icon(LucideIcons.refreshCw, size: 18),
                   label: Text('orders.reorder'.tr()),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.success,
-                    side: BorderSide(color: AppColors.success),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    foregroundColor: AppColors.primaryGreen,
+                    side: const BorderSide(
+                      color: AppColors.primaryGreen,
+                      width: 1.5,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -546,64 +515,49 @@ class _OrdersScreenState extends State<OrdersScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _getStatusColor(status).withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.accentYellow,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Text(
         status.translationKey.tr(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: _getStatusColor(status),
+        style: const TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w900,
+          color: AppColors.primaryGreen,
         ),
       ),
     );
   }
+}
 
-  Color _getStatusColor(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.pending:
-        return Colors.orange;
-      case OrderStatus.confirmed:
-        return Colors.blue;
-      case OrderStatus.preparing:
-        return Colors.purple;
-      case OrderStatus.ready:
-        return Colors.indigo;
-      case OrderStatus.assigned:
-      case OrderStatus.accepted:
-        return Colors.teal;
-      case OrderStatus.pickedUp:
-      case OrderStatus.onTheWay:
-        return AppColors.primaryGreen;
-      case OrderStatus.delivered:
-        return AppColors.success;
-      case OrderStatus.cancelled:
-        return Colors.red;
-    }
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate({required this.child});
+
+  final Widget child;
+
+  @override
+  double get minExtent => 68.0;
+  @override
+  double get maxExtent => 68.0;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
   }
 
-  IconData _getStatusIcon(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.pending:
-        return LucideIcons.hourglass;
-      case OrderStatus.confirmed:
-        return LucideIcons.circleCheck;
-      case OrderStatus.preparing:
-        return LucideIcons.chefHat;
-      case OrderStatus.ready:
-        return LucideIcons.package;
-      case OrderStatus.assigned:
-      case OrderStatus.accepted:
-        return LucideIcons.userCheck;
-      case OrderStatus.pickedUp:
-        return LucideIcons.box;
-      case OrderStatus.onTheWay:
-        return LucideIcons.bike;
-      case OrderStatus.delivered:
-        return LucideIcons.packageCheck;
-      case OrderStatus.cancelled:
-        return LucideIcons.circleX;
-    }
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }

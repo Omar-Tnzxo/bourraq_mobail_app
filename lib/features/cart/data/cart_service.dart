@@ -221,6 +221,14 @@ class CartService extends ChangeNotifier {
     );
   }
 
+  /// Clear local items only (used on logout)
+  Future<void> clearLocalOnly() async {
+    _cachedItems = [];
+    await _prefs?.remove(_cartKey);
+    notifyListeners();
+    print('🛒 [CartService] Local cart cleared');
+  }
+
   /// Check and remove out of stock items
   Future<List<String>> checkAndRemoveOutOfStock() async {
     final removed = await _repository.removeOutOfStockItems();

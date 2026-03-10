@@ -9,6 +9,9 @@ import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/location/data/address_service.dart';
 import 'package:bourraq/features/location/data/address_model.dart';
 import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
+import 'package:bourraq/features/favorites/data/repositories/favorites_repository.dart';
+import 'package:bourraq/features/home/presentation/widgets/product_card.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/search_bloc.dart';
 import '../bloc/search_event.dart';
 import '../bloc/search_state.dart';
@@ -32,24 +35,85 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final AddressService _addressService = AddressService();
+  late FavoritesRepository _favoritesRepository;
+  final Set<String> _favoriteIds = {};
   CartService? _cartService;
   Address? _defaultAddress;
 
   @override
   void initState() {
     super.initState();
+    _favoritesRepository = FavoritesRepository(Supabase.instance.client);
     _searchController.addListener(_onSearchTextChanged);
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    await _loadDefaultAddress();
+    await _loadFavoriteIds();
+  }
+
+  Future<void> _loadFavoriteIds() async {
+    try {
+      final favorites = await _favoritesRepository.getFavorites(
+        areaId: _defaultAddress?.areaId,
+      );
+      if (mounted) {
+        setState(() {
+          _favoriteIds.clear();
+          _favoriteIds.addAll(favorites.map((p) => p.id));
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleFavorite(ProductItem product) async {
+    final wasFavorite = _favoriteIds.contains(product.id);
+    setState(() {
+      if (wasFavorite) {
+        _favoriteIds.remove(product.id);
+      } else {
+        _favoriteIds.add(product.id);
+      }
+    });
+
+    try {
+      if (wasFavorite) {
+        await _favoritesRepository.removeFromFavorites(product.id);
+      } else {
+        await _favoritesRepository.addToFavorites(
+          product.id,
+          branchId: product.branchId,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          if (wasFavorite) {
+            _favoriteIds.add(product.id);
+          } else {
+            _favoriteIds.remove(product.id);
+          }
+        });
+      }
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Use maybeOf pattern to avoid ProviderNotFoundException
-    try {
-      _cartService = Provider.of<CartService>(context, listen: false);
+    if (_cartService == null) {
+      try {
+        _cartService = Provider.of<CartService>(context, listen: false);
+      } catch (_) {
+        try {
+          _cartService = CartService.instance;
+        } catch (_) {
+          _cartService = null;
+        }
+      }
       _loadDefaultAddress();
-    } catch (_) {
-      _cartService = null;
     }
   }
 
@@ -163,6 +227,8 @@ class _SearchScreenState extends State<SearchScreen> {
         hasAddress: _defaultAddress != null,
         onLocationRequired: _showLocationPrompt,
         isLoadingMore: state.isLoadingMore,
+        favoriteIds: _favoriteIds,
+        onFavoriteToggle: _toggleFavorite,
         onLoadMore: () {
           context.read<SearchBloc>().add(const SearchLoadMore());
         },
@@ -207,6 +273,8 @@ class _SearchScreenState extends State<SearchScreen> {
           cartService: _cartService,
           hasAddress: _defaultAddress != null,
           onLocationRequired: _showLocationPrompt,
+          favoriteIds: _favoriteIds,
+          onFavoriteToggle: _toggleFavorite,
         ),
       ],
     );

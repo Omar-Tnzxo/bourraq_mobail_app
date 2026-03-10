@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_state.dart';
 
@@ -151,49 +152,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        icon: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            LucideIcons.circleAlert,
-            color: AppColors.error,
-            size: 40,
-          ),
-        ),
-        title: Text(
-          'auth.error'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          message.tr(),
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.textSecondary, height: 1.5),
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: Text('common.close'.tr()),
-            ),
-          ),
-        ],
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      ),
+    BourraqDialog.show(
+      context,
+      title: 'auth.error'.tr(),
+      message: message.tr(),
+      confirmLabel: 'common.close'.tr(),
+      icon: LucideIcons.circleAlert,
+      iconColor: AppColors.error,
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 
 /// Product info section with name, weight, stock status, and favorite button
 /// Breadfast-style design
@@ -29,8 +30,6 @@ class ProductInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasDiscount = oldPrice != null && oldPrice! > price;
-
     return Container(
       color: AppColors.white,
       padding: const EdgeInsets.all(16),
@@ -82,47 +81,7 @@ class ProductInfoSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Price section
-              if (hasDiscount) ...[
-                Text(
-                  '${oldPrice!.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textLight,
-                    decoration: TextDecoration.lineThrough,
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    price.floor().toString(),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.deepOlive,
-                    ),
-                  ),
-                  Text(
-                    '.${((price - price.floor()) * 100).round().toString().padLeft(2, '0')}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'common.currency_short'.tr(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+              AppPriceDisplay(price: price, oldPrice: oldPrice, scale: 1.33),
               const Spacer(),
 
               // Favorite button

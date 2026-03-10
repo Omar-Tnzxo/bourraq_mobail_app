@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
-import 'package:bourraq/core/widgets/bourraq_header.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/features/location/data/address_model.dart';
 import 'package:bourraq/features/location/data/address_service.dart';
 
@@ -49,26 +49,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
   }
 
   Future<bool> _showDeleteConfirmation() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text('addresses.delete_address'.tr()),
-            content: Text('addresses.delete_address_confirm'.tr()),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('common.cancel'.tr()),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text('common.delete'.tr()),
-              ),
-            ],
-          ),
+    return await BourraqDialog.show(
+          context,
+          title: 'addresses.delete_address'.tr(),
+          message: 'addresses.delete_address_confirm'.tr(),
+          confirmLabel: 'common.delete'.tr(),
+          cancelLabel: 'common.cancel'.tr(),
+          icon: LucideIcons.trash2,
+          isDangerous: true,
         ) ??
         false;
   }
@@ -92,13 +80,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Icon(
                       isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-                      color: AppColors.white,
-                      size: 22,
+                      color: AppColors.accentYellow,
+                      size: 24,
                     ),
                   ),
                 ),
@@ -109,9 +100,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
                   child: Text(
                     'addresses.my_addresses'.tr(),
                     style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      color: AppColors.accentYellow,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -126,13 +117,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppColors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.white.withValues(alpha: 0.1),
+                        ),
                       ),
                       child: const Icon(
                         LucideIcons.plus,
-                        color: AppColors.white,
-                        size: 22,
+                        color: AppColors.accentYellow,
+                        size: 24,
                       ),
                     ),
                   ),
@@ -235,13 +229,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: address.isDefault
-            ? Border.all(color: AppColors.primaryGreen, width: 2)
-            : Border.all(color: AppColors.border),
+            ? Border.all(color: AppColors.deepOlive, width: 2)
+            : Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: AppColors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -255,20 +249,20 @@ class _AddressesScreenState extends State<AddressesScreen> {
             children: [
               // Icon
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   color: address.isDefault
-                      ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                      ? AppColors.deepOlive
                       : AppColors.background,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   _getAddressIcon(address.addressLabel),
                   color: address.isDefault
-                      ? AppColors.primaryGreen
+                      ? AppColors.accentYellow
                       : AppColors.textSecondary,
-                  size: 24,
+                  size: 26,
                 ),
               ),
               const SizedBox(width: 14),
@@ -295,15 +289,15 @@ class _AddressesScreenState extends State<AddressesScreen> {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryGreen,
+                              color: AppColors.deepOlive,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               'addresses.default'.tr(),
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.accentYellow,
                                 fontSize: 10,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),

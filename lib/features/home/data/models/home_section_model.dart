@@ -38,6 +38,18 @@ class HomeSection {
     }
     return titleEn ?? titleAr ?? '';
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'section_type': sectionType,
+      'title_ar': titleAr,
+      'title_en': titleEn,
+      'display_order': displayOrder,
+      'is_active': isActive,
+      'config': config.toJson(),
+    };
+  }
 }
 
 /// Section configuration - flexible JSONB config
@@ -81,5 +93,19 @@ class HomeSectionConfig {
       source: json['source'] as String?,
       categoryId: json['category_id'] as String?,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'limit': limit,
+      'show_title': showTitle,
+      'show_see_all': showSeeAll,
+      'see_all_route': seeAllRoute,
+      'auto_scroll': autoScroll,
+      'scroll_interval_ms': scrollIntervalMs,
+      'placement': placement,
+      'source': source,
+      'category_id': categoryId,
+    };
   }
 }

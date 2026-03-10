@@ -1,3 +1,4 @@
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/features/categories/data/models/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -13,39 +14,25 @@ class CategoriesListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = context.locale.languageCode == 'ar';
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        elevation: 0,
-        title: Text(
-          'category.all_categories'.tr(),
-          style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(LucideIcons.x, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+    return BourraqScaffold(
+      title: 'category.all_categories'.tr(),
       body: GridView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          childAspectRatio: 0.8,
+          childAspectRatio: 0.74, // Adjusted for slightly more title room
           crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+          mainAxisSpacing: 24,
         ),
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final category = categories[index];
-          return _CategoryListItem(
-            category: category,
-            isArabic: isArabic,
-            onTap: () {
-              Navigator.of(context).pop(category.id);
-            },
+          return BourraqListItem(
+            index: index,
+            child: _CategoryGridItem(
+              category: category,
+              onTap: () => Navigator.of(context).pop(category.id),
+            ),
           );
         },
       ),
@@ -53,81 +40,88 @@ class CategoriesListScreen extends StatelessWidget {
   }
 }
 
-class _CategoryListItem extends StatelessWidget {
+class _CategoryGridItem extends StatelessWidget {
   final CategoryItem category;
-  final bool isArabic;
   final VoidCallback onTap;
 
-  const _CategoryListItem({
-    required this.category,
-    required this.isArabic,
-    required this.onTap,
-  });
+  const _CategoryGridItem({required this.category, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final categoryName = isArabic ? category.nameAr : category.nameEn;
-    final hasName = categoryName.isNotEmpty && !category.hideNameOnCard;
+    final lang = context.locale.languageCode;
+    final categoryName = lang == 'ar' ? category.nameAr : category.nameEn;
+    final showName = categoryName.isNotEmpty && !category.hideNameOnCard;
+    final imageUrl = category.getImageUrl(lang);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child:
-                  category.getImageUrl(context.locale.languageCode).isNotEmpty
-                  ? Padding(
-                      padding: EdgeInsets.all(hasName ? 12 : 0),
+    return Column(
+      children: [
+        Expanded(
+          child: BourraqCard(
+            onTap: onTap,
+            padding: EdgeInsets.zero,
+            backgroundColor: Colors.white,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.02),
+                ),
+                if (imageUrl.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.all(showName ? 10 : 0),
+                    child: Center(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(hasName ? 8 : 16),
+                        borderRadius: BorderRadius.circular(showName ? 12 : 16),
                         child: CachedNetworkImage(
-                          imageUrl: category.getImageUrl(
-                            context.locale.languageCode,
+                          imageUrl: imageUrl,
+                          fit: showName ? BoxFit.contain : BoxFit.cover,
+                          placeholder: (_, __) => const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
                           ),
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: hasName ? BoxFit.contain : BoxFit.cover,
-                          errorWidget: (context, url, error) =>
-                              const Icon(LucideIcons.image, color: Colors.grey),
+                          errorWidget: (_, __, ___) => const Icon(
+                            LucideIcons.imageOff,
+                            color: Colors.black12,
+                            size: 24,
+                          ),
                         ),
                       ),
-                    )
-                  : const Icon(
-                      LucideIcons.package,
-                      color: AppColors.primaryGreen,
-                      size: 32,
                     ),
+                  )
+                else
+                  const Center(
+                    child: Icon(
+                      LucideIcons.package,
+                      color: Colors.black12,
+                      size: 36,
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (hasName) ...[
-            const SizedBox(height: 8),
-            Text(
-              categoryName,
-              style: AppTextStyles.labelSmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+        ),
+        if (showName) ...[
+          const SizedBox(height: 12),
+          Text(
+            categoryName,
+            style: AppTextStyles.labelLarge.copyWith(
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+              fontSize: 13,
+              height: 1.2,
             ),
-          ],
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
-      ),
+      ],
     );
   }
 }

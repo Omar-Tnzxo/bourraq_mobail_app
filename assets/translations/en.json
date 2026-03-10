@@ -324,8 +324,10 @@
         "tracking": "Track Order",
         "order_status": "Order Status",
         "current": "Current",
+        "live_tracking": "Live Tracking",
         "live_tracking_soon": "Live Tracking - Coming Soon",
         "all_steps_completed": "All steps completed successfully",
+        "order_summary": "Order Summary",
         "track_order": "Track Order",
         "cannot_cancel": "Cannot cancel order",
         "order_date": "Order Date",
@@ -556,6 +558,7 @@
         "off": "OFF"
     },
     "faq": {
+        "search_hint": "Search FAQs...",
         "q1": "How can I track my order?",
         "a1": "You can track your order by going to 'My Orders' section and selecting the active order to view live tracking details.",
         "q2": "What payment methods are accepted?",
@@ -696,7 +699,8 @@
         "coming_soon": "Coming Soon",
         "payment_integration_coming": "Online payment integration will be available soon. You can currently pay cash on delivery.",
         "transaction_count": "transaction(s)",
-        "no_transactions_hint": "Your transactions will appear here"
+        "no_transactions_hint": "Your transactions will appear here",
+        "secure_balance": "Your balance is fully secure"
     },
     "order_success": {
         "title": "Order details",
@@ -713,7 +717,8 @@
         "cancel_confirm_title": "Confirm Cancellation",
         "cancel_confirm_message": "Are you sure you want to cancel this order?",
         "cancelled_success": "Order cancelled successfully",
-        "cancel_error": "Error cancelling order"
+        "cancel_error": "Error cancelling order",
+        "paid_total": "Paid Total"
     },
     "cancel_order": {
         "title": "Cancel order",

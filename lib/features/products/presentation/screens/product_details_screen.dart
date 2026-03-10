@@ -44,7 +44,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Product? _product;
   List<Product> _relatedProducts = [];
-  Map<String, String>? _category;
   Address? _defaultAddress;
   bool _isLoading = true;
   String? _error;
@@ -71,17 +70,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     // Listen to cart changes for realtime updates
     _cartService.addListener(_loadQuantityFromCart);
 
-    if (mounted) {
-      // Load favorite status and default address
-      final isFav = await _favoritesRepository.isFavorite(widget.productId);
-      final address = await _addressService.getDefaultAddress();
-      setState(() {
-        _servicesInitialized = true;
-        _isFavorite = isFav;
-        _defaultAddress = address;
-        _loadQuantityFromCart();
-      });
-    }
+    final isFav = await _favoritesRepository.isFavorite(widget.productId);
+    final address = await _addressService.getDefaultAddress();
+
+    if (!mounted) return;
+
+    setState(() {
+      _servicesInitialized = true;
+      _isFavorite = isFav;
+      _defaultAddress = address;
+    });
+
+    // Reload product now that we have the address/area, to get correct price/availability
+    _loadProduct();
+    _loadQuantityFromCart();
   }
 
   @override
@@ -97,9 +99,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final cartItem = items
         .where((item) => item.productId == widget.productId)
         .firstOrNull;
-    if (cartItem != null) {
-      setState(() => _quantity = cartItem.quantity);
-    }
+    setState(() => _quantity = cartItem?.quantity ?? 1);
   }
 
   Future<void> _loadProduct() async {
@@ -109,25 +109,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         _error = null;
       });
 
-      final product = await _repository.getProductById(widget.productId);
+      final product = await _repository.getProductById(
+        widget.productId,
+        areaId: _defaultAddress?.areaId,
+      );
 
       if (product == null) {
-        setState(() {
-          _error = 'product.loading_error'.tr();
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _error = 'product.loading_error'.tr();
+            _isLoading = false;
+          });
+        }
         return;
       }
 
-      // Load category name if available
-      Map<String, String>? category;
       if (product.categoryId != null) {
-        category = await _repository.getCategoryById(product.categoryId!);
-
-        // Load related products
         final related = await _repository.getRelatedProducts(
           categoryId: product.categoryId!,
           excludeProductId: widget.productId,
+          areaId: _defaultAddress?.areaId,
         );
         if (mounted) {
           setState(() => _relatedProducts = related);
@@ -137,7 +138,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       if (mounted) {
         setState(() {
           _product = product;
-          _category = category;
           _isLoading = false;
         });
       }
@@ -229,6 +229,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         price: _product!.price,
         quantity: 1.0,
         imageUrl: _product!.imageUrl,
+        branchId: _product!.branchId,
+        branchProductId: _product!.branchProductId,
+        customerPrice: _product!.price,
       );
       await _cartService.addToCart(cartItem);
     }
@@ -344,9 +347,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     final description = isArabic
         ? _product!.descriptionAr
         : _product!.descriptionEn;
-    final categoryName = _category != null
-        ? (isArabic ? _category!['name_ar'] : _category!['name_en'])
-        : null;
 
     return CustomScrollView(
       slivers: [
@@ -410,7 +410,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 crossAxisCount: 3,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 0.64,
+                childAspectRatio: 0.60,
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
                 final product = _relatedProducts[index];

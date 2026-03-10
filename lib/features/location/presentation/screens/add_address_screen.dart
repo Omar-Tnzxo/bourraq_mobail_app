@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:go_router/go_router.dart';
@@ -324,55 +325,24 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     );
   }
 
-  /// عرض حوار لطلب تفعيل الموقع
   void _showLocationRequiredDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: Icon(LucideIcons.mapPin, size: 48, color: AppColors.primaryGreen),
-        title: Text(
-          'addresses.location_required'.tr(),
-          style: AppTextStyles.titleMedium,
-          textAlign: TextAlign.center,
-        ),
-        content: Text(
-          'addresses.location_required_message'.tr(),
-          style: AppTextStyles.bodyMedium,
-          textAlign: TextAlign.center,
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'common.cancel'.tr(),
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              // فتح إعدادات الموقع في الهاتف مباشرة
-              await Geolocator.openLocationSettings();
-              // إعادة محاولة الحصول على الموقع بعد العودة
-              await Future.delayed(const Duration(seconds: 1));
-              if (mounted) {
-                _requestLocationPermissionPersistently();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text('map.open_settings'.tr()),
-          ),
-        ],
-      ),
+    BourraqDialog.show(
+      context,
+      title: 'addresses.location_required'.tr(),
+      message: 'addresses.location_required_message'.tr(),
+      confirmLabel: 'map.open_settings'.tr(),
+      cancelLabel: 'common.cancel'.tr(),
+      icon: LucideIcons.mapPin,
+      onConfirm: () async {
+        Navigator.pop(context);
+        // فتح إعدادات الموقع في الهاتف مباشرة
+        await Geolocator.openLocationSettings();
+        // إعادة محاولة الحصول على الموقع بعد العودة
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          _requestLocationPermissionPersistently();
+        }
+      },
     );
   }
 
@@ -394,13 +364,16 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Icon(
                       isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-                      color: AppColors.white,
-                      size: 22,
+                      color: AppColors.accentYellow,
+                      size: 24,
                     ),
                   ),
                 ),
@@ -411,9 +384,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   child: Text(
                     'addresses.add_address'.tr(),
                     style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      color: AppColors.accentYellow,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -651,55 +624,64 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
           // Label options
           Row(
-            children: List.generate(_labelOptions.length, (index) {
-              final option = _labelOptions[index];
-              final isSelected = _selectedLabelIndex == index;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedLabelIndex = index),
-                  child: Container(
-                    margin: EdgeInsets.only(left: index > 0 ? 10 : 0),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryGreen
-                            : AppColors.border,
-                        width: isSelected ? 2 : 1,
+            children: [
+              for (int i = 0; i < _labelOptions.length; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedLabelIndex = i),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: _selectedLabelIndex == i
+                            ? AppColors.deepOlive
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _selectedLabelIndex == i
+                              ? AppColors.deepOlive
+                              : AppColors.borderLight,
+                          width: 1.5,
+                        ),
+                        boxShadow: _selectedLabelIndex == i
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.deepOlive.withOpacity(0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          option['icon'],
-                          size: 28,
-                          color: isSelected
-                              ? AppColors.primaryGreen
-                              : AppColors.textSecondary,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          option['labelKey'].toString().tr(),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? AppColors.primaryGreen
-                                : AppColors.textPrimary,
+                      child: Column(
+                        children: [
+                          Icon(
+                            _labelOptions[i]['icon'],
+                            size: 30,
+                            color: _selectedLabelIndex == i
+                                ? AppColors.accentYellow
+                                : AppColors.textSecondary,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            _labelOptions[i]['labelKey'].toString().tr(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: _selectedLabelIndex == i
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                              color: _selectedLabelIndex == i
+                                  ? AppColors.accentYellow
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              );
-            }),
+              ],
+            ],
           ),
 
           // حقل التسمية المخصصة
@@ -792,11 +774,18 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     bool isSmall = false,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: TextField(
         controller: controller,
@@ -846,28 +835,32 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
             if (_detectedArea == null && !_isCheckingArea) ...[
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.deepOlive.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.deepOlive.withOpacity(0.1),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      LucideIcons.info,
-                      size: 16,
-                      color: Colors.orange.shade700,
+                    const Icon(
+                      LucideIcons.circleAlert,
+                      size: 20,
+                      color: AppColors.deepOlive,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'location.select_supported_area'.tr(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.orange.shade700,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.deepOlive,
                         ),
                       ),
                     ),
@@ -881,12 +874,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               child: ElevatedButton(
                 onPressed: canSave ? _saveAddress : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: canSave
-                      ? AppColors.primaryGreen
-                      : Colors.grey.shade400,
-                  disabledBackgroundColor: Colors.grey.shade300,
+                  backgroundColor: AppColors.deepOlive,
+                  disabledBackgroundColor: AppColors.deepOlive.withOpacity(0.3),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 0,
                 ),
@@ -896,15 +887,17 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.accentYellow,
                         ),
                       )
                     : Text(
                         'common.save_address'.tr(),
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: canSave ? Colors.white : Colors.grey.shade600,
+                          fontWeight: FontWeight.w800,
+                          color: canSave
+                              ? AppColors.accentYellow
+                              : AppColors.white.withOpacity(0.5),
                         ),
                       ),
               ),

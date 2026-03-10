@@ -56,12 +56,30 @@ class HomeProductsSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                displayTitle,
-                style: AppTextStyles.titleLarge.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
-                ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(
+                    bottom: 2,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppColors
+                            .bottomNavActive, // Matches product discount highlight color
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    displayTitle,
+                    style: AppTextStyles.titleLarge.copyWith(
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
               ),
               if (seeAllRoute != null)
                 GestureDetector(
@@ -95,7 +113,7 @@ class HomeProductsSection extends StatelessWidget {
               crossAxisCount: 3,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
-              childAspectRatio: 0.64,
+              childAspectRatio: 0.60,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {

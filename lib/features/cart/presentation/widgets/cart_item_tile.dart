@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 import 'package:bourraq/features/cart/domain/models/cart_item.dart';
 
 /// Premium cart item tile with larger image and weight display
@@ -35,24 +35,17 @@ class CartItemTile extends StatelessWidget {
         return false;
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: const BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderLight),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border(
+            bottom: BorderSide(color: AppColors.borderLight, width: 1),
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Product Image (100x100)
+            // Product Image
             _buildProductImage(),
             const SizedBox(width: 16),
 
@@ -64,43 +57,36 @@ class CartItemTile extends StatelessWidget {
                   // Product Name
                   Text(
                     item.getName(locale),
-                    style: AppTextStyles.titleSmall.copyWith(
+                    style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.3,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
 
                   // Weight/Size
                   if (item.getWeightDisplay(locale).isNotEmpty)
                     Text(
                       item.getWeightDisplay(locale),
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
+                        fontSize: 15,
                       ),
                     ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
 
-                  // Price Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Price (flexible to shrink if needed)
-                      Flexible(child: _buildPrice()),
-
-                      // Spacing between price and quantity controls
-                      const SizedBox(width: 12),
-
-                      // Quantity Controls
-                      _buildQuantityControls(),
-                    ],
-                  ),
+                  // Price
+                  _buildPrice(),
                 ],
               ),
             ),
+
+            const SizedBox(width: 12),
+
+            // Quantity Controls
+            _buildQuantityControls(),
           ],
         ),
       ),
@@ -108,107 +94,53 @@ class CartItemTile extends StatelessWidget {
   }
 
   Widget _buildProductImage() {
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Stack(
-        children: [
-          // Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: item.imageUrl!,
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.contain,
-                    placeholder: (_, _) => _buildPlaceholder(),
-                    errorWidget: (_, _, _) => _buildPlaceholder(),
-                  )
-                : _buildPlaceholder(),
-          ),
-
-          // Delete Button
-          Positioned(
-            top: 4,
-            right: 4,
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                onRemove();
-              },
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.9),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(LucideIcons.x, size: 16, color: AppColors.white),
-              ),
-            ),
-          ),
-        ],
+    return SizedBox(
+      width: 70,
+      height: 70,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: item.imageUrl!,
+                width: 70,
+                height: 70,
+                fit: BoxFit.contain,
+                placeholder: (_, _) => _buildPlaceholder(),
+                errorWidget: (_, _, _) => _buildPlaceholder(),
+              )
+            : _buildPlaceholder(),
       ),
     );
   }
 
   Widget _buildPlaceholder() {
     return Container(
-      width: 100,
-      height: 100,
+      width: 70,
+      height: 70,
       color: AppColors.skeletonBase,
       child: Center(
-        child: Icon(LucideIcons.image, size: 32, color: AppColors.textLight),
+        child: Icon(LucideIcons.image, size: 24, color: AppColors.textLight),
       ),
     );
   }
 
   Widget _buildPrice() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Text(
-          item.totalPrice.floor().toString(),
-          style: AppTextStyles.titleLarge.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.deepOlive,
-          ),
-        ),
-        Text(
-          '.${((item.totalPrice - item.totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
-          style: AppTextStyles.titleSmall.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          'common.currency_short'.tr(),
-          style: AppTextStyles.labelMedium.copyWith(
-            color: AppColors.deepOlive,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+    return AppPriceDisplay(
+      price: item.totalPrice,
+      scale: 1.1, // Slightly larger than standard 18px product card
     );
   }
 
   Widget _buildQuantityControls() {
     return Container(
-      height: 36,
+      height: 44,
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.deepOlive, width: 1.5),
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.deepOlive,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        textDirection: TextDirection.ltr,
         children: [
           // Minus Button
           _buildQuantityButton(
@@ -218,16 +150,14 @@ class CartItemTile extends StatelessWidget {
 
           // Quantity Display
           Container(
-            constraints: const BoxConstraints(minWidth: 32),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            constraints: const BoxConstraints(minWidth: 28),
+            alignment: Alignment.center,
             child: Text(
-              item.quantity == item.quantity.toInt()
-                  ? '${item.quantity.toInt()}'
-                  : item.quantity.toString(),
+              '\u200E${item.quantity == item.quantity.toInt() ? item.quantity.toInt() : item.quantity}\u200E',
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.w700,
-                color: AppColors.deepOlive,
-                fontSize: 15,
+                color: AppColors.white,
+                fontSize: 18,
               ),
               textAlign: TextAlign.center,
             ),
@@ -237,7 +167,6 @@ class CartItemTile extends StatelessWidget {
           _buildQuantityButton(
             icon: LucideIcons.plus,
             onTap: () => onQuantityChanged(item.quantity + 1),
-            isAdd: true,
           ),
         ],
       ),
@@ -247,7 +176,6 @@ class CartItemTile extends StatelessWidget {
   Widget _buildQuantityButton({
     required IconData icon,
     required VoidCallback onTap,
-    bool isAdd = false,
   }) {
     return GestureDetector(
       onTap: () {
@@ -256,21 +184,9 @@ class CartItemTile extends StatelessWidget {
       },
       child: Container(
         width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: isAdd ? AppColors.deepOlive : Colors.transparent,
-          borderRadius: BorderRadius.only(
-            topLeft: isAdd ? Radius.zero : const Radius.circular(6.5),
-            bottomLeft: isAdd ? Radius.zero : const Radius.circular(6.5),
-            topRight: isAdd ? const Radius.circular(6.5) : Radius.zero,
-            bottomRight: isAdd ? const Radius.circular(6.5) : Radius.zero,
-          ),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: isAdd ? AppColors.white : AppColors.deepOlive,
-        ),
+        height: 44,
+        color: Colors.transparent,
+        child: Icon(icon, size: 20, color: AppColors.accentYellow),
       ),
     );
   }

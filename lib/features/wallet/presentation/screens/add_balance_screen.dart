@@ -1,10 +1,10 @@
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
-import 'package:bourraq/core/constants/app_text_styles.dart';
 import 'package:bourraq/features/wallet/data/wallet_service.dart';
 import 'package:bourraq/features/wallet/data/saved_card_model.dart';
 
@@ -24,7 +24,6 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
   bool _isLoading = false;
   bool _isLoadingCards = true;
 
-  // Quick add amounts
   final List<int> _quickAmounts = [100, 200, 500, 1000];
 
   @override
@@ -55,24 +54,15 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
     setState(() {});
   }
 
-  double get _enteredAmount {
-    return double.tryParse(_amountController.text) ?? 0.0;
-  }
-
-  bool get _canProceed {
-    // يجب أن يكون المبلغ 10 جنيه على الأقل ويجب اختيار بطاقة
-    return _enteredAmount >= 10 && _selectedCard != null;
-  }
-
+  double get _enteredAmount => double.tryParse(_amountController.text) ?? 0.0;
+  bool get _canProceed => _enteredAmount >= 10 && _selectedCard != null;
   bool get _hasNoCards => _savedCards.isEmpty && !_isLoadingCards;
 
   Future<void> _processPayment() async {
     if (!_canProceed) return;
-
     setState(() => _isLoading = true);
 
     // TODO: Implement PayMob payment
-    // For now, simulate success
     await Future.delayed(const Duration(seconds: 2));
 
     final success = await _walletService.addBalance(
@@ -102,104 +92,50 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = context.locale.languageCode == 'ar';
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
+    return BourraqScaffold(
+      title: 'wallet.add_balance'.tr(),
+      isLoading: _isLoadingCards,
+      footer: _buildFooter(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildAmountInput(),
+            const SizedBox(height: 32),
+            _buildQuickAddSection(),
+            const SizedBox(height: 48),
+            _buildPaymentMethodSection(),
+          ],
         ),
-        title: Text('wallet.add_balance'.tr(), style: AppTextStyles.titleLarge),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // === إدخال المبلغ ===
-                  _buildAmountInput(),
-
-                  const SizedBox(height: 28),
-
-                  // === الإضافة السريعة ===
-                  _buildQuickAddSection(),
-
-                  const SizedBox(height: 36),
-
-                  // === طريقة الدفع ===
-                  _buildPaymentMethodSection(),
-                ],
-              ),
-            ),
-          ),
-
-          // === زر الإضافة ===
-          _buildAddButton(),
-        ],
       ),
     );
   }
 
   Widget _buildAmountInput() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'wallet.enter_amount'.tr(),
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+    return BourraqTextField(
+      label: 'wallet.enter_amount'.tr(),
+      controller: _amountController,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      hintText: '0',
+      onChanged: (_) => setState(() {}),
+      prefixIcon: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
         ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Text(
-                'common.currency_short'.tr(),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: '0',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-            ],
+        child: Text(
+          'common.currency_short'.tr(),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: AppColors.primaryGreen,
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -209,44 +145,25 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
       children: [
         Text(
           'wallet.quick_add'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         Row(
           children: _quickAmounts.map((amount) {
             final isSelected = _enteredAmount == amount;
             return Expanded(
-              child: GestureDetector(
-                onTap: () => _selectQuickAmount(amount),
-                child: Container(
-                  margin: EdgeInsets.only(
-                    right: amount != _quickAmounts.last ? 10 : 0,
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primaryGreen
-                          : AppColors.border,
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$amount ${'common.currency_short'.tr()}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: isSelected
-                            ? AppColors.primaryGreen
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: amount != _quickAmounts.last ? 8 : 0,
+                ),
+                child: BourraqButton(
+                  label: '${amount.toString()} ${'common.currency_short'.tr()}',
+                  isSecondary: !isSelected,
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                  ), // Reduce horizontal padding inside the button
+                  onPressed: () => _selectQuickAmount(amount),
                 ),
               ),
             );
@@ -262,100 +179,93 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
       children: [
         Text(
           'wallet.payment_method'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
         ),
-        const SizedBox(height: 14),
-
-        if (_isLoadingCards)
-          const Center(child: CircularProgressIndicator())
-        else if (_hasNoCards) ...[
-          // رسالة تحذيرية - لا توجد بطاقات
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 14),
-            decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Icon(LucideIcons.info, color: Colors.orange[700], size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'wallet.add_card_first'.tr(),
-                    style: TextStyle(
-                      color: Colors.orange[800],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _buildAddNewCard(),
-        ] else
-          Column(
-            children: [
-              ..._savedCards.map((card) => _buildCardOption(card)),
-              const SizedBox(height: 12),
-              _buildAddNewCard(),
-            ],
-          ),
+        const SizedBox(height: 20),
+        if (_hasNoCards)
+          _buildNoCardsWarning()
+        else
+          ..._savedCards.map((card) => _buildCardOption(card)),
+        const SizedBox(height: 12),
+        _buildAddNewCard(),
       ],
+    );
+  }
+
+  Widget _buildNoCardsWarning() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.circleAlert, color: Colors.orange, size: 22),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              'wallet.add_card_first'.tr(),
+              style: const TextStyle(
+                color: Colors.orange,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildCardOption(SavedCard card) {
     final isSelected = _selectedCard?.id == card.id;
 
-    return GestureDetector(
-      onTap: () => setState(() => _selectedCard = card),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryGreen.withValues(alpha: 0.08)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: BourraqCard(
+        onTap: () => setState(() => _selectedCard = card),
+        borderSide: isSelected
+            ? const BorderSide(color: AppColors.primaryGreen, width: 2)
+            : null,
+        backgroundColor: isSelected
+            ? AppColors.primaryGreen.withValues(alpha: 0.02)
+            : Colors.white,
         child: Row(
           children: [
-            // Card icon
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(8),
+                color: isSelected
+                    ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                    : AppColors.background,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 LucideIcons.creditCard,
-                color: AppColors.textSecondary,
+                color: isSelected
+                    ? AppColors.primaryGreen
+                    : AppColors.textSecondary,
                 size: 24,
               ),
             ),
-            const SizedBox(width: 14),
-
-            // Card info
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     card.displayName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: isSelected
+                          ? AppColors.primaryGreen
+                          : AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
                   Text(
                     card.maskedNumber,
                     style: TextStyle(
@@ -366,112 +276,83 @@ class _AddBalanceScreenState extends State<AddBalanceScreen> {
                 ],
               ),
             ),
-
-            // Selection indicator
-            if (isSelected)
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primaryGreen,
-                ),
-                child: const Icon(
-                  LucideIcons.check,
-                  size: 16,
-                  color: Colors.white,
-                ),
-              ),
+            _buildSelectionIndicator(isSelected),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSelectionIndicator(bool isSelected) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+        border: isSelected
+            ? null
+            : Border.all(color: AppColors.border, width: 2),
+      ),
+      child: isSelected
+          ? const Icon(LucideIcons.check, size: 16, color: Colors.white)
+          : null,
     );
   }
 
   Widget _buildAddNewCard() {
-    return GestureDetector(
+    return BourraqCard(
       onTap: () => context.push('/wallet/add-card'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                LucideIcons.plus,
-                color: AppColors.primaryGreen,
-                size: 24,
-              ),
+      borderSide: BorderSide(
+        color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        style: BorderStyle.none,
+      ), // Custom dashed or dotted border would be nice here
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 14),
-            Text(
-              'wallet.new_card'.tr(),
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-                color: AppColors.primaryGreen,
-              ),
+            child: const Icon(
+              LucideIcons.plus,
+              color: AppColors.primaryGreen,
+              size: 24,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            'wallet.new_card'.tr(),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: AppColors.primaryGreen,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildAddButton() {
+  Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black12,
             blurRadius: 10,
-            offset: const Offset(0, -2),
+            offset: Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: _canProceed && !_isLoading ? _processPayment : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              disabledBackgroundColor: Colors.grey[300],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              elevation: 0,
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    'wallet.add'.tr(),
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-          ),
+        child: BourraqButton(
+          label: 'wallet.add'.tr(),
+          isLoading: _isLoading,
+          onPressed: _canProceed ? _processPayment : null,
         ),
       ),
     );

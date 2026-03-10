@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,6 +11,8 @@ import 'package:bourraq/features/orders/data/orders_service.dart';
 import 'package:bourraq/features/orders/presentation/widgets/cancel_reason_sheet.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/cart/domain/models/cart_item.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
+import 'package:bourraq/core/widgets/bourraq_header.dart';
 
 /// Order Details Screen - Professional & Fully Dynamic
 /// Displays complete order information with translations
@@ -144,7 +147,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(isArabic),
+          SliverToBoxAdapter(child: _buildHeader(isArabic)),
           SliverToBoxAdapter(child: _buildStatusHeader()),
           if (_order!.status != OrderStatus.cancelled)
             SliverToBoxAdapter(child: _buildProgressSteps()),
@@ -182,29 +185,45 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-  SliverAppBar _buildAppBar(bool isArabic) {
-    return SliverAppBar(
-      backgroundColor: Colors.white,
-      pinned: true,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-          color: AppColors.textPrimary,
-        ),
-        onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/orders');
-          }
-        },
+  Widget _buildHeader(bool isArabic) {
+    return BourraqHeader(
+      padding: const EdgeInsets.only(top: 16, bottom: 40, left: 16, right: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Back Button
+          GestureDetector(
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/orders');
+              }
+            },
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: isArabic ? 0 : 12,
+                left: isArabic ? 12 : 0,
+              ),
+              child: Icon(
+                isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                color: AppColors.accentYellow,
+                size: 28,
+              ),
+            ),
+          ),
+
+          // Title
+          Text(
+            '${'orders.order_number'.tr()} #${_order!.id.substring(0, 8)}',
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.accentYellow,
+              fontWeight: FontWeight.w800,
+              fontSize: 24,
+            ),
+          ),
+        ],
       ),
-      title: Text(
-        '${'orders.order_number'.tr()} #${_order!.id.substring(0, 8)}',
-        style: AppTextStyles.titleLarge,
-      ),
-      centerTitle: true,
     );
   }
 
@@ -216,16 +235,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            config.color.withValues(alpha: 0.15),
-            config.color.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.primaryGreen,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: config.color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -233,10 +251,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: config.color.withValues(alpha: 0.2),
+              color: AppColors.accentYellow,
               shape: BoxShape.circle,
             ),
-            child: Icon(config.icon, color: config.color, size: 28),
+            child: Icon(config.icon, color: AppColors.primaryGreen, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -245,17 +263,20 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               children: [
                 Text(
                   config.title,
-                  style: AppTextStyles.titleMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: config.color,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.accentYellow,
+                    letterSpacing: 0.2,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   config.subtitle,
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: Colors.white.withOpacity(0.9),
                     fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -438,18 +459,36 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: AppColors.primaryGreen),
-        const SizedBox(width: 12),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primaryGreen),
+        ),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ],
           ),
         ),
@@ -511,122 +550,187 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   Widget _buildItemsSection() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                LucideIcons.shoppingBag,
-                size: 20,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${_order!.items.length} ${'orders.items'.tr()}',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...List.generate(_order!.items.length, (index) {
-            final item = _order!.items[index];
-            final isLast = index == _order!.items.length - 1;
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-              child: Row(
-                children: [
-                  // Product Image
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child:
-                        item.productImage != null &&
-                            item.productImage!.isNotEmpty
-                        ? Image.network(
-                            item.productImage!,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, e, s) => _imagePlaceholder(),
-                          )
-                        : _imagePlaceholder(),
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 15),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 14),
-                  // Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.productName,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                  child: const Icon(
+                    LucideIcons.shoppingBasket,
+                    size: 18,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '\u200E${_order!.itemCount % 1 == 0 ? _order!.itemCount.toInt() : _order!.itemCount}\u200E ${'orders.items'.tr()}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.border),
+
+          // Items List
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _order!.items.length,
+            separatorBuilder: (_, __) => const Divider(
+              height: 1,
+              indent: 20,
+              endIndent: 20,
+              color: AppColors.border,
+            ),
+            itemBuilder: (context, index) {
+              final item = _order!.items[index];
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Product Image with Frame
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: AppColors.border.withOpacity(0.5),
                         ),
-                        if (item.weightValue != null) ...[
-                          const SizedBox(height: 2),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child:
+                            item.productImage != null &&
+                                item.productImage!.isNotEmpty
+                            ? Image.network(
+                                item.productImage!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _imagePlaceholder(),
+                              )
+                            : _imagePlaceholder(),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+
+                    // Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            item.getWeightDisplay(context.locale.languageCode),
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
+                            item.getName(context.locale.languageCode),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              height: 1.2,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              if (item.weightValue != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    item.getWeightDisplay(
+                                      context.locale.languageCode,
+                                    ),
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                              ],
+
+                              // Quantity Tag
+                              Text(
+                                '\u200E${item.quantity % 1 == 0 ? item.quantity.toInt() : item.quantity}\u200E \u00D7',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              AppPriceDisplay(
+                                price: item.price,
+                                textColor: AppColors.textLight,
+                                scale: 0.65,
+                                showCurrency: false,
+                              ),
+                            ],
                           ),
                         ],
-                        const SizedBox(height: 4),
-                        Text(
-                          '${item.quantity}x · ${item.price.toStringAsFixed(2)} ${'common.egp'.tr()}',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                          ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Total for this item
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          textDirection: ui.TextDirection.ltr,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            AppPriceDisplay(
+                              price: item.totalPrice,
+                              textColor: AppColors.textPrimary,
+                              scale: 0.88,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        item.totalPrice.floor().toString(),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                      Text(
-                        '.${((item.totalPrice - item.totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.primaryGreen.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        'common.egp'.tr(),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -647,60 +751,50 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   Widget _buildPriceSummary() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           _summaryRow('orders.subtotal'.tr(), _order!.subtotal),
           _summaryRow('orders.delivery'.tr(), _order!.deliveryFee),
+          if (_order!.serviceFee > 0)
+            _summaryRow('checkout.service_fee'.tr(), _order!.serviceFee),
           if (_order!.discount > 0)
             _summaryRow(
               'orders.discount'.tr(),
               -_order!.discount,
               isDiscount: true,
             ),
-          const Divider(height: 24),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1, thickness: 1),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'orders.total'.tr(),
-                style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    _order!.total.floor().toString(),
-                    style: AppTextStyles.titleMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  Text(
-                    '.${((_order!.total - _order!.total.floor()) * 100).round().toString().padLeft(2, '0')}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.primaryGreen.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'common.egp'.tr(),
-                    style: AppTextStyles.titleMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                ],
+              AppPriceDisplay(
+                price: _order!.total,
+                textColor: AppColors.primaryGreen,
+                scale: 1.25,
               ),
             ],
           ),
@@ -716,12 +810,25 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: AppColors.textSecondary)),
-          Text(
-            '${isDiscount ? '-' : ''}${value.abs().toStringAsFixed(2)} ${'common.egp'.tr()}',
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: isDiscount ? AppColors.success : null,
-            ),
+          Row(
+            textDirection: ui.TextDirection.ltr,
+            children: [
+              if (isDiscount)
+                Text(
+                  '-',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.success,
+                  ),
+                ),
+              AppPriceDisplay(
+                price: value.abs(),
+                textColor: isDiscount
+                    ? AppColors.success
+                    : AppColors.textPrimary,
+                scale: 0.85,
+              ),
+            ],
           ),
         ],
       ),
@@ -739,7 +846,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           if (status.isActive)
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 54,
               child: ElevatedButton.icon(
                 onPressed: () =>
                     context.push('/orders/${widget.orderId}/tracking'),
@@ -748,35 +855,52 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: AppColors.primaryGreen.withOpacity(0.3),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
             ),
 
-          if (status.isActive) const SizedBox(height: 12),
+          if (status.isActive) const SizedBox(height: 14),
 
           // Cancel Button
           if (status.canCancel)
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
+              height: 52,
+              child: TextButton.icon(
                 onPressed: _isCancelling ? null : _cancelOrder,
                 icon: _isCancelling
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.textSecondary,
+                        ),
                       )
-                    : const Icon(LucideIcons.circleX),
-                label: Text('orders.cancel_order'.tr()),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
+                    : Icon(
+                        LucideIcons.circleX,
+                        size: 20,
+                        color: AppColors.textSecondary.withOpacity(0.7),
+                      ),
+                label: Text(
+                  'orders.cancel_order'.tr(),
+                  style: TextStyle(
+                    color: AppColors.textSecondary.withOpacity(0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: AppColors.textSecondary.withOpacity(0.1),
+                    ),
                   ),
                 ),
               ),
@@ -786,40 +910,50 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           if (status == OrderStatus.delivered) ...[
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 54,
               child: ElevatedButton.icon(
                 onPressed: () =>
                     context.push('/orders/${widget.orderId}/rating'),
-                icon: const Icon(LucideIcons.star),
+                icon: const Icon(
+                  LucideIcons.star,
+                  color: AppColors.primaryGreen,
+                ),
                 label: Text('orders.rate_order'.tr()),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.accentYellow,
+                  foregroundColor: AppColors.primaryGreen,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 52,
               child: OutlinedButton.icon(
                 onPressed: _isReordering ? null : _reorder,
                 icon: _isReordering
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryGreen,
+                        ),
                       )
-                    : const Icon(LucideIcons.refreshCw),
+                    : const Icon(LucideIcons.refreshCw, size: 20),
                 label: Text('orders.reorder'.tr()),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryGreen,
-                  side: BorderSide(color: AppColors.primaryGreen),
+                  side: const BorderSide(
+                    color: AppColors.primaryGreen,
+                    width: 1.5,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
@@ -830,20 +964,28 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           if (status == OrderStatus.cancelled)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                color: AppColors.error.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.error.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
-                  Icon(LucideIcons.info, color: Colors.red.shade700),
-                  const SizedBox(width: 12),
+                  const Icon(
+                    LucideIcons.circleAlert,
+                    color: AppColors.error,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Text(
                       'orders.cancelled_message'.tr(),
-                      style: TextStyle(color: Colors.red.shade700),
+                      style: const TextStyle(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -859,28 +1001,28 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       case OrderStatus.pending:
         return _StatusConfig(
           icon: LucideIcons.hourglass,
-          color: Colors.orange,
+          color: const Color(0xFFF59E0B),
           title: 'orders.status_title.pending'.tr(),
           subtitle: 'orders.status_subtitle.pending'.tr(),
         );
       case OrderStatus.confirmed:
         return _StatusConfig(
           icon: LucideIcons.circleCheck,
-          color: Colors.blue,
+          color: const Color(0xFF3B82F6),
           title: 'orders.status_title.confirmed'.tr(),
           subtitle: 'orders.status_subtitle.confirmed'.tr(),
         );
       case OrderStatus.preparing:
         return _StatusConfig(
           icon: LucideIcons.chefHat,
-          color: Colors.purple,
+          color: const Color(0xFF8B5CF6),
           title: 'orders.status_title.preparing'.tr(),
           subtitle: 'orders.status_subtitle.preparing'.tr(),
         );
       case OrderStatus.ready:
         return _StatusConfig(
-          icon: LucideIcons.package,
-          color: Colors.indigo,
+          icon: LucideIcons.shoppingBasket,
+          color: const Color(0xFF10B981),
           title: 'orders.status_title.ready'.tr(),
           subtitle: 'orders.status_subtitle.ready'.tr(),
         );
@@ -888,13 +1030,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       case OrderStatus.accepted:
         return _StatusConfig(
           icon: LucideIcons.userCheck,
-          color: Colors.teal,
+          color: AppColors.primaryGreen,
           title: 'orders.status_title.assigned'.tr(),
           subtitle: 'orders.status_subtitle.assigned'.tr(),
         );
       case OrderStatus.pickedUp:
         return _StatusConfig(
-          icon: LucideIcons.box,
+          icon: LucideIcons.shoppingBasket,
           color: AppColors.primaryGreen,
           title: 'orders.status_title.picked_up'.tr(),
           subtitle: 'orders.status_subtitle.picked_up'.tr(),
@@ -916,7 +1058,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       case OrderStatus.cancelled:
         return _StatusConfig(
           icon: LucideIcons.circleX,
-          color: Colors.red,
+          color: AppColors.error,
           title: 'orders.status_title.cancelled'.tr(),
           subtitle: 'orders.status_subtitle.cancelled'.tr(),
         );

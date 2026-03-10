@@ -4,21 +4,20 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/core/utils/error_handler.dart';
 import '../../features/account/data/models/contact_option_model.dart';
 
 /// Reusable Contact Options Bottom Sheet
-/// Shows dynamic contact options fetched from Supabase database.
+/// Now uses [BourraqBottomSheet] for premium consistency.
 class ContactOptionsSheet {
   /// Shows the contact options bottom sheet
   static void show(BuildContext context) {
-    showModalBottomSheet(
+    BourraqBottomSheet.show(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => const _ContactOptionsContent(),
+      title: 'account.contact_us'.tr(),
+      child: const _ContactOptionsContent(),
     );
   }
 }
@@ -87,7 +86,7 @@ class _ContactOptionsContentState extends State<_ContactOptionsContent> {
       case 'x':
         return LucideIcons.twitter;
       case 'tiktok':
-        return LucideIcons.music2;
+        return LucideIcons.music2; // Changed from music
       case 'snapchat':
         return LucideIcons.ghost;
       case 'youtube':
@@ -101,11 +100,11 @@ class _ContactOptionsContentState extends State<_ContactOptionsContent> {
       case 'discord':
         return LucideIcons.gamepad2;
       case 'reddit':
-        return LucideIcons.messageSquare;
+        return LucideIcons.messageSquareOff;
       case 'twitch':
         return LucideIcons.twitch;
       case 'spotify':
-        return LucideIcons.music;
+        return LucideIcons.music2;
       case 'pinterest':
         return LucideIcons.pin;
       case 'github':
@@ -185,73 +184,106 @@ class _ContactOptionsContentState extends State<_ContactOptionsContent> {
   Widget build(BuildContext context) {
     final languageCode = context.locale.languageCode;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'account.contact_us'.tr(),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: CircularProgressIndicator(),
-            )
-          else if (_error != null)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Icon(
-                    LucideIcons.circleAlert,
-                    color: Colors.red.shade400,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'common.error_occurred'.tr(),
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            )
-          else if (_options.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Icon(
-                    LucideIcons.messageSquareOff,
-                    color: Colors.grey.shade400,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'account.no_contact_options'.tr(),
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            )
-          else
-            ...(_options.map(
-              (option) => ListTile(
-                leading: Icon(
-                  _getIconForType(option.type),
-                  color: _getColorForType(option.type),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 48),
+            child: CircularProgressIndicator(color: AppColors.accentYellow),
+          )
+        else if (_error != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 48),
+            child: Column(
+              children: [
+                const Icon(
+                  LucideIcons.circleAlert,
+                  color: Colors.red,
+                  size: 48,
                 ),
-                title: Text(option.getTitle(languageCode)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _launchUrl(option.getLaunchUrl());
-                },
-              ),
-            )),
-        ],
-      ),
+                const SizedBox(height: 12),
+                Text(
+                  'common.error_occurred'.tr(),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ],
+            ),
+          )
+        else if (_options.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 48),
+            child: Column(
+              children: [
+                const Icon(
+                  LucideIcons.messageSquareOff,
+                  color: Colors.white24,
+                  size: 48,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'account.no_contact_options'.tr(),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ],
+            ),
+          )
+        else
+          ...(_options.map(
+            (option) => Column(
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  hoverColor: Colors.white.withValues(alpha: 0.05),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _getColorForType(
+                        option.type,
+                      ).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _getIconForType(option.type),
+                      color: _getColorForType(option.type),
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    option.getTitle(languageCode),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    LucideIcons.chevronRight,
+                    color: Colors.white24,
+                    size: 18,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _launchUrl(option.getLaunchUrl());
+                  },
+                ),
+                if (_options.indexOf(option) < _options.length - 1)
+                  Divider(
+                    height: 1,
+                    indent: 64,
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+              ],
+            ),
+          )),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

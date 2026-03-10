@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 
 /// Delivery Time Slot model
 class DeliveryTimeSlot {
@@ -26,13 +28,14 @@ class DeliveryTimeSlot {
   }
 
   /// Generate time slots for the day
-  static List<DeliveryTimeSlot> generateDailySlots() {
+  static List<DeliveryTimeSlot> generateDailySlots(String locale) {
     final now = DateTime.now();
     final slots = <DeliveryTimeSlot>[];
 
     // Instant delivery option
     final instantArrival = now.add(const Duration(minutes: 45));
-    final instantLabel = DateFormat('h:mm a').format(instantArrival);
+    final timeFormat = DateFormat.jm(locale);
+    final instantLabel = timeFormat.format(instantArrival);
     slots.add(
       DeliveryTimeSlot(
         id: 'instant',
@@ -50,8 +53,8 @@ class DeliveryTimeSlot {
       final start = DateTime(now.year, now.month, now.day, hour);
       final end = DateTime(now.year, now.month, now.day, hour + 1);
 
-      final startFormatted = DateFormat('h:mm a').format(start);
-      final endFormatted = DateFormat('h:mm a').format(end);
+      final startFormatted = timeFormat.format(start);
+      final endFormatted = timeFormat.format(end);
 
       slots.add(
         DeliveryTimeSlot(
@@ -70,7 +73,7 @@ class DeliveryTimeSlot {
 }
 
 /// Delivery Time Picker Bottom Sheet
-/// Breadfast-style time selection
+/// Now uses [BourraqBottomSheet] for premium consistency.
 class DeliveryTimePickerSheet extends StatefulWidget {
   final String? currentSlotId;
   final List<DeliveryTimeSlot> slots;
@@ -87,16 +90,13 @@ class DeliveryTimePickerSheet extends StatefulWidget {
     String? currentSlotId,
     List<DeliveryTimeSlot>? slots,
   }) {
-    final timeSlots = slots ?? DeliveryTimeSlot.generateDailySlots();
+    final timeSlots =
+        slots ?? DeliveryTimeSlot.generateDailySlots(context.locale.toString());
 
-    return showModalBottomSheet<DeliveryTimeSlot>(
+    return BourraqBottomSheet.show<DeliveryTimeSlot>(
       context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DeliveryTimePickerSheet(
+      title: 'delivery_time.title'.tr(),
+      child: DeliveryTimePickerSheet(
         currentSlotId: currentSlotId,
         slots: timeSlots,
       ),
@@ -129,234 +129,156 @@ class _DeliveryTimePickerSheetState extends State<DeliveryTimePickerSheet> {
   Widget build(BuildContext context) {
     final languageCode = context.locale.languageCode;
 
-    return SafeArea(
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Close button
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(
-                        LucideIcons.x,
-                        color: AppColors.textPrimary,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Time Slots List
+        ...widget.slots.asMap().entries.map((entry) {
+          final index = entry.key;
+          final slot = entry.value;
+          final isSelected = _selectedSlotId == slot.id;
+          final isInstant = slot.isInstant;
 
-                  // Title
-                  Text(
-                    'delivery_time.title'.tr(),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
+          // Section header for scheduled slots
+          Widget? sectionHeader;
+          if (index == 1) {
+            sectionHeader = Padding(
+              padding: const EdgeInsets.only(bottom: 16, top: 8),
+              child: Text(
+                'delivery_time.schedule_another'.tr(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white70,
+                ),
               ),
-            ),
+            );
+          }
 
-            // Time Slots List
-            Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: widget.slots.length,
-                itemBuilder: (context, index) {
-                  final slot = widget.slots[index];
-                  final isSelected = _selectedSlotId == slot.id;
-                  final isInstant = slot.isInstant;
-
-                  // Section header for scheduled slots
-                  Widget? sectionHeader;
-                  if (index == 1) {
-                    sectionHeader = Padding(
-                      padding: const EdgeInsets.only(bottom: 12, top: 8),
-                      child: Text(
-                        'delivery_time.schedule_another'.tr(),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (sectionHeader != null) sectionHeader,
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedSlotId = slot.id);
+                  // Auto-select and close for instant
+                  if (isInstant) {
+                    Future.delayed(const Duration(milliseconds: 250), () {
+                      if (mounted) {
+                        Navigator.pop(context, _selectedSlot);
+                      }
+                    });
                   }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.accentYellow
+                          : Colors.white.withValues(alpha: 0.08),
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      ?sectionHeader,
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedSlotId = slot.id);
-                          // Auto-select and close for instant
-                          if (isInstant) {
-                            Future.delayed(
-                              const Duration(milliseconds: 200),
-                              () {
-                                if (mounted) {
-                                  Navigator.pop(context, _selectedSlot);
-                                }
-                              },
-                            );
-                          }
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(16),
+                      // Instant badge with lightning icon
+                      if (isInstant) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: isInstant && isSelected
-                                ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primaryGreen
-                                  : AppColors.border,
-                              width: isSelected ? 2 : 1,
+                            color: AppColors.accentYellow.withValues(
+                              alpha: 0.2,
                             ),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Instant badge with lightning icon
-                              if (isInstant) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryGreen.withValues(
-                                      alpha: 0.15,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'delivery_time.instant'.tr(),
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primaryGreen,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Icon(
-                                        LucideIcons.zap,
-                                        size: 16,
-                                        color: AppColors.primaryGreen,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                              ],
-
-                              // Time label
-                              Expanded(
-                                child: Text(
-                                  isInstant
-                                      ? DateFormat('h:mm a').format(
-                                          DateTime.now().add(
-                                            const Duration(minutes: 45),
-                                          ),
-                                        )
-                                      : slot.getLabel(languageCode),
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: AppColors.textPrimary,
-                                  ),
+                              Text(
+                                'delivery_time.instant'.tr(),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.accentYellow,
                                 ),
                               ),
-
-                              // Radio circle
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.primaryGreen
-                                        : AppColors.textSecondary,
-                                    width: 2,
-                                  ),
-                                  color: isSelected
-                                      ? AppColors.primaryGreen
-                                      : Colors.transparent,
-                                ),
-                                child: isSelected
-                                    ? const Center(
-                                        child: Icon(
-                                          LucideIcons.check,
-                                          size: 14,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : null,
+                              const SizedBox(width: 4),
+                              const Icon(
+                                LucideIcons.zap,
+                                size: 14,
+                                color: AppColors.accentYellow,
                               ),
                             ],
                           ),
                         ),
+                        const SizedBox(width: 12),
+                      ],
+
+                      // Time label
+                      Expanded(
+                        child: Text(
+                          isInstant
+                              ? DateFormat.jm(languageCode).format(
+                                  DateTime.now().add(
+                                    const Duration(minutes: 45),
+                                  ),
+                                )
+                              : slot.getLabel(languageCode),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isSelected ? Colors.white : Colors.white70,
+                          ),
+                        ),
+                      ),
+
+                      // Radio indicator-like icon
+                      Icon(
+                        isSelected
+                            ? LucideIcons.circleCheck
+                            : LucideIcons.circle,
+                        size: 22,
+                        color: isSelected
+                            ? AppColors.accentYellow
+                            : Colors.white24,
                       ),
                     ],
-                  );
-                },
-              ),
-            ),
-
-            // Confirm Button
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _selectedSlot != null
-                      ? () => Navigator.pop(context, _selectedSlot)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'common.confirm'.tr(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          );
+        }),
+
+        const SizedBox(height: 16),
+
+        // Confirm Button (Only for scheduled slots)
+        if (_selectedSlotId != 'instant')
+          BourraqButton(
+            label: 'common.confirm'.tr(),
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              Navigator.pop(context, _selectedSlot);
+            },
+            backgroundColor: AppColors.accentYellow,
+            foregroundColor: AppColors.deepOlive,
+          ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

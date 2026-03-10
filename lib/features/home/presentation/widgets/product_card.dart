@@ -11,6 +11,7 @@ import 'package:bourraq/core/utils/guest_restriction_helper.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
 import 'package:bourraq/features/cart/domain/models/cart_item.dart';
 import 'package:bourraq/features/products/data/models/product_model.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 
 /// Product Card Widget - Grabit Style
 /// Features: image with quantity counter overlay, discount badge, favorite icon
@@ -212,7 +213,7 @@ class _ProductCardState extends State<ProductCard>
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final imageHeight = constraints.maxHeight * 0.55;
+            final imageHeight = constraints.maxHeight * 0.52;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,27 +239,21 @@ class _ProductCardState extends State<ProductCard>
                       // Discount badge
                       if (hasDiscount)
                         Positioned(
-                          top: -1,
-                          left: isArabic ? null : -1,
-                          right: isArabic ? -1 : null,
+                          top: 0,
+                          left: 0,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                            decoration: BoxDecoration(
-                              color: const Color(
+                            decoration: const BoxDecoration(
+                              color: Color(
                                 0xFFFF6B6B,
                               ), // Soft red from reference
-                              borderRadius: isArabic
-                                  ? const BorderRadius.only(
-                                      topRight: Radius.circular(12),
-                                      bottomLeft: Radius.circular(20),
-                                    )
-                                  : const BorderRadius.only(
-                                      topLeft: Radius.circular(12),
-                                      bottomRight: Radius.circular(20),
-                                    ),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                bottomRight: Radius.circular(12),
+                              ),
                             ),
                             child: Text(
                               '-$discountPercent%',
@@ -273,8 +268,7 @@ class _ProductCardState extends State<ProductCard>
                       // Favorite button
                       Positioned(
                         top: 6,
-                        left: isArabic ? 6 : null,
-                        right: isArabic ? null : 6,
+                        right: 6,
                         child: Material(
                           color: AppColors.white,
                           shape: const CircleBorder(),
@@ -317,10 +311,11 @@ class _ProductCardState extends State<ProductCard>
                         ),
                       ),
                       // Quantity counter or Add button
+                      // Quantity counter or Add button
                       Positioned(
-                        bottom: 8,
-                        left: isArabic || _quantity > 0 ? 8 : null,
-                        right: isArabic ? (_quantity > 0 ? 8 : null) : 8,
+                        bottom: 6,
+                        left: isArabic ? 6 : null,
+                        right: isArabic ? null : 6,
                         child: _quantity > 0
                             ? _buildQuantityCounter()
                             : _buildAddButton(),
@@ -331,7 +326,10 @@ class _ProductCardState extends State<ProductCard>
                 // Info Section
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
                     child: SingleChildScrollView(
                       physics: const NeverScrollableScrollPhysics(),
                       child: Column(
@@ -340,9 +338,9 @@ class _ProductCardState extends State<ProductCard>
                           Text(
                             productName,
                             style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              height: 1.2,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              height: 1.1,
                               color: AppColors.textPrimary,
                             ),
                             maxLines: 2,
@@ -352,12 +350,13 @@ class _ProductCardState extends State<ProductCard>
                               .getWeightDisplay(isArabic)
                               .isNotEmpty)
                             Padding(
-                              padding: const EdgeInsets.only(top: 2),
+                              padding: const EdgeInsets.only(top: 4),
                               child: Text(
                                 widget.product.getWeightDisplay(isArabic),
                                 style: const TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 12,
                                   color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -418,74 +417,11 @@ class _ProductCardState extends State<ProductCard>
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              Container(
-                                padding: hasDiscount
-                                    ? const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 0,
-                                      )
-                                    : EdgeInsets.zero,
-                                decoration: BoxDecoration(
-                                  color: hasDiscount
-                                      ? AppColors.bottomNavActive
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  children: [
-                                    Text(
-                                      widget.product.displayPrice
-                                          .floor()
-                                          .toString(),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w900,
-                                        color: AppColors.deepOlive,
-                                      ),
-                                    ),
-                                    Text(
-                                      '.${((widget.product.displayPrice - widget.product.displayPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      'common.currency_short'.tr(),
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.deepOlive,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (hasDiscount)
-                                Text(
-                                  '${widget.product.oldPrice!.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
-                                    decoration: TextDecoration.lineThrough,
-                                    decorationColor: AppColors.error,
-                                    decorationThickness: 2.0,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                            ],
+                          const SizedBox(height: 6),
+                          AppPriceDisplay(
+                            price: widget.product.displayPrice,
+                            oldPrice: widget.product.oldPrice,
+                            scale: 1.0,
                           ),
                         ],
                       ),
@@ -561,7 +497,7 @@ class _ProductCardState extends State<ProductCard>
               );
             },
             child: Text(
-              '$_quantity',
+              '\u200E${_quantity % 1 == 0 ? _quantity.toInt() : _quantity}\u200E',
               key: ValueKey<num>(_quantity),
               style: const TextStyle(
                 color: AppColors.white,
@@ -596,20 +532,31 @@ class _ProductCardState extends State<ProductCard>
 
   // Simple add button
   Widget _buildAddButton() {
-    return Material(
-      color: AppColors.deepOlive,
-      shape: const CircleBorder(),
-      elevation: 3,
-      shadowColor: AppColors.black.withValues(alpha: 0.3),
-      child: InkWell(
-        onTap: _incrementQuantity,
-        customBorder: const CircleBorder(),
-        splashColor: AppColors.white.withValues(alpha: 0.3),
-        highlightColor: AppColors.white.withValues(alpha: 0.1),
-        child: const SizedBox(
-          width: 32,
-          height: 32,
-          child: Icon(LucideIcons.plus, color: AppColors.white, size: 20),
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.bottomNavActive, // Lime green from reference
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _incrementQuantity,
+          customBorder: const CircleBorder(),
+          child: const Padding(
+            padding: EdgeInsets.all(4.0),
+            child: Icon(
+              LucideIcons.plus,
+              color: AppColors.deepOlive, // Black/Dark Olive plus
+              size: 24,
+            ),
+          ),
         ),
       ),
     );
@@ -702,7 +649,7 @@ class ProductItem {
       nameAr: p.nameAr,
       nameEn: p.nameEn,
       price: p.price,
-      oldPrice: p.oldPrice,
+      oldPrice: p.customerPriceBeforeDiscount ?? p.oldPrice,
       imageUrl: p.imageUrl ?? '',
       isAvailable: p.isActive,
       customerPrice: p.price,
@@ -717,11 +664,13 @@ class ProductItem {
     Map<String, dynamic> map, {
     bool isArabic = false,
   }) {
+    final double price = (map['price'] as num?)?.toDouble() ?? 0.0;
     return ProductItem(
       id: map['id'] as String? ?? '',
       nameAr: map['name_ar'] as String? ?? map['name_en'] as String? ?? '',
       nameEn: map['name_en'] as String? ?? map['name_ar'] as String? ?? '',
-      price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      price: price,
+      customerPrice: price, // Ensure customerPrice is never null
       oldPrice: (map['old_price'] as num?)?.toDouble(),
       imageUrl: map['image_url'] as String? ?? '',
       isAvailable: map['in_stock'] as bool? ?? true,
@@ -738,6 +687,9 @@ class ProductItem {
       nameAr: branchProduct.nameAr as String,
       nameEn: branchProduct.nameEn as String,
       price: (branchProduct.customerPrice as num).toDouble(),
+      oldPrice: branchProduct.customerPriceBeforeDiscount != null
+          ? (branchProduct.customerPriceBeforeDiscount as num).toDouble()
+          : null,
       imageUrl: branchProduct.imageUrl as String? ?? '',
       isAvailable: branchProduct.isAvailable as bool,
       branchProductId: branchProduct.id as String,

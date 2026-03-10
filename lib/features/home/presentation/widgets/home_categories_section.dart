@@ -30,11 +30,30 @@ class HomeCategoriesSection extends StatelessWidget {
         // Section Title
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
-            displayTitle,
-            style: AppTextStyles.titleLarge.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                bottom: 2,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 10, // Thickness of the underline
+                  decoration: BoxDecoration(
+                    color: AppColors
+                        .bottomNavActive, // Matches product discount highlight color
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              Text(
+                displayTitle,
+                style: AppTextStyles.titleLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

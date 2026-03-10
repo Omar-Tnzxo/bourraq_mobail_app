@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 
 /// Product bottom bar with quantity selector and add to cart button
 /// Breadfast-style design - fixed at bottom
@@ -77,9 +78,7 @@ class ProductBottomBar extends StatelessWidget {
                       },
                       child: Text(
                         quantity > 0
-                            ? (quantity == quantity.toInt()
-                                  ? '${quantity.toInt()}'
-                                  : quantity.toString())
+                            ? '\u200E${quantity % 1 == 0 ? quantity.toInt() : quantity}\u200E'
                             : '1',
                         key: ValueKey<num>(quantity),
                         style: const TextStyle(
@@ -132,45 +131,11 @@ class ProductBottomBar extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          if (hasDiscount && oldTotalPrice != null)
-                            Text(
-                              '${oldTotalPrice.toStringAsFixed(2)} ${'common.currency_short'.tr()}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.white.withValues(alpha: 0.7),
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                totalPrice.floor().toString(),
-                                style: const TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(
-                                '.${((totalPrice - totalPrice.floor()) * 100).round().toString().padLeft(2, '0')}',
-                                style: TextStyle(
-                                  color: AppColors.white.withValues(alpha: 0.6),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                'common.currency_short'.tr(),
-                                style: const TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
+                          AppPriceDisplay(
+                            price: totalPrice,
+                            oldPrice: hasDiscount ? oldTotalPrice : null,
+                            textColor: AppColors.white,
+                            scale: 0.77,
                           ),
                         ],
                       ),

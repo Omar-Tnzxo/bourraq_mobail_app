@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 
 /// Free delivery progress banner - Modern 2026 Design
 /// Follows BRAND_IDENTITY.md and UI-UX-QUALITY-RULES.md
@@ -196,27 +197,31 @@ class FreeDeliveryBanner extends StatelessWidget {
 
   /// Message text with highlighted amount
   Widget _buildMessageText() {
-    return RichText(
-      text: TextSpan(
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
-          height: 1.3,
-        ),
-        children: [
-          TextSpan(text: 'cart.add'.tr()),
-          const TextSpan(text: ' '),
-          TextSpan(
-            text:
-                '${remainingAmount.toStringAsFixed(0)} ${'common.currency_short'.tr()}',
-            style: AppTextStyles.titleSmall.copyWith(
-              color: AppColors.primaryGreen,
-              fontWeight: FontWeight.w700,
-            ),
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          'cart.add'.tr(),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textPrimary,
+            height: 1.3,
           ),
-          const TextSpan(text: ' '),
-          TextSpan(text: 'cart.free_delivery'.tr()),
-        ],
-      ),
+        ),
+        const SizedBox(width: 4),
+        AppPriceDisplay(
+          price: remainingAmount,
+          textColor: AppColors.primaryGreen,
+          scale: 0.8, // roughly similar size to titleSmall
+        ),
+        const SizedBox(width: 4),
+        Text(
+          'cart.free_delivery'.tr(),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textPrimary,
+            height: 1.3,
+          ),
+        ),
+      ],
     );
   }
 

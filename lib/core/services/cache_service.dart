@@ -8,6 +8,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 /// 1. TTL-based cache expiration
 /// 2. Type-safe JSON storage
 /// 3. Cache invalidation methods
+/// 4. Auto-clear home cache on every cold start for fresh UI
 class CacheService {
   static final CacheService _instance = CacheService._internal();
   factory CacheService() => _instance;
@@ -20,6 +21,15 @@ class CacheService {
   Box<int>? _metaBox;
 
   bool _isInitialized = false;
+
+  /// Home-related cache keys that should be cleared on every cold start
+  /// so the UI always reflects the latest server data.
+  static const List<String> _homeCacheKeys = [
+    'home_banners',
+    'home_categories',
+    'home_products',
+    'home_sections',
+  ];
 
   /// Default TTL durations (in minutes)
   static const Map<String, int> defaultTTL = {
@@ -42,8 +52,25 @@ class CacheService {
       _metaBox = await Hive.openBox<int>(_metaBoxName);
       _isInitialized = true;
       debugPrint('✅ [CACHE] Service initialized');
+
+      // Always clear home cache on cold start so users see fresh data
+      await _clearHomeCacheOnStart();
     } catch (e) {
       debugPrint('❌ [CACHE] Failed to initialize: $e');
+    }
+  }
+
+  /// Clear ONLY home-related cache on every cold start.
+  /// Login, cart, addresses, favorites etc. are NOT affected.
+  Future<void> _clearHomeCacheOnStart() async {
+    try {
+      for (final key in _homeCacheKeys) {
+        await _cacheBox?.delete(key);
+        await _metaBox?.delete('${key}_ts');
+      }
+      debugPrint('🧹 [CACHE] Home cache cleared on cold start');
+    } catch (e) {
+      debugPrint('⚠️ [CACHE] Failed to clear home cache: $e');
     }
   }
 

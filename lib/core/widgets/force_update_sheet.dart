@@ -7,6 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 
 import 'package:bourraq/core/constants/app_colors.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/core/widgets/maintenance_view.dart';
 
 /// App Update Model
@@ -207,20 +208,20 @@ class ForceUpdateSheet extends StatelessWidget {
     required AppVersion appVersion,
     bool canSkip = true,
   }) async {
-    final result = await showModalBottomSheet<bool>(
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final isArabic = languageCode == 'ar';
+
+    final result = await BourraqBottomSheet.show<bool>(
       context: context,
+      title: appVersion.getTitle(isArabic),
+      showCloseButton: canSkip,
       isDismissible: canSkip,
       enableDrag: canSkip,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => PopScope(
+      child: PopScope(
         canPop: canSkip,
         child: ForceUpdateSheet(
           appVersion: appVersion,
-          onSkip: canSkip ? () => Navigator.pop(ctx, true) : null,
+          onSkip: canSkip ? () => Navigator.pop(context, true) : null,
         ),
       ),
     );
@@ -234,194 +235,198 @@ class ForceUpdateSheet extends StatelessWidget {
     final canSkip = onSkip != null;
     final changelog = appVersion.getChangelog(isArabic);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 8),
+        // Illustration
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: 24),
-
-          // Illustration
-          ClipRRect(
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child:
                 appVersion.illustrationUrl != null &&
                     appVersion.illustrationUrl!.isNotEmpty
                 ? Image.network(
                     appVersion.illustrationUrl!,
-                    height: 100,
-                    width: 140,
+                    height: 90,
+                    width: 90,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) =>
                         _buildDefaultIllustration(),
                   )
                 : _buildDefaultIllustration(),
           ),
-          const SizedBox(height: 20),
+        ),
+        const SizedBox(height: 24),
 
-          // Title
-          Text(
-            appVersion.getTitle(isArabic),
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
+        // Message
+        Text(
+          appVersion.getMessage(isArabic),
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.white70,
+            height: 1.5,
           ),
-          const SizedBox(height: 12),
+          textAlign: TextAlign.center,
+        ),
 
-          // Message
-          Text(
-            appVersion.getMessage(isArabic),
-            style: TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          // Changelog
-          if (changelog != null && changelog.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'update.whats_new'.tr(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    changelog,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
+        // Changelog
+        if (changelog != null && changelog.isNotEmpty) ...[
           const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      LucideIcons.sparkles,
+                      color: AppColors.accentYellow,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'update.whats_new'.tr(),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  changelog,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white60,
+                    height: 1.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
-          // Update Button
+        const SizedBox(height: 32),
+
+        // Update Button
+        SizedBox(
+          width: double.infinity,
+          height: 60,
+          child: ElevatedButton(
+            onPressed: () => _launchStore(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accentYellow,
+              foregroundColor: AppColors.deepOlive,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(LucideIcons.rocket, size: 22),
+                const SizedBox(width: 12),
+                Text(
+                  'update.update_now'.tr(),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Skip Button
+        if (canSkip) ...[
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _launchStore(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+            height: 56,
+            child: TextButton(
+              onPressed: onSkip,
+              style: TextButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                 ),
-                elevation: 0,
               ),
-              icon: const Icon(LucideIcons.externalLink, size: 20),
-              label: Text(
-                'update.update_now'.tr(),
+              child: Text(
+                'update.later'.tr(),
                 style: const TextStyle(
                   fontSize: 16,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
+        ],
 
-          // Skip Button
-          if (canSkip) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: onSkip,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'update.later'.tr(),
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+        // Force update warning
+        if (!canSkip) ...[
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
             ),
-          ],
-
-          // Force update warning
-          if (!canSkip) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.info, color: Colors.orange, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'update.force_update_warning'.tr(),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w500,
-                      ),
+            child: Row(
+              children: [
+                const Icon(
+                  LucideIcons.triangleAlert,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'update.force_update_warning'.tr(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 8),
-          Text(
-            'v${appVersion.versionNumber} (${appVersion.buildNumber})',
-            style: TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary.withValues(alpha: 0.5),
+                ),
+              ],
             ),
           ),
         ],
-      ),
+
+        const SizedBox(height: 16),
+        Text(
+          'v${appVersion.versionNumber} (${appVersion.buildNumber})',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.3),
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
@@ -433,18 +438,10 @@ class ForceUpdateSheet extends StatelessWidget {
   }
 
   Widget _buildDefaultIllustration() {
-    return Container(
-      height: 100,
-      width: 140,
-      decoration: BoxDecoration(
-        color: AppColors.primaryGreen.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(
-        LucideIcons.rocket,
-        size: 48,
-        color: AppColors.primaryGreen,
-      ),
+    return const Icon(
+      LucideIcons.rocket,
+      size: 50,
+      color: AppColors.accentYellow,
     );
   }
 }

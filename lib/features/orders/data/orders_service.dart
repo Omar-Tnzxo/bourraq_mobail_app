@@ -170,12 +170,9 @@ class OrdersService {
 
       if (orderResponse == null) return null;
 
-      // جلب عناصر الطلب
       final itemsResponse = await _supabase
           .from('order_items')
-          .select(
-            '*, partner_products(products(weight_value, weight_unit_ar, weight_unit_en))',
-          )
+          .select('*, partner_products(*, products(*))')
           .eq('order_id', orderId);
 
       final items = (itemsResponse as List)

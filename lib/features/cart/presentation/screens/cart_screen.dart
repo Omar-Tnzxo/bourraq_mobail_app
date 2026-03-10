@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
-import 'package:bourraq/core/widgets/bourraq_header.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/core/notifiers/cart_badge_notifier.dart';
 import 'package:bourraq/core/widgets/shimmer_skeleton.dart';
 import 'package:bourraq/features/cart/data/cart_service.dart';
@@ -19,6 +19,7 @@ import 'package:bourraq/features/cart/presentation/widgets/cart_empty_state.dart
 import 'package:bourraq/features/cart/presentation/widgets/free_delivery_banner.dart';
 import 'package:bourraq/features/location/data/address_service.dart';
 import 'package:bourraq/core/utils/guest_restriction_helper.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 
 /// Cart Screen - Premium Rabbit-style design
 class CartScreen extends StatefulWidget {
@@ -30,16 +31,39 @@ class CartScreen extends StatefulWidget {
   State<CartScreen> createState() => _CartScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> {
+class _CartScreenState extends State<CartScreen>
+    with SingleTickerProviderStateMixin {
   CartService? _cartService;
   List<CartItem> _items = [];
   bool _isLoading = true;
   List<String> _removedOutOfStock = [];
 
+  late AnimationController _arrowAnimationController;
+  late Animation<double> _arrowAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    _arrowAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+
+    _arrowAnimation = Tween<double>(begin: 0, end: 5).animate(
+      CurvedAnimation(
+        parent: _arrowAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
     _initCart();
+  }
+
+  @override
+  void dispose() {
+    _arrowAnimationController.dispose();
+    super.dispose();
   }
 
   Future<void> _initCart() async {
@@ -126,33 +150,13 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> _clearCart() async {
     HapticFeedback.mediumImpact();
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'cart.clear_cart'.tr(),
-          style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'cart.clear_cart_confirm'.tr(),
-          style: AppTextStyles.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'common.cancel'.tr(),
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text('cart.clear_all'.tr()),
-          ),
-        ],
-      ),
+    final confirmed = await BourraqDialog.show(
+      context,
+      title: 'cart.clear_cart'.tr(),
+      message: 'cart.clear_cart_confirm'.tr(),
+      confirmLabel: 'cart.clear_all'.tr(),
+      cancelLabel: 'common.cancel'.tr(),
+      icon: LucideIcons.trash2,
     );
 
     if (confirmed == true) {
@@ -223,66 +227,58 @@ class _CartScreenState extends State<CartScreen> {
     final canPop = Navigator.of(context).canPop();
 
     return BourraqHeader(
+      padding: const EdgeInsets.only(top: 16, bottom: 40, left: 16, right: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Back Button (only when navigated via push)
           if (canPop) ...[
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12),
                 child: Icon(
                   _locale == 'ar'
                       ? LucideIcons.arrowRight
                       : LucideIcons.arrowLeft,
-                  color: AppColors.white,
-                  size: 22,
+                  color: AppColors.accentYellow,
+                  size: 28,
                 ),
               ),
             ),
-            const SizedBox(width: 12),
           ],
 
-          // Title + Badge
-          Expanded(
-            child: Row(
-              children: [
-                Text(
-                  'cart.my_cart'.tr(),
-                  style: AppTextStyles.headlineSmall.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (_itemCount > 0) ...[
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      _itemCount == _itemCount.toInt()
-                          ? '${_itemCount.toInt()}'
-                          : _itemCount.toStringAsFixed(1),
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+          // Title
+          Text(
+            'cart.my_cart'.tr(),
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.accentYellow,
+              fontWeight: FontWeight.w800,
+              fontSize: 28,
             ),
           ),
+
+          if (_itemCount > 0) ...[
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.white, width: 1.5),
+              ),
+              child: Text(
+                '\u200E${_itemCount % 1 == 0 ? _itemCount.toInt() : _itemCount}\u200E',
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  height: 1.0,
+                ),
+              ),
+            ),
+          ],
+
+          const Spacer(),
 
           // Clear All Button
           if (_items.isNotEmpty)
@@ -290,9 +286,10 @@ class _CartScreenState extends State<CartScreen> {
               onTap: _clearCart,
               child: Text(
                 'cart.clear_all'.tr(),
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.w500,
+                style: const TextStyle(
+                  color: AppColors.accentYellow,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
                 ),
               ),
             ),
@@ -367,36 +364,37 @@ class _CartScreenState extends State<CartScreen> {
               ),
               Row(
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        _cartTotal.floor().toString(),
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        '.${((_cartTotal - _cartTotal.floor()) * 100).round().toString().padLeft(2, '0')}',
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: AppColors.white.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'common.currency_short'.tr(),
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  // Separator line
+                  Container(
+                    height: 16,
+                    width: 1.5,
+                    color: AppColors.white.withValues(alpha: 0.3),
+                  ),
+                  const SizedBox(width: 12),
+                  AppPriceDisplay(
+                    price: _cartTotal,
+                    textColor: AppColors.white,
+                    scale: 1.1,
                   ),
                   const SizedBox(width: 8),
-                  const Icon(LucideIcons.arrowRight, size: 20),
+                  AnimatedBuilder(
+                    animation: _arrowAnimation,
+                    builder: (context, child) {
+                      // Move left for Arabic, right for others
+                      final direction = _locale == 'ar' ? -1.0 : 1.0;
+                      return Transform.translate(
+                        offset: Offset(_arrowAnimation.value * direction, 0),
+                        child: child,
+                      );
+                    },
+                    child: Icon(
+                      _locale == 'ar'
+                          ? LucideIcons.arrowLeft
+                          : LucideIcons.arrowRight,
+                      size: 20,
+                      color: AppColors.accentYellow,
+                    ),
+                  ),
                 ],
               ),
             ],

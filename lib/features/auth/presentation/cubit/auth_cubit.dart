@@ -259,13 +259,20 @@ class AuthCubit extends Cubit<AuthState> {
     await _checkAuthStatus();
   }
 
+  bool _isLoggingOut = false;
+
   /// تسجيل الخروج
   Future<void> logout() async {
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
+
     try {
       await _authRepository.logout();
       emit(const AuthUnauthenticated());
     } catch (e) {
       emit(AuthError(message: ErrorHandler.getErrorKey(e)));
+    } finally {
+      _isLoggingOut = false;
     }
   }
 

@@ -24,6 +24,8 @@ class BranchProduct {
   // Branch-specific pricing
   final double partnerPrice;
   final double customerPrice;
+  final double? customerPriceBeforeDiscount;
+  double? get oldPrice => customerPriceBeforeDiscount;
 
   // Rating
   final double avgRating;
@@ -60,6 +62,7 @@ class BranchProduct {
     this.isActive = true,
     required this.partnerPrice,
     required this.customerPrice,
+    this.customerPriceBeforeDiscount,
     this.avgRating = 0,
     this.ratingCount = 0,
     this.branchLat,
@@ -134,6 +137,8 @@ class BranchProduct {
       isActive: product?['is_active'] as bool? ?? true,
       partnerPrice: (json['partner_price'] as num?)?.toDouble() ?? 0,
       customerPrice: (json['customer_price'] as num?)?.toDouble() ?? 0,
+      customerPriceBeforeDiscount:
+          (json['customer_price_before_discount'] as num?)?.toDouble(),
       avgRating: (json['avg_rating'] as num?)?.toDouble() ?? 0,
       ratingCount: json['rating_count'] as int? ?? 0,
       branchLat: (branch?['latitude'] as num?)?.toDouble(),
@@ -190,6 +195,7 @@ class BranchProduct {
       'product_id': productId,
       'partner_price': partnerPrice,
       'customer_price': customerPrice,
+      'customer_price_before_discount': customerPriceBeforeDiscount,
       'avg_rating': avgRating,
       'rating_count': ratingCount,
       'is_available': isAvailable,

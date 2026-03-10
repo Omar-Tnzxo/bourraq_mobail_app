@@ -5,9 +5,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
-import 'package:bourraq/core/widgets/bourraq_header.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_state.dart';
+import 'package:bourraq/core/widgets/logout_confirmation_dialog.dart';
+import 'package:bourraq/core/widgets/delete_account_confirmation_dialog.dart';
 
 /// صفحة إعدادات الملف الشخصي
 /// Profile Settings Screen
@@ -179,10 +181,23 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
                         // === Save Button ===
                         if (_hasChanges) ...[
+                          const SizedBox(height: 10),
                           SizedBox(
                             width: double.infinity,
+                            height: 54,
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _saveChanges,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGreen,
+                                foregroundColor: Colors.white,
+                                elevation: 4,
+                                shadowColor: AppColors.primaryGreen.withValues(
+                                  alpha: 0.3,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
                               child: _isLoading
                                   ? const SizedBox(
                                       width: 22,
@@ -192,7 +207,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : Text('common.save'.tr()),
+                                  : Text(
+                                      'common.save'.tr(),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -227,50 +248,37 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final isArabic = context.locale.languageCode == 'ar';
 
     return BourraqHeader(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 48),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 44),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Back button row
+          // Back Button
           GestureDetector(
             onTap: () => context.pop(),
-            child: Row(
-              children: [
-                Icon(
-                  isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
-                  color: Colors.white,
-                  size: 22,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'profile.settings'.tr(),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isArabic ? LucideIcons.arrowRight : LucideIcons.arrowLeft,
+                color: AppColors.accentYellow,
+                size: 22,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          // User info
-          Text(
-            state.name,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            state.email,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w500,
+          const SizedBox(width: 16),
+
+          // Title
+          Expanded(
+            child: Text(
+              'profile.settings'.tr(),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: AppColors.white,
+              ),
             ),
           ),
         ],
@@ -302,11 +310,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isGoogleAuth
-            ? Colors.blue.shade50
-            : AppColors.primaryGreen.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
+            ? Colors.blue.withValues(alpha: 0.05)
+            : AppColors.primaryGreen.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isGoogleAuth ? Colors.blue.shade200 : AppColors.border,
+          color: isGoogleAuth
+              ? Colors.blue.withValues(alpha: 0.15)
+              : AppColors.primaryGreen.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
@@ -315,7 +325,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: isGoogleAuth
                 ? Image.asset('assets/icons/google.png', width: 22, height: 22)
@@ -336,7 +353,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       : 'profile.signed_in_email'.tr(),
                   style: const TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -345,9 +362,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   isGoogleAuth
                       ? 'profile.google_account_desc'.tr()
                       : 'profile.email_account_desc'.tr(),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -364,85 +382,114 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   Widget _buildPersonalInfoCard(bool isGoogleAuth) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           // Name field
-          TextFormField(
+          _buildTextField(
             controller: _nameController,
-            style: AppTextStyles.bodyLarge,
+            label: 'profile.name'.tr(),
+            icon: LucideIcons.user,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'profile.name_required'.tr();
               }
               return null;
             },
-            decoration: InputDecoration(
-              labelText: 'profile.name'.tr(),
-              prefixIcon: const Icon(
-                LucideIcons.user,
-                color: AppColors.primaryGreen,
-                size: 22,
-              ),
-            ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          _buildDivider(),
+          const SizedBox(height: 12),
 
           // Email field
-          TextFormField(
+          _buildTextField(
             controller: _emailController,
+            label: 'profile.email'.tr(),
+            icon: LucideIcons.mail,
             readOnly: true,
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
-            ),
-            decoration: InputDecoration(
-              labelText: 'profile.email'.tr(),
-              prefixIcon: const Icon(
-                LucideIcons.mail,
-                color: AppColors.primaryGreen,
-                size: 22,
-              ),
-              suffixIcon: isGoogleAuth
-                  ? const Icon(
-                      LucideIcons.lock,
+            suffixIcon: isGoogleAuth
+                ? Icon(
+                    LucideIcons.lock,
+                    size: 18,
+                    color: AppColors.textSecondary.withValues(alpha: 0.5),
+                  )
+                : IconButton(
+                    icon: const Icon(
+                      LucideIcons.pencil,
                       size: 18,
-                      color: AppColors.textSecondary,
-                    )
-                  : IconButton(
-                      icon: const Icon(
-                        LucideIcons.pencil,
-                        size: 18,
-                        color: AppColors.primaryGreen,
-                      ),
-                      onPressed: _showChangeEmailDialog,
+                      color: AppColors.primaryGreen,
                     ),
-              fillColor: AppColors.background,
-            ),
+                    onPressed: _showChangeEmailDialog,
+                  ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          _buildDivider(),
+          const SizedBox(height: 12),
 
           // Phone field
-          TextFormField(
+          _buildTextField(
             controller: _phoneController,
+            label: 'profile.phone'.tr(),
+            icon: LucideIcons.phone,
             keyboardType: TextInputType.phone,
-            style: AppTextStyles.bodyLarge,
-            decoration: InputDecoration(
-              labelText: 'profile.phone'.tr(),
-              prefixIcon: const Icon(
-                LucideIcons.phone,
-                color: AppColors.primaryGreen,
-                size: 22,
-              ),
-            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool readOnly = false,
+    Widget? suffixIcon,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: readOnly,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: AppTextStyles.bodyLarge.copyWith(
+        fontWeight: FontWeight.w600,
+        color: readOnly ? AppColors.textSecondary : AppColors.textPrimary,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: AppColors.textSecondary.withValues(alpha: 0.7),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: AppColors.primaryGreen.withValues(alpha: 0.8),
+          size: 20,
+        ),
+        suffixIcon: suffixIcon,
+        filled: false,
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        errorBorder: InputBorder.none,
+        focusedErrorBorder: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
       ),
     );
   }
@@ -509,7 +556,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
+            border: Border.all(
+              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+            ),
           ),
           child: Material(
             color: Colors.transparent,
@@ -526,12 +575,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
+                        color: AppColors.primaryGreen.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         LucideIcons.logOut,
-                        color: Colors.orange,
+                        color: AppColors.primaryGreen,
                         size: 22,
                       ),
                     ),
@@ -542,7 +591,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.orange,
+                          color: AppColors.primaryGreen,
                         ),
                       ),
                     ),
@@ -551,7 +600,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ? LucideIcons.arrowLeft
                           : LucideIcons.arrowRight,
                       size: 16,
-                      color: Colors.orange.withValues(alpha: 0.5),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
                     ),
                   ],
                 ),
@@ -565,9 +614,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         // Delete Account tile
         Container(
           decoration: BoxDecoration(
-            color: Colors.red.shade50.withValues(alpha: 0.5),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+            ),
           ),
           child: Material(
             color: Colors.transparent,
@@ -584,12 +635,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
+                        color: AppColors.primaryGreen.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         LucideIcons.trash2,
-                        color: Colors.red.shade400,
+                        color: AppColors.primaryGreen.withValues(alpha: 0.7),
                         size: 22,
                       ),
                     ),
@@ -600,7 +651,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.red.shade400,
+                          color: AppColors.primaryGreen.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -609,7 +660,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ? LucideIcons.arrowLeft
                           : LucideIcons.arrowRight,
                       size: 16,
-                      color: Colors.red.withValues(alpha: 0.3),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
                     ),
                   ],
                 ),
@@ -619,6 +670,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildDivider() {
+    return Container(height: 1, color: AppColors.border.withValues(alpha: 0.5));
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -670,191 +725,81 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   // Dialogs
   // ══════════════════════════════════════════════════════════════
 
-  void _showLogoutConfirmation() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('account.logout_confirm_title'.tr()),
-        content: Text('account.logout_confirm_message'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('common.cancel'.tr()),
-          ),
-          TextButton(
-            onPressed: () async {
-              final authCubit = context.read<AuthCubit>();
-              final router = GoRouter.of(context);
-              Navigator.pop(ctx);
-              await authCubit.logout();
-              if (mounted) {
-                router.go('/login');
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.orange),
-            child: Text('account.logout'.tr()),
-          ),
-        ],
-      ),
-    );
+  void _showLogoutConfirmation() async {
+    final shouldLogout = await LogoutConfirmationDialog.show(context);
+    if (shouldLogout && context.mounted) {
+      context.read<AuthCubit>().logout();
+    }
   }
 
-  void _showDeleteConfirmation() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('account.delete_confirm_title'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('account.delete_confirm_message'.tr()),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red[200]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    LucideIcons.triangleAlert,
-                    color: Colors.red[400],
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'account.delete_warning'.tr(),
-                      style: TextStyle(fontSize: 13, color: Colors.red[700]),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('common.cancel'.tr()),
-          ),
-          TextButton(
-            onPressed: () async {
-              final authCubit = context.read<AuthCubit>();
-              final router = GoRouter.of(context);
-              Navigator.pop(ctx);
-              await authCubit.deleteAccount();
-              if (mounted) {
-                router.go('/login');
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text('account.delete_account'.tr()),
-          ),
-        ],
-      ),
-    );
+  void _showDeleteConfirmation() async {
+    final shouldDelete = await DeleteAccountConfirmationDialog.show(context);
+    if (shouldDelete && context.mounted) {
+      context.read<AuthCubit>().deleteAccount();
+    }
   }
 
-  void _showChangeEmailDialog() {
+  void _showChangeEmailDialog() async {
     final emailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'profile.change_email'.tr(),
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+    final shouldChange = await BourraqDialog.show(
+      context,
+      title: 'profile.change_email'.tr(),
+      confirmLabel: 'common.confirm'.tr(),
+      cancelLabel: 'common.cancel'.tr(),
+      icon: LucideIcons.mail,
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'profile.change_email_desc'.tr(),
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            BourraqTextField(
+              label: 'profile.new_email'.tr(),
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              prefixIcon: const Icon(
+                LucideIcons.mail,
+                color: AppColors.primaryGreen,
+                size: 22,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'auth.error_email_required'.tr();
+                }
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value.trim())) {
+                  return 'auth.error_invalid_email'.tr();
+                }
+                if (value.trim() == _emailController.text) {
+                  return 'profile.email_same_error'.tr();
+                }
+                return null;
+              },
+            ),
+          ],
         ),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'profile.change_email_desc'.tr(),
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.4,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                style: AppTextStyles.bodyLarge,
-                decoration: InputDecoration(
-                  labelText: 'profile.new_email'.tr(),
-                  prefixIcon: const Icon(
-                    LucideIcons.mail,
-                    color: AppColors.primaryGreen,
-                    size: 22,
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'auth.error_email_required'.tr();
-                  }
-                  if (!value.contains('@')) {
-                    return 'auth.error_email_invalid'.tr();
-                  }
-                  return null;
-                },
-              ),
-            ],
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.border),
-                    foregroundColor: AppColors.textSecondary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Text('common.cancel'.tr()),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      context.read<AuthCubit>().requestEmailChange(
-                        emailController.text.trim(),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Text('common.send'.tr()),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
+      onConfirm: () {
+        if (formKey.currentState!.validate()) {
+          Navigator.pop(context, true);
+        }
+      },
     );
+
+    if (shouldChange == true && mounted) {
+      context.read<AuthCubit>().requestEmailChange(emailController.text.trim());
+    }
   }
 }

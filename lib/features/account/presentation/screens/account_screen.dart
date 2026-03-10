@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/widgets/bourraq_header.dart';
+import 'package:bourraq/core/widgets/bourraq_widgets.dart';
 import 'package:bourraq/core/widgets/contact_options_sheet.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bourraq/features/auth/presentation/cubit/auth_state.dart';
 import 'package:bourraq/features/wallet/data/wallet_service.dart';
+import 'package:bourraq/core/widgets/logout_confirmation_dialog.dart';
 
 /// صفحة الحساب - مُعاد تصميمها وفقاً لـ Rabbit UI Reference
 /// وتتبع UI-UX-QUALITY-RULES.MD و BRAND_IDENTITY.md
@@ -87,11 +90,6 @@ class _AccountScreenState extends State<AccountScreen> {
                     _buildSectionTitle('account.section_support'.tr()),
                     const SizedBox(height: 12),
                     _buildSupportSection(context),
-
-                    const SizedBox(height: 24),
-
-                    // === Social Media Links ===
-                    _buildSocialLinks(context),
                   ],
                 ),
               ),
@@ -104,68 +102,132 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Widget _buildHeader(BuildContext context, String userName, bool isGuest) {
     return BourraqHeader(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 48),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 44),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            '${'account.hello'.tr()} $userName',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
+          // Profile Logo Circle
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: AppColors.accentYellow,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 3,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Image.asset(
+              'assets/icons/white_icon_logo.png', // Assuming this is the logo, using white_icon_logo as reference
+              color: AppColors.primaryGreen,
+              fit: BoxFit.contain,
             ),
           ),
-          const SizedBox(height: 4),
-          if (isGuest)
-            GestureDetector(
-              onTap: () => context.go('/login'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'account.login_or_register'.tr(),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.white,
+          const SizedBox(width: 16),
+
+          // User Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'account.hello'.tr(),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withValues(alpha: 0.85),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            )
-          else
-            GestureDetector(
-              onTap: () => context.push('/profile-settings'),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    LucideIcons.settings,
-                    size: 16,
-                    color: Colors.white70,
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.white,
+                    height: 1.1,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'account.profile_settings'.tr(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (isGuest) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => context.go('/login'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentYellow.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.accentYellow.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            LucideIcons.logIn,
+                            size: 13,
+                            color: AppColors.accentYellow,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'account.login_or_register'.tr(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.accentYellow,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
+              ],
+            ),
+          ),
+
+          // Logout / Action Button
+          if (!isGuest)
+            IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  LucideIcons.logOut,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
+              onPressed: () => _showLogoutConfirmation(context),
             ),
         ],
       ),
     );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) async {
+    final shouldLogout = await LogoutConfirmationDialog.show(context);
+    if (shouldLogout && context.mounted) {
+      context.read<AuthCubit>().logout();
+    }
   }
 
   /// Quick Actions Row (My Orders, Promo Codes, Saved Items)
@@ -294,40 +356,11 @@ class _AccountScreenState extends State<AccountScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  _walletBalance.floor().toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  '.${((_walletBalance - _walletBalance.floor()) * 100).round().toString().padLeft(2, '0')}',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                          : AppPriceDisplay(
+                              price: _walletBalance,
+                              textColor: Colors.white,
+                              scale: 1.77,
                             ),
-                      const SizedBox(width: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          'common.egp'.tr(),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -426,9 +459,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Localizations.localeOf(context).languageCode == 'ar'
-                    ? LucideIcons.arrowLeft
-                    : LucideIcons.arrowRight,
+                LucideIcons.arrowRight,
                 color: Colors.white,
                 size: 22,
               ),
@@ -451,9 +482,10 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  /// Account Section (Addresses, Cards, Language, Country)
+  /// Account Section (Profile, Addresses, Cards, Language)
   Widget _buildAccountSection(BuildContext context, bool isGuest) {
     return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -462,6 +494,13 @@ class _AccountScreenState extends State<AccountScreen> {
       child: Column(
         children: [
           if (!isGuest) ...[
+            _buildMenuItem(
+              context: context,
+              icon: LucideIcons.user,
+              title: 'account.profile_settings'.tr(),
+              onTap: () => context.push('/profile-settings'),
+            ),
+            _buildDivider(),
             _buildMenuItem(
               context: context,
               icon: LucideIcons.mapPin,
@@ -547,8 +586,6 @@ class _AccountScreenState extends State<AccountScreen> {
     Widget? trailing,
     required VoidCallback onTap,
   }) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -585,8 +622,8 @@ class _AccountScreenState extends State<AccountScreen> {
                 ),
               ),
               trailing ??
-                  Icon(
-                    isArabic ? LucideIcons.arrowLeft : LucideIcons.arrowRight,
+                  const Icon(
+                    LucideIcons.chevronRight,
                     size: 16,
                     color: AppColors.textSecondary,
                   ),
@@ -605,98 +642,40 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  /// Social Links
-  Widget _buildSocialLinks(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          'account.follow_us'.tr(),
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildSocialIcon(
-              icon: LucideIcons.facebook,
-              onTap: () => _launchUrl('https://www.facebook.com/Bourraq'),
-            ),
-            const SizedBox(width: 24),
-            _buildSocialIcon(
-              icon: LucideIcons.globe,
-              onTap: () => _launchUrl('http://www.bourraq.com/'),
-            ),
-            const SizedBox(width: 24),
-            _buildSocialIcon(
-              icon: LucideIcons.phone,
-              onTap: () => _launchUrl('https://wa.me/+201102450471'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialIcon({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: AppColors.primaryGreen, size: 22),
-      ),
-    );
-  }
-
   // ══════════════════════════════════════════════════════════════
   // Dialog Methods
   // ══════════════════════════════════════════════════════════════
 
   void _showLanguagePicker(BuildContext context) {
-    showModalBottomSheet(
+    BourraqBottomSheet.show(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'settings.select_language'.tr(),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            _buildLanguageOption(
-              context: context,
-              title: 'العربية',
-              isSelected: context.locale.languageCode == 'ar',
-              onTap: () {
-                context.setLocale(const Locale('ar'));
-                Navigator.pop(ctx);
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildLanguageOption(
-              context: context,
-              title: 'English',
-              isSelected: context.locale.languageCode == 'en',
-              onTap: () {
-                context.setLocale(const Locale('en'));
-                Navigator.pop(ctx);
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+      title: 'settings.select_language'.tr(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildLanguageOption(
+            context: context,
+            title: 'العربية',
+            isSelected: context.locale.languageCode == 'ar',
+            onTap: () {
+              HapticFeedback.selectionClick();
+              context.setLocale(const Locale('ar'));
+              Navigator.pop(context);
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildLanguageOption(
+            context: context,
+            title: 'English',
+            isSelected: context.locale.languageCode == 'en',
+            onTap: () {
+              HapticFeedback.selectionClick();
+              context.setLocale(const Locale('en'));
+              Navigator.pop(context);
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
@@ -709,16 +688,19 @@ class _AccountScreenState extends State<AccountScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryGreen.withValues(alpha: 0.1)
-              : Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : AppColors.border,
+            color: isSelected
+                ? AppColors.primaryGreen
+                : Colors.white.withValues(alpha: 0.1),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -729,15 +711,13 @@ class _AccountScreenState extends State<AccountScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : AppColors.textPrimary,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                  color: isSelected ? Colors.white : Colors.white70,
                 ),
               ),
             ),
             if (isSelected)
-              Icon(
+              const Icon(
                 LucideIcons.circleCheck,
                 color: AppColors.primaryGreen,
                 size: 24,
@@ -749,48 +729,78 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   void _showLegalOptions(BuildContext context) {
-    showModalBottomSheet(
+    BourraqBottomSheet.show(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      title: 'account.legal'.tr(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildLegalItem(
+            icon: LucideIcons.fileText,
+            title: 'account.terms'.tr(),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/pages/terms');
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildLegalItem(
+            icon: LucideIcons.shield,
+            title: 'account.privacy'.tr(),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/pages/privacy');
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    );
+  }
+
+  Widget _buildLegalItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
           children: [
-            Text(
-              'account.legal'.tr(),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppColors.primaryGreen, size: 22),
             ),
-            const SizedBox(height: 24),
-            ListTile(
-              leading: const Icon(LucideIcons.fileText),
-              title: Text('account.terms'.tr()),
-              onTap: () {
-                Navigator.pop(ctx);
-                context.push('/pages/terms');
-              },
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
             ),
-            ListTile(
-              leading: const Icon(LucideIcons.shield),
-              title: Text('account.privacy'.tr()),
-              onTap: () {
-                Navigator.pop(ctx);
-                context.push('/pages/privacy');
-              },
+            const Icon(
+              LucideIcons.chevronRight,
+              color: Colors.white24,
+              size: 20,
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }

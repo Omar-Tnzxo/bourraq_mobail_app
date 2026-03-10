@@ -32,24 +32,23 @@ class HomeCubit extends Cubit<HomeState> {
            branchProductRepository ?? BranchProductRepository(),
        super(HomeInitial());
 
-  /// Load all home screen data with cache-first strategy
+  /// Load all home screen data
   ///
-  /// 1. Immediately emit cached data if available (fast UI response)
-  /// 2. Fetch fresh data from network in background
-  /// 3. Update UI when fresh data arrives
+  /// Strategy:
+  /// 1. On init, show Shimmer (`HomeLoading`) instead of default cache to prevent flicker.
+  /// 2. Fetch fresh data from network.
+  /// 3. On network error, if no current state, fallback to old cache.
+  /// 4. On refresh, do not show loading state, just fetch in background smoothly.
   Future<void> loadHomeData({String? areaId}) async {
     if (isClosed) return;
     _areaId = areaId ?? _areaId;
 
-    // Step 1: Try to load from cache first for instant UI
-    final hasCachedData = await _tryLoadFromCache();
-
-    // Only show loading spinner if no cached data
-    if (!hasCachedData && !isClosed) {
+    // Only show loading spinner if it's the initial load (no current loaded state)
+    if (state is! HomeLoaded && !isClosed) {
       emit(HomeLoading());
     }
 
-    // Step 2: Fetch fresh data from network
+    // Fetch fresh data from network
     try {
       await _fetchAndEmitFreshData();
     } catch (e) {
@@ -69,9 +68,12 @@ class HomeCubit extends Cubit<HomeState> {
         return;
       }
 
-      // If we have cached data, keep showing it with stale indicator
-      if (hasCachedData) {
-        // Keep current state but mark as stale if needed
+      // If network failed and we don't have a loaded state, fallback to stale cache
+      if (state is! HomeLoaded) {
+        final loadedOffline = await _emitFallbackCache();
+        if (loadedOffline) return;
+      } else {
+        // We already have a valid state, just stay on it silently (offline refresh)
         return;
       }
 
@@ -87,8 +89,8 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  /// Try to load data from cache
-  Future<bool> _tryLoadFromCache() async {
+  /// Emit cached data as offline fallback
+  Future<bool> _emitFallbackCache() async {
     if (!_repository.hasHomeCache()) return false;
 
     try {
@@ -122,7 +124,7 @@ class HomeCubit extends Cubit<HomeState> {
             sectionData: sectionData,
             isStale: true,
             cacheAgeMinutes: cacheAge,
-            isRefreshing: true, // Will fetch fresh data
+            isRefreshing: false,
           ),
         );
       }
@@ -363,14 +365,25 @@ class HomeCubit extends Cubit<HomeState> {
   /// Map raw product data to ProductItem
   List<ProductItem> _mapProducts(List<Map<String, dynamic>> data) {
     return data.map((json) {
+      double? discountPrice;
+      final partnerProducts = json['partner_products'] as List?;
+      if (partnerProducts != null && partnerProducts.isNotEmpty) {
+        discountPrice =
+            (partnerProducts.first['customer_price_before_discount'] as num?)
+                ?.toDouble();
+      }
+
       return ProductItem(
         id: json['id'] as String,
         nameAr: json['name_ar'] as String? ?? '',
         nameEn: json['name_en'] as String? ?? '',
         price: (json['price'] as num?)?.toDouble() ?? 0.0,
-        oldPrice: (json['old_price'] as num?)?.toDouble(),
+        oldPrice: discountPrice ?? (json['old_price'] as num?)?.toDouble(),
         imageUrl: json['image_url'] as String? ?? '',
         isAvailable: json['is_active'] as bool? ?? true,
+        weightValue: (json['weight_value'] as num?)?.toDouble(),
+        weightUnitAr: json['weight_unit_ar'] as String?,
+        weightUnitEn: json['weight_unit_en'] as String?,
       );
     }).toList();
   }

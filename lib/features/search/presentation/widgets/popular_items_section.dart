@@ -14,6 +14,8 @@ class PopularItemsSection extends StatelessWidget {
   final VoidCallback? onCartUpdated;
   final bool hasAddress;
   final VoidCallback? onLocationRequired;
+  final Set<String>? favoriteIds;
+  final Function(ProductItem)? onFavoriteToggle;
 
   const PopularItemsSection({
     super.key,
@@ -22,6 +24,8 @@ class PopularItemsSection extends StatelessWidget {
     this.onCartUpdated,
     this.hasAddress = true,
     this.onLocationRequired,
+    this.favoriteIds,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -60,13 +64,16 @@ class PopularItemsSection extends StatelessWidget {
               crossAxisCount: 3,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
-              childAspectRatio: 0.64,
+              childAspectRatio: 0.60,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
+              final productItem = ProductItem.fromMap(product);
               return ProductCard(
-                product: ProductItem.fromMap(product),
+                product: productItem,
+                isFavorite: favoriteIds?.contains(productItem.id) ?? false,
+                onFavoriteTap: () => onFavoriteToggle?.call(productItem),
                 cartService: cartService,
                 onCartUpdated: onCartUpdated,
                 hasAddress: hasAddress,

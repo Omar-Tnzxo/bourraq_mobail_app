@@ -6,6 +6,7 @@ import 'package:bourraq/features/cart/data/cart_service.dart';
 class CartBadgeNotifier extends ChangeNotifier {
   num _count = 0;
   bool _isInitialized = false;
+  bool _isDisposed = false;
   CartService? _cartService;
 
   num get count => _count;
@@ -26,6 +27,7 @@ class CartBadgeNotifier extends ChangeNotifier {
     _cartService!.addListener(_onCartChanged);
 
     _isInitialized = true;
+    if (_isDisposed) return;
     _updateCount();
     print('✅ [CartBadgeNotifier] Ready with count: $_count');
   }
@@ -35,7 +37,7 @@ class CartBadgeNotifier extends ChangeNotifier {
   }
 
   void _updateCount() {
-    if (_cartService == null) return;
+    if (_cartService == null || _isDisposed) return;
 
     _count = _cartService!.getCartItemCount();
     notifyListeners();
@@ -52,6 +54,7 @@ class CartBadgeNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _cartService?.removeListener(_onCartChanged);
     super.dispose();
   }

@@ -380,7 +380,7 @@ class ShimmerProductGrid extends StatelessWidget {
     super.key,
     this.itemCount = 6,
     this.crossAxisCount = 3,
-    this.childAspectRatio = 0.64,
+    this.childAspectRatio = 0.60,
     this.padding = const EdgeInsets.all(8),
   });
 

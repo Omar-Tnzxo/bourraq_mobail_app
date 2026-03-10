@@ -7,6 +7,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/number_symbols_data.dart';
+import 'package:intl/number_symbols.dart';
 import 'package:bourraq/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:bourraq/features/favorites/presentation/cubit/favorites_cubit.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -37,6 +39,12 @@ Future<void> main() async {
 
   // Initialize EasyLocalization
   await EasyLocalization.ensureInitialized();
+
+  // Force English numbers globally for Arabic locale
+  // This ensures that NumberFormat and DateFormat use Latin digits
+  if (numberFormatSymbols.containsKey('ar')) {
+    numberFormatSymbols['ar'] = numberFormatSymbols['en_US'] as NumberSymbols;
+  }
 
   // Initialize Firebase
   await Firebase.initializeApp();
@@ -117,8 +125,29 @@ class _BourraqAppState extends State<BourraqApp> {
     super.initState();
     // Listen for session expiry and redirect to login
     SessionManager().onSessionExpired.listen((_) {
-      debugPrint('🔴 [APP] Session expired, redirecting to login...');
-      AppRouter.router.go('/login');
+      if (!mounted) return;
+      debugPrint('🔴 [APP] Session expired or user signed out');
+
+      // Use microtask to ensure we don't navigate during a build cycle
+      Future.microtask(() {
+        // Prevent redundant navigation if already on login/onboarding
+        final router = AppRouter.router;
+        final currentLocation = router.routerDelegate.currentConfiguration.uri
+            .toString();
+
+        if (currentLocation.contains('/login') ||
+            currentLocation.contains('/email-login') ||
+            currentLocation.contains('/otp-verification')) {
+          debugPrint('ℹ️ [APP] Already on auth screen, skipping redirect');
+          return;
+        }
+
+        // Hide keyboard before redirect to avoid UI freezing
+        FocusManager.instance.primaryFocus?.unfocus();
+
+        debugPrint('➡️ [APP] Redirecting to login from $currentLocation...');
+        router.go('/login');
+      });
     });
   }
 

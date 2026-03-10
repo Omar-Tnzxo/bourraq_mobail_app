@@ -84,7 +84,7 @@ class DateFormatter {
     final hour12 = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
     final period = hour >= 12 ? 'date.pm'.tr() : 'date.am'.tr();
 
-    return '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+    return '\u200E${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}\u200E $period';
   }
 
   /// Format short date (d MMM)

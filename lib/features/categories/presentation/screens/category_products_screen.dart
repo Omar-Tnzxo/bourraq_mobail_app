@@ -22,6 +22,7 @@ import 'package:bourraq/features/products/data/models/product_model.dart';
 import 'package:bourraq/features/products/data/models/branch_product_model.dart';
 import 'package:bourraq/features/home/presentation/widgets/address_picker_bottom_sheet.dart';
 import 'package:bourraq/features/categories/presentation/screens/categories_list_screen.dart';
+import 'package:bourraq/features/favorites/data/repositories/favorites_repository.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
   final String categoryId;
@@ -41,10 +42,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen>
     with SingleTickerProviderStateMixin {
   final SupabaseClient _supabase = Supabase.instance.client;
   List<CategoryItem> _mainCategories = [];
-  bool _isLoading = true;
   String? _error;
   TabController? _tabController;
-  String? _resolvedCategoryId;
 
   @override
   void initState() {
@@ -82,8 +81,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen>
 
         setState(() {
           _mainCategories = categories;
-          _resolvedCategoryId = targetId;
-          _isLoading = false;
         });
 
         int initialIndex = _mainCategories.indexWhere((c) => c.id == targetId);
@@ -103,7 +100,6 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen>
       if (mounted) {
         setState(() {
           _error = ErrorHandler.getErrorKey(e);
-          _isLoading = false;
         });
       }
     }
@@ -175,8 +171,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen>
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.only(
-                  bottom: 12,
-                ), // Tighter space for curve
+                  bottom: 32,
+                ), // More space to show indicator above curve
                 decoration: const BoxDecoration(color: AppColors.primaryGreen),
                 child: SafeArea(
                   bottom: false,
@@ -214,11 +210,20 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen>
                                       controller: _tabController,
                                       isScrollable: true,
                                       tabAlignment: TabAlignment.center,
-                                      indicatorColor: AppColors.accentYellow,
-                                      indicatorWeight: 3,
-                                      indicatorSize: TabBarIndicatorSize.label,
+                                      indicator: const UnderlineTabIndicator(
+                                        borderSide: BorderSide(
+                                          color: AppColors.accentYellow,
+                                          width: 4,
+                                        ),
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(2),
+                                          topRight: Radius.circular(2),
+                                        ),
+                                        insets: EdgeInsets.only(bottom: 6),
+                                      ),
                                       labelColor: AppColors.accentYellow,
                                       unselectedLabelColor: AppColors.white,
+                                      padding: const EdgeInsets.only(bottom: 8),
                                       labelStyle: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -386,6 +391,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
   final SupabaseClient _supabase = Supabase.instance.client;
   final BranchProductRepository _branchProductRepo = BranchProductRepository();
   final AddressService _addressService = AddressService();
+  late FavoritesRepository _favoritesRepository;
 
   // Controllers for Scrollable Lists
   final ItemScrollController _itemScrollController = ItemScrollController();
@@ -419,6 +425,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
   @override
   void initState() {
     super.initState();
+    _favoritesRepository = FavoritesRepository(_supabase);
     _initCartService();
     _loadData();
     _loadUserFavorites();
@@ -486,17 +493,6 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
         });
         // _scrollToTab(minIndex); // Removed disturbing animation
       }
-    }
-  }
-
-  void _scrollToTab(int index) {
-    if (_tabsScrollController.isAttached) {
-      _tabsScrollController.scrollTo(
-        index: index,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-        alignment: 0.0,
-      );
     }
   }
 
@@ -590,7 +586,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
               'name_en': sp.nameEn,
               'price': sp.customerPrice,
               'partner_price': sp.partnerPrice,
-              'old_price': null,
+              'old_price': sp.customerPriceBeforeDiscount,
               'image_url': sp.imageUrl,
               'is_active': sp.isActive,
               'category_id': sp.categoryId,
@@ -602,6 +598,10 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
               'badge_name_ar': sp.badgeNameAr,
               'badge_name_en': sp.badgeNameEn,
               'badge_color': sp.badgeColor,
+              'weight_value': sp.weightValue,
+              'weight_unit_ar': sp.weightUnitAr,
+              'weight_unit_en': sp.weightUnitEn,
+              'customer_price_before_discount': sp.customerPriceBeforeDiscount,
               'created_at': DateTime.now().toIso8601String(),
               'tags': '',
             },
@@ -633,16 +633,13 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
-      final response = await _supabase
-          .from('favorites')
-          .select('product_id')
-          .eq('user_id', user.id);
+      final favorites = await _favoritesRepository.getFavorites(
+        areaId: _areaId,
+      );
       if (mounted) {
         setState(() {
           _favoriteIds.clear();
-          for (final fav in response) {
-            _favoriteIds.add(fav['product_id'] as String);
-          }
+          _favoriteIds.addAll(favorites.map((p) => p.id));
         });
       }
     } catch (_) {}
@@ -748,7 +745,9 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
     }
   }
 
-  Future<void> _toggleFavorite(String productId) async {
+  Future<void> _toggleFavorite(Map<String, dynamic> product) async {
+    final productId = product['id'] as String;
+    final branchId = product['branch_id'] as String?;
     final user = _supabase.auth.currentUser;
     final wasFavorite = _favoriteIds.contains(productId);
 
@@ -776,19 +775,12 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
     if (user != null) {
       try {
         if (wasFavorite) {
-          await _supabase
-              .from('favorites')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('product_id', productId);
+          await _favoritesRepository.removeFromFavorites(productId);
         } else {
-          await _supabase
-              .from('favorites')
-              .upsert(
-                {'user_id': user.id, 'product_id': productId},
-                onConflict: 'user_id,product_id',
-                ignoreDuplicates: true,
-              );
+          await _favoritesRepository.addToFavorites(
+            productId,
+            branchId: branchId,
+          );
         }
       } catch (_) {
         setState(() {
@@ -925,7 +917,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
       child: ScrollablePositionedList.builder(
         itemScrollController: _tabsScrollController,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        // Removed global padding as it causes RTL layout spacing issues in ScrollablePositionedList
         itemCount: _activeSubCategories.length,
         itemBuilder: (context, index) {
           final category = _activeSubCategories[index];
@@ -933,7 +925,12 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
           return GestureDetector(
             onTap: () => _onTabSelected(index),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
+              margin: EdgeInsetsDirectional.only(
+                start: index == 0 ? 12 : 4,
+                end: index == _activeSubCategories.length - 1 ? 12 : 4,
+                top: 4,
+                bottom: 4,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected
@@ -943,7 +940,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
               ),
               alignment: Alignment.center,
               child: Text(
-                isArabic ? category.nameAr : category.nameEn,
+                isArabic ? category.nameAr.trim() : category.nameEn.trim(),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
@@ -979,7 +976,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
               child: Row(
                 children: [
                   Text(
-                    isArabic ? category.nameAr : category.nameEn,
+                    isArabic ? category.nameAr.trim() : category.nameEn.trim(),
                     style: AppTextStyles.titleLarge.copyWith(
                       fontWeight: FontWeight.w800,
                       color: AppColors.deepOlive,
@@ -997,7 +994,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
                 crossAxisCount: 3,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 0.64,
+                childAspectRatio: 0.60,
               ),
               itemCount: products.length,
               itemBuilder: (context, pIndex) {
@@ -1009,7 +1006,7 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
                   product: ProductItem.fromProduct(productModel),
                   isFavorite: _favoriteIds.contains(productId),
                   onTap: () => ProductDetailsSheet.show(context, productId),
-                  onFavoriteTap: () => _toggleFavorite(productId),
+                  onFavoriteTap: () => _toggleFavorite(productData),
                   cartService: _cartService,
                   onCartUpdated: _updateCartCount,
                   hasAddress: _areaId != null,
@@ -1202,7 +1199,9 @@ class _CategoryProductsBodyState extends State<_CategoryProductsBody>
                         shape: BoxShape.circle,
                       ),
                       child: Text(
-                        _cartItemCount > 9 ? '9+' : '$_cartItemCount',
+                        _cartItemCount > 9
+                            ? '9+'
+                            : '\u200E${_cartItemCount % 1 == 0 ? _cartItemCount.toInt() : _cartItemCount}\u200E',
                         style: const TextStyle(
                           color: AppColors.white,
                           fontSize: 8,

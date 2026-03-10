@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:bourraq/core/constants/app_colors.dart';
 import 'package:bourraq/core/widgets/bourraq_header.dart';
 import 'package:bourraq/core/constants/app_text_styles.dart';
+import 'package:bourraq/core/widgets/app_price_display.dart';
 import 'package:bourraq/features/account/presentation/cubit/promo_codes_cubit.dart';
 import 'package:bourraq/features/account/data/repositories/account_content_repository.dart';
 import 'package:bourraq/features/account/data/models/promo_code_model.dart';
@@ -373,36 +375,44 @@ class _PromoCodesView extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                promo.discountType == 'percentage'
-                                    ? '${promo.discountValue.toInt()}%'
-                                    : '${promo.discountValue.toInt()}',
-                                style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.bold,
-                                  color: accentColor,
-                                  height: 1,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: Text(
-                                  promo.discountType == 'percentage'
-                                      ? 'promo.off'.tr()
-                                      : 'common.egp'.tr(),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: accentColor.withValues(alpha: 0.8),
+                          if (promo.discountType == 'percentage')
+                            Directionality(
+                              textDirection: ui.TextDirection.ltr,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '\u200E${promo.discountValue.toInt()}%\u200E',
+                                    style: TextStyle(
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.w900,
+                                      color: accentColor,
+                                      height: 1,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 6),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Text(
+                                      'promo.off'.tr(),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: accentColor.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            )
+                          else
+                            AppPriceDisplay(
+                              price: promo.discountValue,
+                              textColor: accentColor,
+                              scale: 2.22, // roughly 40 font size (40 / 18)
+                            ),
                           if (description.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
